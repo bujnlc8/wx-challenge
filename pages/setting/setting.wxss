@@ -1,0 +1,11 @@
+.menu {
+  font-size: 15px;
+  height: 44px;
+  line-height: 44px;
+  margin-left: 10px;
+  margin-right: 10px;
+  border-bottom: 2px solid #f3f3f2;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}

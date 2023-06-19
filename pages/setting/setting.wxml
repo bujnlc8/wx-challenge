@@ -1,0 +1,15 @@
+<view style="background-color: white;">
+	<view class="menu" bindtap="operateShowCorrectAnswer" style="cursor: pointer;">
+		<text style="flex: 4;cursor: pointer;">显示正确答案</text>
+		<switch checked="{{show_correct_answer}}"></switch>
+	</view>
+	<view class="menu" bindtap="operateShowAnalysis" style="cursor: pointer;">
+		<text style="flex: 4;cursor: pointer;">显示答案解析</text>
+		<switch checked="{{show_analysis}}"></switch>
+	</view>
+	<view class="menu" bindtap="operateSound" style="cursor: pointer;">
+		<text style="flex: 4;cursor: pointer;" wx:if="{{is_ios}}">开启音效提示</text>
+		<text style="flex: 4;cursor: pointer;" wx:else>开启音效背景</text>
+		<switch checked="{{sound_close == 0}}"></switch>
+	</view>
+</view>

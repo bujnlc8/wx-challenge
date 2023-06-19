@@ -1,0 +1,74 @@
+<view class="board" wx:if="{{show_tip || is_show_help_tip}}" catchtouchmove="catchtouchmove"></view>
+<view class="container">
+	<view style="display: flex;">
+		<view style="cursor: pointer;" class="tab {{t == 0 ? 'tab-active': '' }}" data-t="0" bindtap="changeTab">本周排行榜</view>
+		<view style="cursor: pointer;" class="tab {{t == 1 ? 'tab-active': '' }}" data-t="1" bindtap="changeTab">历史高分榜</view>
+	</view>
+	<view wx:if="{{t == 0}}" style="margin-top: 10px;color: #665757;font-size: 0.9em;padding-bottom: 5px;">下次重置：<text wx:if="{{reset_day > 0}}">{{reset_day}}天 </text>{{ reset_hour}} 时 {{reset_minute}}分</view>
+	<view wx:if="{{t == 1}}" style="margin-top: 10px;color: #665757;font-size: 0.9em;padding-bottom: 5px;">高分榜不重置，上榜至少需要2000分</view>
+	<scroll-view class="ranking-list" scroll-y="true" enhanced="true" show-scrollbar="false">
+		<view class="ranking-item" wx:for="{{current_rank_list}}">
+			<span class="index-class {{index == 0 ? 'first-place': index==1 ? 'second-place':index==2 ? 'third-place': 'other-place'}}">{{index + 1}}</span>
+			<span class="item-class">
+				<image src="/images/grade{{item.grade}}.png" style="width: 15px;height:15px;margin-right: 2px;" wx:if="{{item.grade > 0}}" />
+				<image src="/images/no-grade.png" style="width: 15px;height:15px;margin-right: 2px;" wx:else="" />
+				<image class="avatar_class" src="{{item.avatar_url}}" />
+			</span>
+			<span class="item-class">{{item.nickname}}</span>
+			<span class="item-class">{{item.total_score}}分</span>
+			<span class="item-class">{{item.total_question}}题</span>
+		</view>
+	</scroll-view>
+	<view wx:if="{{current_rank_list.length == 0}}" style="margin-top: 10px;font-size:17px;">暂无数据</view>
+	<view style="display: flex;position: fixed;bottom: 16px;width: 100%;flex-direction: column;">
+		<view wx:if="{{logined == 1 && mine}}" class="ranking-item" style="padding-left: 5%;width: 90%;padding-right:5%; background-color: #f8e8c1;margin-bottom: 21px;height: 62px;color: #665757;">
+			<span class="index-class  {{my_rank == 1 ? 'first-place': my_rank==2 ? 'second-place':my_rank==3 ? 'third-place': 'other-place'}}">{{my_rank}}</span>
+			<span class="item-class">
+				<image src="/images/grade{{mine.grade}}.png" style="width: 15px;height:15px;margin-right: 2px;" wx:if="{{mine.grade > 0}}" />
+				<image src="/images/no-grade.png" style="width: 15px;height:15px;margin-right: 2px;" wx:else="" />
+				<image class="avatar_class" src="{{mine.avatar_url}}" />
+			</span>
+			<span class="item-class">{{mine.nickname || ''}}</span>
+			<span class="item-class" wx:if="{{mine.total_score != -1}}">{{mine.total_score || 0}}分</span>
+			<span class="item-class" wx:if="{{mine.total_score != -1}}">{{mine.total_question || 0}}题</span>
+			<span class="item-class" wx:if="{{mine.total_score == -1}}" style="flex: 2;">暂无答题记录</span>
+		</view>
+		<view wx:else="" class="ranking-item" style="padding-left: 5%;width: 90%;padding-right:5%; background-color: #f8e8c1;margin-bottom: 21px;height: 62px;color: #665757;cursor: pointer;" bindtap="goToLogin">
+			<span class="index-class other-place">99...</span>
+			<span class="item-class">
+				<image src="/images/no-grade.png" style="width: 15px;height:15px;margin-right: 2px;" />
+				<image class="avatar_class" src="https://bucket-1256650966.cos.ap-beijing.myqcloud.com/challenge/default_avatar.png" />
+			</span>
+			<span class="item-class" style="flex: 3;">请登录后答题</span>
+		</view>
+		<text bindtap="startChallenge" class="start_challenge_class" style="cursor: pointer;">开始挑战</text>
+	</view>
+	<icon type="info" class="icon_class" color="#15559AAA" bindtap="openTip" style="cursor: pointer;"></icon>
+	<view class="pop-tip" wx:if="{{show_tip}}" bindlongpress="closeTip" style="cursor: pointer;">
+		<view class="pop-tip-title">挑战模式说明</view>
+		<view class="rule-item">（1）时间限时<text class="hi-num">30</text>秒
+			，超时自动判为错误<text class="common-gray underline-class" bindtap="goToClassIntro" style="cursor: pointer;">（见等级说明）</text>；</view>
+		<view class="rule-item">（2）用时越短，分数越高<text class="common-gray">（该题得分 = 倒计时秒数* 10 * 等级倍数，</text><text class="common-gray underline-class" bindtap="goToClassIntro" style="cursor: pointer;">见等级说明）</text>；</view>
+		<view class="rule-item">（3）回答错误，消耗<text class="hi-num">1000</text>百科币可复活，每轮限1次机会<text class="common-gray underline-class" bindtap="goToClassIntro" style="cursor: pointer;">（见等级说明）</text>；</view>
+		<view class="rule-item">（4）每日首次答题，送<text class="hi-num">1000</text>百科币；</view>
+		<view class="rule-item">（5）每答对1题送「该题得分 / 5」个百科币，每答对<text class="hi-num">100</text>题(去重)，额外送<text class="hi-num">10000</text>百科币。答的越多，送的越多！</view>
+		<view class="rule-item">（6）点击右上角按钮本轮可跳过该题，每日限<text class="hi-num">1</text>次机会<text class="common-gray underline-class" bindtap="goToClassIntro" style="cursor: pointer;">（见等级说明）</text>；</view>
+		<view class="rule-item">（7）长按题目可永久跳过，每日限<text class="hi-num">5</text>次机会；</view>
+		<view class="rule-item">（8）对题目有任何疑问，欢迎点击左上角按钮进行反馈，成功将送500百科币；<text class="common-gray">（不限次数）</text></view>
+		<view class="iknow" bindtap="closeTip" style="cursor: pointer;">知道了</view>
+	</view>
+
+	<view class="pop-tip" wx:if="{{is_show_help_tip}}" bindlongpress="closeHelpTip" style="cursor: pointer;">
+		<view class="pop-tip-title">使用帮助</view>
+		<view class="rule-item">（1）在“挑战”页面，点击“开始挑战”按钮右上角的<icon type="info" color="#15559AAA" size="15px"></icon>小图标查看挑战模式的答题规则；</view>
+		<view class="rule-item">（2）在“练习”页面查看练习模式的答题规则；</view>
+		<view class="rule-item">（3）在“我的”页面：</view>
+		<view class="rule-item rule-item-indent">• 点击头像或昵称进行修改；</view>
+		<view class="rule-item rule-item-indent">• 点击百科币数量查看明细；</view>
+		<view class="rule-item rule-item-indent">• 点击“错题集”菜单查看答错的题目；</view>
+		<view class="rule-item rule-item-indent">• 点击“题目类型”菜单选择题目类型；</view>
+		<view class="rule-item rule-item-indent">• 点击“设置”菜单对答题音效等进行设置；</view>
+		<view class="rule-item">（4）在体验过程中遇到任何问题欢迎点击题目左上角的“反馈”按钮反馈或通过客服联系我；</view>
+		<view class="iknow" bindtap="closeHelpTip" style="cursor: pointer;">知道了</view>
+	</view>
+</view>

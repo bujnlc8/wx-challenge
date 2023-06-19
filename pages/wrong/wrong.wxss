@@ -1,0 +1,17 @@
+.question {
+  text-align: left;
+  margin-left: 12%;
+  margin-right: 12%;
+  margin-top: 10px;
+  line-height: 29px;
+}
+
+.option {
+  padding-left: 6px;
+  padding-right: 6px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  line-height: 29px;
+  word-break: break-all;
+  font-size: 16px;
+}

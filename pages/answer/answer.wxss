@@ -1,0 +1,54 @@
+/* pages/answer/answer.wxss */
+
+.current_score {
+  font-size: 25px;
+  color: green;
+}
+
+.sub_button {
+  margin-top: 26px;
+  width: 156px;
+  border: 1px solid #61ac85;
+  text-align: center;
+  line-height: 42px;
+  height: 42px;
+  margin-left: auto;
+  border-radius: 20px;
+}
+
+.sub_button_active {
+  background-color: #61ac85;
+  color: white;
+}
+
+.right_answer_class {
+  margin-top: 16px;
+  font-size: 16px;
+  height: 42px;
+  line-height: 42px;
+}
+
+.login {
+  text-align: center;
+  width: 156px;
+  height: 52px;
+  line-height: 52px;
+  border: 1px solid #61ac85;
+  border-radius: 26px;
+  margin: auto;
+  margin-top: 52px;
+}
+
+.count_down_num {
+  display: inline-block;
+  height: 62px;
+  line-height: 62px;
+  width: 62px;
+  border: 1px solid #61ac85;
+  border-radius: 50%;
+  margin-top: 16px;
+  font-size: 21px;
+  font-weight: 700;
+  text-align: center;
+  color: #ed9db2;
+}

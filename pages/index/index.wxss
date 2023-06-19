@@ -1,0 +1,88 @@
+.start_challenge_class {
+  height: 62px;
+  width: 100%;
+  border-radius: 31px;
+  text-align: center;
+  line-height: 62px;
+  background-color: #15559a;
+  color: white;
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.icon_class {
+  position: fixed;
+  bottom: 75px;
+  right: 1%;
+}
+.rule-item {
+  line-height: 26px;
+  font-size: 15px;
+}
+
+.avatar_class {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+.first-place {
+  background-color: #fb8c05;
+  color: white;
+}
+.second-place {
+  background-color: #fcc515;
+  color: white;
+}
+.third-place {
+  background-color: #f7de98;
+  color: white;
+}
+.other-place {
+  background-color: #f8e8c1;
+  color: #665757;
+}
+.ranking-list {
+  width: 90%;
+  max-height: 85vh;
+  color: #665757;
+}
+.ranking-item {
+  height: 52px;
+  line-height: 52px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+.ranking-item:last-child {
+  margin-bottom: 135px;
+}
+.index-class {
+  font-size: 20px;
+  text-align: center;
+  border-radius: 50%;
+  width: 31px;
+  height: 31px;
+  line-height: 31px;
+  margin-right: 17px;
+}
+.item-class {
+  font-size: 15px;
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  justify-content: center;
+}
+.tab {
+  padding-left: 10px;
+  padding-right: 10px;
+  line-height: 36px;
+  height: 36px;
+  font-size: 16px;
+}
+.tab-active {
+  background-color: #c6e6e8;
+  border-radius: 18px;
+  font-weight: 700;
+}

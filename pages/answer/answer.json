@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "popup": "/component/popup/popup",
+    "report": "/component/report/report"
+  }
+}

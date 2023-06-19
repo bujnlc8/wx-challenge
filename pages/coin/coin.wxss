@@ -1,0 +1,27 @@
+.record {
+  display: flex;
+  font-size: 15px;
+  margin-bottom: 21px;
+}
+.item-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-wrap: normal;
+}
+.item-text1 {
+  flex: 1;
+  font-weight: 700;
+}
+.item-text2 {
+  flex: 2;
+}
+.item-text3 {
+  flex: 3;
+}
+.text-green {
+  color: #61ac85;
+}
+.text-red {
+  color: #ed9db2;
+}

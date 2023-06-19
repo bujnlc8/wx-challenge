@@ -1,0 +1,9 @@
+<view class="train-text">
+	<view style="text-align: center;font-size: 18px;font-weight: 700;margin-top: 10px;margin-bottom: 10px;">练习模式说明</view>
+	<view class="rule-item">（1）每题不限时，计时但不计分；</view>
+	<view class="rule-item">（2）答错的题将计入错题集，但不计入“我的”页面“错题数”等数据；</view>
+	<view class="rule-item">（3）每日练习达<text class="hi-num">300</text>题，送<text class="hi-num">10000</text>百科币；</view>
+	<view class="rule-item">（4）长按题目可永久跳过，每日限<text class="hi-num">5</text>次机会；</view>
+	<view class="rule-item">（5）对题目有任何疑问，欢迎点击左上角按钮进行反馈<text style="font-size: 14px;color: gray;">（作答之后反馈）。</text></view>
+	<view bindtap="goToTrain" class="train-btn" style="cursor: pointer;">开始练习</view>
+</view>

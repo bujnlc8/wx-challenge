@@ -1,0 +1,11 @@
+<!-- <view class="board" wx:if="{{!flag}}" catchtouchmove="catchtouchmove"></view> -->
+<view class="{{show_modal ? 'wx-popup': ''}}" hidden="{{flag}}" wx:if="{{content}}">
+	<view class='popup-container'>
+		<view class="wx-popup-title" wx:if="{{title}}">{{title}}</view>
+		<view class="wx-popup-con">{{content}}</view>
+		<view class="wx-popup-btn">
+			<text class="btn-no btn" bindtap='popupCancel' style="cursor: pointer;">{{btn_no}}</text>
+			<text class="btn" bindtap='popupConfirm' style="cursor: pointer;">{{btn_ok}}</text>
+		</view>
+	</view>
+</view>

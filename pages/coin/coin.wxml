@@ -1,0 +1,15 @@
+<view style="padding-bottom: 42px;">
+	<view class="record">
+		<text class="item-text item-text1" style="font-weight: normal;">数量</text>
+		<text class="item-text item-text2">来源</text>
+		<text class="item-text item-text3">时间</text>
+	</view>
+	<view wx:for="{{record_list}}" wx:key="index" class="record">
+		<text class="item-text item-text1 {{item.amount > 0 ? 'text-red' : 'text-green'}}">{{item.amount > 0 ? '+': ''}}{{item.amount}}</text>
+		<text class="item-text item-text2"> {{item.source_text}}</text>
+		<text class="item-text item-text3">{{item.create_time}}</text>
+	</view>
+	<view wx:if="{{no_more_data == 1 && record_list.length > 0}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">我是有底线滴 :)</view>
+	<view wx:if="{{record_list.length == 0 && !loading_str}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">没有更多数据啦 :(</view>
+	<view wx:if="{{loading_str}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">{{loading_str}}</view>
+</view>

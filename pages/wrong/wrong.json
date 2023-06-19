@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "popup": "/component/popup/popup",
+    "report": "/component/report/report"
+  },
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "backgroundColor": "#f3f3f2"
+}

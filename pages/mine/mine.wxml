@@ -1,0 +1,146 @@
+<view class="board" wx:if="{{show_tip == 1 || show_about_me == 1}}" catchtouchmove="catchtouchmove"></view>
+<view wx:if="{{logined == 0}}" style="display: flex;align-items: center;margin-left: 10px;cursor: pointer;">
+    <image src="../../images/default_avatar.png" class="default-avatar" bindtap="login" style="cursor: pointer;" />
+    <text style="margin-left: 10px;font-size: 18px;cursor: pointer;" bindtap="login">点击登录</text>
+</view>
+<view style="display: flex;cursor: pointer;" class="share_out_on_login share" bindtap="showHelp" wx:if="{{logined == 0}}">
+    <text style="flex: 4; cursor: pointer;">使用帮助</text>
+    <image src="../../images/right_arrow.png" class="right-arrow"></image>
+</view>
+<view style="display: flex;margin-top: 0;border-top: 2px solid #f3f3f2;" class="share_out_on_login share" wx:if="{{logined == 0}}">
+    <button class="share" open-type="share" style="flex: 4">分享给好友</button>
+    <image src="../../images/right_arrow.png" style="width: 42px;height: 42px;"></image>
+</view>
+<view style="display: flex; margin-top: 0;border-top: 2px solid #f3f3f2;cursor: pointer;" class="share_out_on_login share" bindtap="aboutMe" wx:if="{{logined == 0}}">
+    <text style="flex: 4; cursor: pointer;display: inline-block;">关于小程序</text>
+    <image src="../../images/right_arrow.png" class="right-arrow"></image>
+</view>
+<view wx:if="{{logined == 1}}" style="display: flex; background-color: white;padding-bottom: 5px;padding-top: 16px;">
+    <view style="display: flex;flex-direction: column;flex: 1;">
+        <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="chooseAvatar">
+            <image src="{{user_info.avatar}}" class="avatar" />
+        </button>
+        <input type="nickname" style="margin-left:5px;font-size: 16px;text-align: center;margin-top: 5px;height: 52px;line-height: 52px;" placeholder="请输入昵称" value="{{user_info.nickname}}" bindblur="updateNickname" bindconfirm="updateNickname" bindinput="inputNickname" />
+    </view>
+    <view style="display: flex; flex-direction: column;flex: 3;">
+        <view style="margin-top: 14px;" class="mine-text">
+            <text bindtap="tapMaxScore" style="cursor: pointer;">最高分</text>
+            <text bindtap="tapQuestionNum" style="cursor: pointer;">答题数</text>
+            <text bindtap="tapWrongQuestion" style="cursor: pointer;">错题数</text>
+            <text bindtap="tapCorrectRate" style="cursor: pointer;">正确率</text>
+        </view>
+        <view style="margin-top: 17px;" class="mine-text">
+            <text bindtap="tapMaxScore" style="cursor: pointer;">{{user_info.max_score}}</text>
+            <text bindtap="tapQuestionNum" style="cursor: pointer;">{{user_info.total_question}}</text>
+            <text bindtap="tapWrongQuestion" style="cursor: pointer;">{{user_info.wrong_question}}</text>
+            <text bindtap="tapCorrectRate" style="cursor: pointer;">{{correct_rate}}%</text>
+        </view>
+    </view>
+</view>
+<view style="background-color: white;padding-bottom: 16px;padding-top: 16px;margin-top: 16px;padding-left: 10px;font-size: 15px;" wx:if="{{logined == 1}}">
+    <view style="display: flex;align-items: center;cursor: pointer;" bindtap="goToCoin">
+        <image src="/images/coin.png" class="icon-class" />
+        <text style="margin-left: 10px;">{{user_info.coin}} 个</text>
+    </view>
+    <view style="display: flex;align-items: center;margin-top: 10px;cursor: pointer;" bindtap="openTip">
+        <image src="/images/grade.png" class="icon-class" />
+        <text style="margin-left: 10px;">{{user_info.grade}} 级</text>
+        <image src="/images/star{{user_info.grade > 0 ? '-fill': ''}}.png" class="star-class star-colored" />
+        <image src="/images/star{{user_info.grade > 1 ? '-fill': ''}}.png" class="star-class star-colored" />
+        <image src="/images/star{{user_info.grade > 2 ? '-fill': ''}}.png" class="star-class star-colored" />
+        <image src="/images/star{{user_info.grade > 3 ? '-fill': ''}}.png" class="star-class star-colored" />
+        <image src="/images/star{{user_info.grade > 4 ? '-fill': ''}}.png" class="star-class star-colored" />
+        <image src="/images/star{{user_info.grade > 5 ? '-fill': ''}}.png" class="star-class star-colored" />
+        <!-- <view wx:for="{{user_info.grade}}" style="display: flex;" wx:key="index">
+        </view> -->
+    </view>
+    <view style="margin-top: 10px;display: flex;align-items: center;font-size: 14px;cursor: pointer;" bindtap="openTip">
+        <text style="color: gray;">距离下一级还需{{user_info.to_upgrade_coin}}个百科币</text>
+        <image src="/images/report_error.png" style="width: 17px;height: 17px;margin-right: auto;margin-left: 4px;" />
+    </view>
+</view>
+<view wx:if="{{logined == 1}}" style="background-color: white;margin-top: 16px;">
+    <view class="menu" bindtap="goToSetting" style="cursor: pointer;"><text style="flex: 4;cursor: pointer;">设置</text>
+        <text style="color: gray;">{{is_ios ? '音效提示等' : '背景音效等'}}</text>
+        <image src="../../images/right_arrow.png" class="right-arrow"></image>
+    </view>
+    <view wx:if="{{user_info.wrong_valid_question > 0}}" class="menu" bindtap="goToWrongQuestion" style="cursor: pointer;"><text style="flex: 4;cursor: pointer;">错题集</text><text style="color: gray;cursor: pointer;">{{user_info.wrong_valid_question}}</text>
+        <image src="../../images/right_arrow.png" class="right-arrow"></image>
+    </view>
+    <view class="menu">
+        <picker mode="selector" range="{{category_lables}}" bindchange="selectQuestionType" style="flex: 4;font-size: 15px;" value="{{category}}">
+            题目类型<text style="float: right;color: gray;">{{categories[category]}}</text></picker>
+        <image src="../../images/right_arrow.png" class="right-arrow"></image>
+    </view>
+    <view class="menu" bindtap="showHelp" wx:if="{{logined == 1}}" style="cursor: pointer;">
+        <text style="flex: 4;cursor: pointer;">使用帮助</text>
+        <image src="../../images/right_arrow.png" class="right-arrow"></image>
+    </view>
+    <view class="menu">
+        <button class="share" open-type="share" style="flex: 4;">分享给好友</button>
+        <text style="color: gray;">得1000百科币</text>
+        <image src="../../images/right_arrow.png" class="right-arrow"></image>
+    </view>
+    <view class="menu" bindtap="aboutMe" wx:if="{{logined == 1}}" style="cursor: pointer;">
+        <text style="flex: 4; cursor: pointer;">关于小程序</text>
+        <image src="../../images/right_arrow.png" class="right-arrow"></image>
+    </view>
+    <view class="menu" bindtap="logout" wx:if="{{logined == 1}}" style="cursor: pointer;">
+        <text style="flex: 4; cursor: pointer;">退出当前账号</text>
+        <image src="../../images/right_arrow.png" class="right-arrow"></image>
+    </view>
+</view>
+<view class="pop-tip" bindlongpress="closeTip" wx:if="{{show_tip == 1}}" style="cursor: pointer;">
+    <view class="pop-tip-title">等级说明</view>
+    <view class="rule-item">（1）等级与百科币数量相关，随数量动态变化；</view>
+    <view class="rule-item">（2）每增加1个等级，答题超时秒数 <text class="oneplus">+1</text>，复活次数 <text class="oneplus">+1</text>，跳过次数 <text class="oneplus">+1</text>；</view>
+    <view class=" rule-item">（3）答题得分按照等级进行相应加倍，1级 * <text class="oneplus">1.1</text>，2级 * <text class="oneplus">1.2</text> ... 以此类推。</view>
+    <view class="table-item">
+        <view class="tr-item">数量</view>
+        <view class="tr-item tr-right">等级</view>
+    </view>
+    <view class="table-item">
+        <view class="tr-item">0-1w</view>
+        <view class="tr-item tr-right">0级</view>
+    </view>
+    <view class="table-item">
+        <view class="tr-item">1w-5w</view>
+        <view class="tr-item tr-right">1级</view>
+    </view>
+    <view class="table-item">
+        <view class="tr-item">5w-10w</view>
+        <view class="tr-item tr-right">2级</view>
+    </view>
+    <view class="table-item">
+        <view class="tr-item">10w-50w</view>
+        <view class="tr-item tr-right">3级</view>
+    </view>
+    <view class="table-item">
+        <view class="tr-item">50w-200w</view>
+        <view class="tr-item tr-right">4级</view>
+    </view>
+    <view class="table-item">
+        <view class="tr-item">200w-1000w</view>
+        <view class="tr-item tr-right">5级</view>
+    </view>
+    <view class="table-item">
+        <view class="tr-item" style="border-bottom: 1px solid #e6e6e6">>=1000w</view>
+        <view class="tr-item tr-right" style="border-bottom: 1px solid #e6e6e6">6级</view>
+    </view>
+    <view class="iknow" bindtap="closeTip" style="cursor: pointer;">知道了</view>
+</view>
+
+<view class="pop-tip" wx:if="{{show_about_me == 1}}" style="height: 80%;">
+    <view class="pop-tip-title">关于小程序</view>
+    <view style="max-height: 77%; overflow-y: scroll;">
+        <view class="about-item">（1）做这个小程序完全是兴趣使然，目前大概有2万道题（可能是最强题库了）。虽然花费了我大量时间整理，难免还有不少错漏，为此我做了一个后台 <text style="color: #61ac85;word-break: break-all;cursor: pointer;" catchtap="copyUrl">https://igsc.admin.haihui.site</text>，有兴趣的朋友可以帮忙一起整理<text class="common-gray">（需要找我添加权限）</text>，把自己觉得有趣的题目添加到题库，将一些无趣的题目剔除。</view>
+        <view class="about-item">（2）插播一条广告，欢迎体验我的另一个小程序<text class="common-gray">（长按可识别）</text>：
+        </view>
+        <view class="about-item" style="text-align: center;">
+            <image src="https://blog-1256650966.cos.ap-beijing.myqcloud.com/gh_5355d8f99118_430.jpg" mode="widthFix" style="width: 75%;" show-menu-by-longpress="true" />
+        </view>
+        <view class="about-item">（3）在体验小程序的过程中对题目有任何疑问，欢迎点击答题界面左上角的“反馈”按钮进行反馈 <text class="common-gray">（成功可得百科币哦）</text>。</view>
+        <view class="about-item">（4）对小程序有任何的建议或意见，欢迎随时提出交流<text class="common-gray">（可以通过小程序的客服找到我）</text>。</view>
+    </view>
+    <view class="iknow" bindtap="closeAbdoutMe" style="cursor: pointer;">知道了</view>
+</view>

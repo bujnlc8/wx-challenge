@@ -1,0 +1,28 @@
+<view class="board" wx:if="{{show_feedback}}" catchtouchmove="catchtouchmove"></view>
+<view wx:if="{{show_feedback}}" class="feedback" bindlongpress="closeFeedback" style="cursor: pointer;">
+	<view class="feedback_text">
+		<icon type="clear" style="float: right;margin-right: 8px;margin-top: 5px;cursor: pointer;" color="white" size="16px" bindtap="closeFeedback"></icon>
+		<text style="color: white;font-size: 15px;">问题反馈</text>
+	</view>
+	<view class="feedback-bottom">
+		<checkbox-group bindchange="feedbackChecked">
+			<view class="weui-cell__hd">
+				<checkbox value="1" color="#61ac85" class="feedback_checkbox"><text class="feedback-label">题干错误</text></checkbox>
+				<checkbox value="2" color="#61ac85" class="feedback_checkbox" style="margin-left: 52px;"><text class="feedback-label">选项错误</text></checkbox>
+			</view>
+			<view class="weui-cell__hd">
+				<checkbox value="4" color="#61ac85" class="feedback_checkbox"><text class="feedback-label">答案错误</text></checkbox>
+				<checkbox value="16" color="#61ac85" class="feedback_checkbox" style="margin-left: 52px;"><text class="feedback-label">类型错误</text></checkbox>
+			</view>
+			<view class="weui-cell__hd">
+				<checkbox value="8" color="#61ac85" class="feedback_checkbox"><text class="feedback-label">其他问题</text></checkbox>
+			</view>
+		</checkbox-group>
+		<textarea placeholder="请输入问题的详细说明，以便我们修正，至少5个字..." class="remark" value="{{feedback_remark}}" placeholder-style="font-size:14px;" bindinput="feedbackRemarkInput" maxlength="500" adjust-position="true"></textarea>
+		<view style="display: flex;margin-top: 10px;">
+			<input type="text" style="flex: 5;height: 42px;border: 0.5px dashed #61ac85; border-radius: 20px;margin-left: 7%;padding-left: 8px;caret-color: #61ac85;" placeholder="6位数字验证码" bindinput="captchaInput" value="{{captcha_data}}" />
+			<image bindtap="getCaptcha" src="data:image/png;base64,{{captcha_image}}" style="height: 42px;width: 83px;margin-right: 13px;margin-left: 5px;cursor: pointer;"></image>
+		</view>
+		<button type="primary" style="color: rgb(97, 113, 114);;font-weight: normal; margin-top: 10px;margin-left: 7%;border:0.5px dashed #61ac85;width: 86%;border-radius: 20px;cursor: pointer;" bindtap="feedbackSubmit" plain="true">提交</button>
+	</view>
+</view>

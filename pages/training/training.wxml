@@ -1,0 +1,56 @@
+<!--pages/answer/answer.wxml-->
+<wxs src="../../utils/util.wxs" module="tools" />
+<view wx:if="{{logined}}" class="question-container">
+	<view style="display: flex;margin-left: 12%;margin-right: 12%;">
+		<text class="skip top-text" bindtap="doFeedback" style="color: #ed9db2; border: 1px solid #ed9db2;cursor: pointer;" wx:if="{{answer_result != -1 && answer_result != -2}}">反馈</text>
+		<text class="skip top-text" style="border: none;" wx:else=""></text>
+		<text class="skip top-text" style="margin-left: auto;">{{question_corrent_num}} | {{continue_correct_num}}</text>
+	</view>
+	<view class="question-common" bindlongpress="hideQuestion" style="cursor: pointer;">
+		<view class="question_body" wx:if="{{ tools.indexOf(current_question, '/>') || tools.indexOf(current_question, '</')}}">第{{total_index}}题：<rich-text space="true" nodes="{{current_question}}"></rich-text>
+		</view>
+		<view class="question_body" wx:if="{{ !(tools.indexOf(current_question, '/>') || tools.indexOf(current_question, '</'))}}">第{{total_index}}题：<text>{{current_question}}</text>
+		</view>
+		<image wx:if="{{question_image && !is_video}}" src="{{question_image}}" class="image-question" mode="widthFix" bindtap="previewImg" data-image_src="{{question_image}}" style="cursor: pointer;" />
+		<video wx:if="{{question_image && is_video }}" src="{{question_image}}" class="video-option" autoplay="true" enable-play-gesture="true" picture-in-picture-show-progress="true" loop="true"></video>
+		<view wx:if="{{option_type == 0}}">
+			<view wx:if="{{option_a}}" data-i="1" class="option-common {{selected_option == 1?'option_selected': ''}} {{ selected_option == 1 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 1 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;">A：{{option_a}}</view>
+			<view wx:if="{{option_b}}" data-i="2" class="option-common {{selected_option == 2?'option_selected': ''}} {{ selected_option == 2 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 2 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;">B：{{option_b}}</view>
+			<view wx:if="{{option_c}}" data-i="3" class="option-common {{selected_option == 3?'option_selected': ''}} {{ selected_option == 3 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 3 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;">C：{{option_c}}</view>
+			<view wx:if="{{option_d}}" data-i="4" class="option-common {{selected_option == 4?'option_selected': ''}} {{ selected_option == 4 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 4 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;">D：{{option_d}}</view>
+		</view>
+		<view wx:if="{{option_type == 1}}">
+			<view wx:if="{{option_a}}" data-i="1" class="option-common {{selected_option == 1?'option_selected': ''}} {{ selected_option == 1 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 1 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;border: none;cursor: pointer;" bindtap="tapOption">
+				<text style="display: flex;align-items: center;" data-i="1">A：</text>
+				<image src="{{option_a}}" class="image-option" data-i="1" mode="widthFix" />
+			</view>
+			<view wx:if="{{option_b}}" data-i="2" class="option-common {{selected_option == 2?'option_selected': ''}} {{ selected_option == 2 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 2 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;border: none;cursor: pointer;" bindtap="tapOption">
+				<text style="display: flex;align-items: center;" data-i="2">B：</text>
+				<image src="{{option_b}}" class="image-option" data-i="2" mode="widthFix" />
+			</view>
+			<view wx:if="{{option_c}}" data-i="3" class="option-common {{selected_option == 3?'option_selected': ''}} {{ selected_option == 3 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 3 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;border: none;cursor: pointer;" bindtap="tapOption">
+				<text style="display: flex;align-items: center;" data-i="3">C：</text>
+				<image src="{{option_c}}" class="image-option" data-i="3" mode="widthFix" />
+			</view>
+			<view wx:if="{{option_d}}" data-i="4" class="option-common {{selected_option == 4?'option_selected': ''}} {{ selected_option == 4 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 4 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;border: none;cursor: pointer;" bindtap="tapOption">
+				<text style="display: flex;align-items: center;" data-i="4">D：</text>
+				<image src="{{option_d}}" class="image-option" data-i="4" mode="widthFix" />
+			</view>
+		</view>
+		<view style="display: flex;">
+			<view class="count_down_class">计时：<text class="{{count_down_stop ? 'count-down-stop' : 'count-down'}}">{{count_down}}</text></view>
+			<view bindtap="submitAnswer" class="sub_button {{sub_button_active}}" style="cursor: pointer;">确认</view>
+		</view>
+		<view style="display: flex;">
+			<view class="up-question" bindtap="upQuestion" style="cursor: pointer;">上一道</view>
+			<view bindtap="nextQuestion" class="next-question" style="cursor: pointer;">下一道</view>
+		</view>
+		<view wx:if="{{answer_result != -1 && answer_result != -2  && analysis && show_analysis}}" style="margin-top: 10px;font-size: 15px;">
+			<text style="font-size: 16px;color: #ed9db2;">解析：</text>
+			<rich-text space="true" nodes="{{analysis}}" wx:if="{{ tools.indexOf(analysis, '/>') || tools.indexOf(analysis, '</')}}"></rich-text>
+			<text wx:else="">{{analysis}}</text>
+		</view>
+	</view>
+</view>
+<popup class="popup_compon" bind:error="popupCancel" bind:success="popupConfirm"></popup>
+<report class="report" show_feedback="{{show_feedback}}" question_id="{{current_question_id}}" />
