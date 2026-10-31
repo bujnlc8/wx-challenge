@@ -1,0 +1,38 @@
+<page-meta page-style="{{modal_locked ? 'overflow: hidden;' : ''}}" />
+<wxs src="../../utils/util.wxs" module="tools" />
+<view class="single-page">
+  <view wx:if="{{view_state === 'ready'}}">
+    <view class="question-common single-question">
+      <view class="question_body"><rich-text wx:if="{{tools.indexOf(content, '/>') || tools.indexOf(content, '</')}}" nodes="{{content}}" space="true" /><text wx:else>{{content}}</text></view>
+      <image wx:if="{{question_image && !is_video}}" src="{{question_image}}" class="image-question" mode="widthFix" bindtap="previewQuestionImage" />
+      <video wx:if="{{question_image && is_video}}" src="{{question_image}}" class="video-option" object-fit="contain" />
+      <view wx:for="{{options}}" wx:key="number" class="option-common single-option {{selected_option === item.number ? 'option_selected' : ''}} {{phase === 'completed' && selected_option === item.number ? (result === 1 ? 'answer_result1' : 'answer_result0') : ''}} {{phase === 'completed' && show_correct_answer && right_answer === item.number ? 'answer_result1' : ''}}" data-number="{{item.number}}" bindtap="tapOption" aria-role="radio" aria-checked="{{selected_option === item.number}}" hover-class="{{phase === 'question' ? 'button-pressed' : 'none'}}">
+        <text class="single-option__label">{{item.label}}：</text><image wx:if="{{option_type === 1}}" src="{{item.content}}" class="image-option" mode="widthFix" /><text wx:else>{{item.content}}</text>
+      </view>
+      <button wx:if="{{phase !== 'completed'}}" class="single-primary single-submit" bindtap="submitAnswer" disabled="{{phase === 'submitting'}}">{{phase === 'submitting' ? '正在提交…' : (phase === 'uncertain' ? '重试提交' : '提交答案')}}</button>
+      <text wx:if="{{submit_error}}" class="single-submit-error">{{submit_error}}</text>
+      <view wx:if="{{phase === 'completed'}}" class="single-result">
+        <view class="single-result__heading"><text>{{result === 1 ? '回答正确' : '本题未答对'}}</text><text class="single-result__score">{{score}}分</text></view>
+        <text class="single-result__caption">{{source === 'daily' ? '今日这一题已完成' : '本题作答已完成'}}</text>
+        <view wx:if="{{analysis && show_analysis}}" class="answer-analysis"><text class="analysis-label">解析：</text><rich-text wx:if="{{tools.indexOf(analysis, '/>') || tools.indexOf(analysis, '</')}}" nodes="{{analysis}}" space="true" /><text wx:else>{{analysis}}</text></view>
+      </view>
+    </view>
+    <view wx:if="{{phase === 'completed'}}" class="single-completed-actions">
+      <button class="single-primary" bindtap="returnToSource">{{source === 'daily' ? '返回每日挑战' : '返回首页'}}</button>
+      <button class="question-share-button" bindtap="openQuestionPoster"><image src="/images/ui-share.png" class="question-share-icon" />生成分享海报</button>
+      <button class="single-feedback" bindtap="openFeedback">纠错</button>
+    </view>
+  </view>
+  <view wx:else class="single-state">
+    <view wx:if="{{view_state === 'loading'}}" class="single-spinner"></view>
+    <image wx:else src="/images/ui-empty-question.png" class="empty-illustration" mode="aspectFit" />
+    <text class="single-state__title">{{view_state === 'loading' ? '正在准备题目' : (view_state === 'logged-out' ? '登录后开始答题' : '这道题暂时打不开')}}</text>
+    <text wx:if="{{view_state === 'error'}}" class="single-state__description">{{error_message}}</text>
+    <button wx:if="{{view_state === 'logged-out'}}" class="single-primary" bindtap="loginAndLoad">点击登录</button>
+    <button wx:if="{{view_state === 'error' && question_id}}" class="single-primary" bindtap="loadQuestion">重新加载</button>
+    <button wx:if="{{view_state !== 'loading'}}" class="single-feedback" bindtap="returnToSource">{{source === 'daily' ? '返回每日挑战' : '返回首页'}}</button>
+  </view>
+</view>
+<report id="single-report" bind:nextQuestion="onFeedbackClosed" show_feedback="{{show_feedback}}" question_id="{{question_id}}" />
+<question-poster id="question-poster" />
+<ui-feedback state="{{ui_feedback}}" />

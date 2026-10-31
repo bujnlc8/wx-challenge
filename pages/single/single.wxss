@@ -1,0 +1,125 @@
+.single-page {
+  padding: 8px 20px 36px;
+}
+.single-question {
+  margin: 0;
+}
+.single-option {
+  display: flex;
+  align-items: flex-start;
+}
+.single-option__label {
+  flex-shrink: 0;
+}
+button.single-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  margin: 0;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  background: #2864eb;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.single-primary::after,
+.single-feedback::after {
+  border: 0;
+}
+button.single-primary[disabled] {
+  color: #fff;
+  background: #9cb8f3;
+}
+button.single-submit {
+  margin-top: 24px;
+}
+.single-submit-error {
+  display: block;
+  margin-top: 14px;
+  color: #916539;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.single-result {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #e6edf7;
+}
+.single-result__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  color: #202b40;
+  font-size: 20px;
+  font-weight: 600;
+}
+.single-result__score {
+  color: #2864eb;
+  font-size: 25px;
+}
+.single-result__caption {
+  display: block;
+  margin-top: 8px;
+  color: #68758a;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.single-completed-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+button.single-feedback {
+  margin: 0;
+  padding: 10px 16px;
+  background: transparent;
+  color: #68758a;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.single-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 24px;
+  gap: 20px;
+  text-align: center;
+}
+.single-state__title {
+  color: #202b40;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.single-state__description {
+  color: #68758a;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.single-spinner {
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  border: 4px solid #e6eeff;
+  border-top-color: #2864eb;
+  border-radius: 50%;
+  animation: single-spin 0.8s linear infinite;
+}
+@keyframes single-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .single-spinner {
+    animation: none;
+  }
+}

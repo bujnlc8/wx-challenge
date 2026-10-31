@@ -7,11 +7,59 @@ function subscriptionRequestId() {
   });
 }
 
+function beijingDay(timestamp = Date.now()) {
+  return new Date(Number(timestamp) + 8 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+}
+function dailyPromptKey(platform, templateId, timestamp = Date.now()) {
+  const uid = platform.getStorageSync("uid");
+  if (!uid) return "";
+  return ["daily-reminder", String(uid), templateId, beijingDay(timestamp)]
+    .map(encodeURIComponent)
+    .join(":");
+}
+function hasDailyPrompt(platform, templateId, timestamp = Date.now()) {
+  const key = dailyPromptKey(platform, templateId, timestamp);
+  if (!key) return true;
+  if (platform.getStorageSync(key) === true) return true;
+  const uid = platform.getStorageSync("uid");
+  for (const env of ["develop", "trial", "release"]) {
+    const legacy = [
+      "daily-reminder",
+      String(uid),
+      templateId,
+      env,
+      beijingDay(timestamp),
+    ]
+      .map(encodeURIComponent)
+      .join(":");
+    if (platform.getStorageSync(legacy) === true) {
+      // A previous version may have prompted in another runtime today.
+      platform.setStorageSync(key, true);
+      return true;
+    }
+  }
+  return false;
+}
+function markDailyPrompt(platform, templateId, timestamp = Date.now()) {
+  try {
+    const key = dailyPromptKey(platform, templateId, timestamp);
+    if (!key || typeof platform.setStorageSync !== "function") return false;
+    platform.setStorageSync(key, true);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 // A saved preference is not a WeChat subscription entitlement.
 function createDailySubscription({
   platform,
   recordAcceptance,
   createRequestId = subscriptionRequestId,
+  now = Date.now,
+  onNativeSettled = () => {},
 }) {
   let pending = false;
   const owner = () =>
@@ -28,11 +76,17 @@ function createDailySubscription({
       const account = owner();
       const requestId = createRequestId();
       pending = true;
+      markDailyPrompt(platform, templateId, now());
       return new Promise((resolve, reject) => {
         let settled = false;
         const finish = (action) => {
           if (settled) return;
           settled = true;
+          try {
+            onNativeSettled();
+          } catch (error) {
+            /* UI callbacks must not suppress recording a real accept. */
+          }
           action();
         };
         try {
@@ -77,4 +131,12 @@ function createDailySubscription({
   };
 }
 
-export { DAILY_TEMPLATE_ID, subscriptionRequestId, createDailySubscription };
+export {
+  DAILY_TEMPLATE_ID,
+  subscriptionRequestId,
+  createDailySubscription,
+  beijingDay,
+  dailyPromptKey,
+  hasDailyPrompt,
+  markDailyPrompt,
+};

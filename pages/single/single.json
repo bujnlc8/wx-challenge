@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "单题答题",
+  "usingComponents": {
+    "report": "/component/report/report"
+  }
+}

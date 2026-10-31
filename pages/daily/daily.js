@@ -1,3 +1,4 @@
+import { buildActivityCalendar } from "../../utils/activity-calendar";
 import {
   httpGET,
   httpPOST,
@@ -33,6 +34,10 @@ Page({
     pending: false,
     error_message: "",
     next_send_time: "",
+    activity_state: "loading",
+    activity: null,
+    activity_selected: null,
+    activity_scroll_target: "",
   },
   onLoad() {
     this._subscriptions = createDailySubscription({
@@ -54,12 +59,16 @@ Page({
           credits: 0,
           today: null,
           view_state: "loading",
+          activity_state: "loading",
+          activity: null,
+          activity_selected: null,
         });
       this.setData(reset);
     }
     this._owner = owner;
     this._hidden = false;
     this.loadDaily();
+    this.loadActivity();
   },
   onHide() {
     this._visible = false;
@@ -68,6 +77,7 @@ Page({
   },
   onUnload() {
     this._disposed = true;
+    this._activityOperation = (this._activityOperation || 0) + 1;
     this._operation = (this._operation || 0) + 1;
   },
   isCurrent(operation, owner) {
@@ -119,15 +129,74 @@ Page({
       hideLoading(loading);
     }
   },
+  async loadActivity() {
+    const owner = account();
+    const operation = (this._activityOperation =
+      (this._activityOperation || 0) + 1);
+    if (!wx.getStorageSync("uid")) {
+      this.setData({
+        activity_state: "idle",
+        activity: null,
+        activity_selected: null,
+      });
+      return;
+    }
+    const current = () =>
+      !this._disposed &&
+      this._visible !== false &&
+      operation === this._activityOperation &&
+      owner === account();
+    this.setData({ activity_state: "loading" });
+    try {
+      const result = payload(
+        await httpGET("api/daily-challenge/activity", { days: 365 }),
+      );
+      const activity = buildActivityCalendar(result);
+      if (!current()) return;
+      this.setData(
+        {
+          activity_state: "ready",
+          activity,
+          activity_selected: activity.today,
+          activity_scroll_target: "",
+        },
+        () => {
+          if (current())
+            this.setData({ activity_scroll_target: "activity-today" });
+        },
+      );
+    } catch (error) {
+      if (current())
+        this.setData({
+          activity_state: "error",
+          activity: null,
+          activity_selected: null,
+        });
+    }
+  },
+  selectActivityDay(event) {
+    if (!this.data.activity) return;
+    const date = event.currentTarget.dataset.date;
+    for (const week of this.data.activity.weeks) {
+      const day = week.days.find((item) => item.date === date && item.in_range);
+      if (day) {
+        this.setData({ activity_selected: day });
+        return;
+      }
+    }
+  },
   loginAndLoad() {
-    app.checkLogin(() => this.loadDaily());
+    app.checkLogin(() => {
+      this.loadDaily();
+      this.loadActivity();
+    });
   },
   startDaily() {
     if (this.data.view_state !== "ready" || !this.data.today) return;
     wx.navigateTo({
       url:
-        "/pages/answer/answer?question_id=" +
-        encodeURIComponent(this.data.today.question_id),
+        "/pages/single/single?question_id=" +
+        encodeURIComponent(this.data.today.question_id) + "&from=daily",
     });
   },
   async toggleReminder(event) {

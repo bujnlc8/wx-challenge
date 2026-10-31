@@ -1,3 +1,4 @@
+<page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
 <view class="page-shell">
   <view class="page-title">按你的习惯来</view><view class="page-subtitle">调整作答体验，找到舒服的节奏</view>
   <view class="settings-group surface">

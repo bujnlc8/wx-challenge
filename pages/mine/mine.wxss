@@ -1,5 +1,5 @@
-.mine-page > .page-subtitle {
-  margin-bottom: 24px;
+.mine-page {
+  padding-top: 8px;
 }
 .profile-card {
   padding: 24px 20px;
@@ -75,113 +75,75 @@
   color: #68758a;
   margin-top: 6px;
 }
-.wallet-card {
-  padding: 22px;
-  background: #eaf1ff;
-  border-radius: 20px;
-  margin-top: 16px;
-}
-.wallet-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.wallet-label {
-  font-size: 13px;
-  color: #48618d;
-}
-.wallet-value {
-  font-size: 32px;
-  line-height: 1.5;
-  font-weight: 800;
-  color: #1e4388;
-  word-break: break-all;
-}
-.wallet-unit {
-  font-size: 12px;
-  font-weight: 400;
-  margin-left: 6px;
-}
-.wallet-detail {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  color: #2056ce;
-  font-size: 12px;
-}
-.wallet-detail .right-arrow {
-  width: 20px;
-  height: 20px;
-  margin-left: 2px;
-}
 .grade-row {
   display: flex;
   align-items: center;
-  padding-top: 16px;
-  margin-top: 14px;
-  border-top: 1px solid #d6e2fa;
+  min-height: 28px;
+  margin-top: 2px;
 }
-.grade-badge {
-  font-size: 14px;
-  font-weight: 700;
-  color: #2056ce;
-  margin-right: 8px;
+.grade-progress-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  word-break: break-all;
+  color: #68758a;
 }
 .grade-crest {
   display: block;
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  margin-right: 10px;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
 }
-.grade-help {
-  font-size: 12px;
-  margin-left: auto;
+.grade-progress {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #edf3ff;
   color: #48618d;
-}
-.upgrade-note {
-  margin-top: 10px;
-  color: #48618d;
-  font-size: 12px;
-}
-.menu-section {
-  margin-top: 24px;
-}
-.menu-section-title {
-  margin: 0 4px 10px;
-  color: #68758a;
   font-size: 13px;
-  line-height: 1.5;
-  font-weight: 500;
+  line-height: 1.8;
 }
 .menu-group {
-  padding: 4px 18px;
+  margin-top: 16px;
+  padding: 8px 18px;
   overflow: hidden;
 }
 .menu {
+  color: #202b40;
   display: flex;
   align-items: center;
-  min-height: 58px;
+  min-height: 56px;
+  padding: 6px 0;
   font-size: 15px;
-  border-bottom: 1px solid #edf1f6;
 }
-.menu:last-child {
-  border-bottom: none;
+.menu-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-right: 12px;
 }
 .menu-label {
   flex: 1;
   min-width: 0;
 }
 .menu-caption {
+  max-width: 46%;
   margin-left: 12px;
-  color: #68758a;
+  text-align: right;
+  word-break: break-all;
+  color: inherit;
   font-size: 12px;
 }
+.coin-balance {
+  color: inherit;
+  font-weight: 600;
+}
 .menu-count {
-  color: #2056ce;
-  background: #edf3ff;
-  border-radius: 7px;
-  padding: 1px 8px;
+  color: inherit;
   font-size: 12px;
 }
 .right-arrow {
@@ -283,4 +245,40 @@
 .oneplus {
   color: #2056ce;
   font-weight: 700;
+}
+
+.grade-current {
+  margin-bottom: 10px;
+  color: #35435a;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.menu {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue",
+    "Microsoft Yahei", sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #202b40;
+}
+
+.menu-label {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #202b40;
+  letter-spacing: 0;
+}
+.menu-caption,
+.menu-count,
+.coin-balance {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 22px;
+  color: #68758a;
+  letter-spacing: 0;
 }

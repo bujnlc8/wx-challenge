@@ -1,7 +1,7 @@
 <canvas type="2d" id="question-poster-canvas" class="poster-canvas"></canvas>
 <view wx:if="{{visible}}" class="poster-overlay">
-  <view class="poster-mask" bindtap="close" catchtouchmove="preventTouch"></view>
-  <view class="poster-dialog" aria-role="dialog" aria-label="{{appMode ? '分享小程序' : '分享这道题'}}">
+  <view class="poster-mask" catchtap="close" catchtouchmove="preventTouch"></view>
+  <view class="poster-dialog" catchtap="preventTouch" aria-role="dialog" aria-label="{{appMode ? '分享小程序' : '分享这道题'}}">
     <view class="poster-heading">
       <view><text class="poster-heading__title">{{appMode ? '分享小程序' : '分享这道题'}}</text><text class="poster-heading__caption">{{appMode ? '与朋友一起，探索更多知识' : '把好题分享给朋友，一起挑战'}}</text></view>
       <button class="poster-close" bindtap="close" aria-label="关闭海报" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view></view></button>

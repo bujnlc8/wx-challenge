@@ -1,5 +1,5 @@
 .home {
-  padding: 24px 20px 0;
+  padding: 8px 20px 0;
   height: 100vh;
 }
 .challenge-intro {
@@ -223,7 +223,7 @@
 }
 @media (max-height: 680px) {
   .home {
-    padding-top: 16px;
+    padding-top: 8px;
   }
   .challenge-intro {
     padding: 16px 20px;

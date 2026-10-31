@@ -1,3 +1,4 @@
+import { createModalLock } from "../../utils/modal-lock";
 import { httpPOST, httpGET, showToast } from "../../utils/util";
 
 const app = getApp();
@@ -22,11 +23,29 @@ Component({
     feedback_checked_value: [],
     captcha_data: "",
   },
+  observers: {
+    show_feedback(visible) {
+      if (this._modalLock) this._modalLock.set(visible);
+    },
+  },
+  lifetimes: {
+    attached() {
+      this._modalLock = createModalLock();
+      this._modalLock.set(this.data.show_feedback);
+    },
+    detached() {
+      if (this._modalLock) this._modalLock.dispose();
+    },
+  },
   pageLifetimes: {
     show: function () {
-      // this.getCaptcha()
+      if (this._modalLock) {
+        this._modalLock.set(this.data.show_feedback);
+        this._modalLock.show();
+      }
     },
     hide: function () {
+      if (this._modalLock) this._modalLock.hide();
       this.setData({
         feedback_remark: "",
         captcha_token: "",

@@ -171,7 +171,20 @@ function componentHarness() {
     },
   };
   const toasts = [];
-  vm.runInNewContext(source, {
+  const modalSource = readFileSync(
+    new URL("../utils/modal-lock.js", import.meta.url),
+    "utf8",
+  ).replace(/export\s*\{[\s\S]*?\};?/g, "");
+  const ownerPage = {
+    data: {},
+    setData(patch) {
+      Object.assign(this.data, patch);
+    },
+  };
+  vm.runInNewContext(modalSource + "\n" + source, {
+    getCurrentPages() {
+      return [ownerPage];
+    },
     ...methods,
     wx: platform,
     httpPOST(path, body) {
@@ -275,6 +288,9 @@ function installCanvas(harness, exportHandler) {
     beginPath() {},
     moveTo() {},
     arcTo() {},
+    save() {},
+    restore() {},
+    clip() {},
     closePath() {},
     fill() {},
     fillText(value) {

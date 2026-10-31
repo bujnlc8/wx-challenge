@@ -131,7 +131,7 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 function layoutPoster(ctx, question, images) {
-  let y = 282;
+  let y = 258;
   function layoutBlocks(blocks, x, width) {
     return blocks.map((block) => {
       const item = { ...block, x, y, width };
@@ -196,22 +196,32 @@ function roundedRect(ctx, x, y, width, height, radius, color) {
   ctx.closePath();
   ctx.fill();
 }
+function drawRoundedLogo(ctx, logo, x, y, size, radius) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + size, y, x + size, y + size, radius);
+  ctx.arcTo(x + size, y + size, x, y + size, radius);
+  ctx.arcTo(x, y + size, x, y, radius);
+  ctx.arcTo(x, y, x + size, y, radius);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(logo, x, y, size, size);
+  ctx.restore();
+}
 function drawPoster(ctx, layout, question, images, code, logo, env) {
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillStyle = "#edf3ff";
   ctx.fillRect(0, 0, layout.width, layout.height);
-  if (logo) ctx.drawImage(logo, 52, 40, 76, 76);
+  if (logo) drawRoundedLogo(ctx, logo, 52, 40, 76, 18);
   ctx.fillStyle = "#2864eb";
   ctx.font = "600 39px sans-serif";
   ctx.fillText("百科知识挑战", logo ? 148 : 52, 54);
   ctx.fillStyle = "#202b40";
   ctx.font = "600 52px sans-serif";
   ctx.fillText("这道题，你会吗？", 52, 152);
-  ctx.fillStyle = "#68758a";
-  ctx.font = "24px sans-serif";
-  ctx.fillText("和朋友一起，挑战知识边界", 54, 220);
-  roundedRect(ctx, 36, 260, 828, layout.contentBottom - 260, 24, "#ffffff");
+  roundedRect(ctx, 36, 236, 828, layout.contentBottom - 236, 24, "#ffffff");
   function drawBlocks(blocks) {
     for (const block of blocks) {
       if (block.type === "image") {
@@ -273,7 +283,7 @@ function drawAppPoster(ctx, layout, code, logo, env) {
   roundedRect(ctx, 36, 36, 828, 1128, 32, "#ffffff");
   roundedRect(ctx, 308, 114, 284, 284, 60, "#edf3ff");
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(logo, 332, 138, 236, 236);
+  drawRoundedLogo(ctx, logo, 332, 138, 236, 52);
   ctx.fillStyle = "#202b40";
   ctx.font = "600 64px sans-serif";
   ctx.fillText("百科知识挑战", 450, 448);

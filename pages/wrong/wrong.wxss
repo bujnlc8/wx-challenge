@@ -40,27 +40,39 @@
 .question-footer {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid #edf1f6;
 }
 .question-date {
-  width: 100%;
-  margin-bottom: 10px;
+  display: block;
+  flex: 1;
+  min-width: 0;
+  margin-right: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #68758a;
   font-size: 12px;
 }
 .question-action-icon {
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
   margin-right: 5px;
 }
 .question-action {
+  flex-shrink: 0;
+  white-space: nowrap;
   font-size: 12px;
   color: #48618d;
   padding: 6px 0;
 }
 .report-action-icon {
-  margin-left: auto;
+  margin-left: 12px;
+}
+
+.question-footer-share {
+  margin-left: 12px;
 }

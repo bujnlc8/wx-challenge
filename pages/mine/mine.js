@@ -54,7 +54,9 @@ Page({
           wx.setStorageSync("mine_cache", res.data.data);
         } else {
           if (res.data.code == 11111) {
-            wx.clearStorageSync("uid");
+            wx.removeStorageSync("uid");
+            wx.removeStorageSync("token");
+            wx.removeStorageSync("mine_cache");
             this.setData({
               logined: 0,
             });

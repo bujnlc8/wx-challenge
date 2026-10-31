@@ -1,3 +1,4 @@
+<page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
 <view class="page-shell daily-page">
   <view class="page-title">每日挑战</view>
   <view class="page-subtitle">每天一道题，给好奇心一点回应</view>
@@ -9,12 +10,33 @@
       <view class="daily-description">与大家一起，发现一个新的知识点</view>
       <button class="primary-button daily-start" bindtap="startDaily" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">开始今日挑战</button>
     </view>
+    <view class="activity-card surface">
+      <view class="activity-heading"><text class="activity-title">答题记录</text><text class="activity-range">近一年</text></view>
+      <view wx:if="{{activity_state == 'ready'}}">
+        <view class="activity-summary">累计 <text>{{activity.total_count}}</text> 题，活跃 <text>{{activity.active_days}}</text> 天</view>
+        <view class="activity-chart">
+          <view class="activity-weekdays"><text style="top:0;">一</text><text style="top:26px;">三</text><text style="top:52px;">五</text></view>
+          <scroll-view class="activity-scroll" scroll-x="true" enhanced="true" show-scrollbar="false" scroll-into-view="{{activity_scroll_target}}">
+            <view class="activity-months" style="width:{{activity.width}}px;"><text wx:for="{{activity.months}}" wx:key="left" style="left:{{item.left}}px;">{{item.label}}</text></view>
+            <view class="activity-weeks" style="width:{{activity.width}}px;">
+              <view wx:for="{{activity.weeks}}" wx:for-item="week" wx:key="key" class="activity-week">
+                <view wx:for="{{week.days}}" wx:for-item="day" wx:key="date" id="{{day.today ? 'activity-today' : ''}}" class="activity-cell activity-level-{{day.level}} {{!day.in_range ? 'activity-outside' : ''}} {{day.in_range && !day.tracked ? 'activity-untracked' : ''}} {{activity_selected.date == day.date ? 'activity-selected' : ''}}" data-date="{{day.date}}" bindtap="selectActivityDay" aria-label="{{day.date}}，{{day.tracked ? day.count + '题' : '未开始记录'}}"></view>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+        <view class="activity-footer"><text class="activity-day-detail" wx:if="{{activity_selected}}">{{activity_selected.date}} · {{activity_selected.tracked ? activity_selected.count + '题' : '未开始记录'}}</text><view class="activity-legend"><text>少</text><view class="activity-cell activity-level-0"></view><view class="activity-cell activity-level-1"></view><view class="activity-cell activity-level-2"></view><view class="activity-cell activity-level-3"></view><view class="activity-cell activity-level-4"></view><text>多</text></view></view>
+        <view class="activity-history-note">自 {{activity.history_start_date}} 开始记录，可左右滑动查看更多</view>
+      </view>
+      <view wx:elif="{{activity_state == 'error'}}" class="activity-error"><image src="/images/ui-empty-question.png" mode="aspectFit" /><text>答题记录暂时打不开</text><button bindtap="loadActivity" class="activity-retry" hover-class="button-pressed">重新加载</button></view>
+      <view wx:else class="activity-loading">正在加载答题记录…</view>
+    </view>
     <view class="reminder-card surface">
       <view class="reminder-row"><view><view class="reminder-title">每日提醒</view><view class="reminder-time">早上 <text>08:00</text></view></view><switch color="#2864eb" checked="{{enabled}}" disabled="{{pending}}" bindchange="toggleReminder" aria-label="每日八点提醒" /></view>
       <view class="reminder-divider"></view>
       <view class="reminder-copy">请允许<text class="reminder-link" bindtap="subscribeReminder" aria-role="button">订阅消息</text>，接收下一次题目提醒</view>
       <view class="reminder-status" wx:if="{{enabled && credits > 0}}">已获得 {{credits}} 次提醒授权</view>
-      <view class="reminder-note">当前为一次性订阅，每次允许后可收到一条提醒；可在这里再次订阅。</view>
+      <view class="reminder-note">开启后，答题时每天最多提示一次订阅。当前为一次性订阅，每次允许后可收到一条提醒。</view>
     </view>
   </view>
   <view class="daily-state" wx:elif="{{view_state == 'logged-out'}}"><image src="/images/ui-empty-question.png" mode="aspectFit" /><view class="state-title">登录后开启每日挑战</view><view class="state-description">每天一道题，也可以订阅早上八点的提醒</view><button class="primary-button" bindtap="loginAndLoad" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">去登录</button></view>

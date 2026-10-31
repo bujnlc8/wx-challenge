@@ -5,16 +5,7 @@ Page({
   /**
    * 页面的初始数据
    */
-  data: { show_rules: false },
-  openRules: function () {
-    app.clickSound();
-    this.setData({ show_rules: true });
-  },
-  closeRules: function () {
-    app.clickSound();
-    this.setData({ show_rules: false });
-  },
-  catchtouchmove: function () {},
+  data: {},
   goToTrain: function () {
     app.clickSound();
     app.checkLogin(this.goToChallenge);

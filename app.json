@@ -10,7 +10,8 @@
     "pages/setting/setting",
     "pages/help/help",
     "pages/about/about",
-    "pages/daily/daily"
+    "pages/daily/daily",
+    "pages/single/single"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -48,7 +49,9 @@
       }
     ]
   },
-  "requiredBackgroundModes": ["audio"],
+  "requiredBackgroundModes": [
+    "audio"
+  ],
   "resizable": true,
   "usingComponents": {
     "ui-feedback": "/component/ui-feedback/ui-feedback",

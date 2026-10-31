@@ -1,3 +1,4 @@
+import { createModalLock } from "../../utils/modal-lock";
 const app = getApp();
 Component({
   options: {
@@ -31,6 +32,31 @@ Component({
   },
   data: {
     flag: true,
+  },
+  observers: {
+    "flag, content"(flag, content) {
+      if (this._modalLock) this._modalLock.set(!flag && !!content);
+    },
+  },
+  lifetimes: {
+    attached() {
+      this._modalLock = createModalLock();
+      this._modalLock.set(!this.data.flag && !!this.data.content);
+    },
+    detached() {
+      if (this._modalLock) this._modalLock.dispose();
+    },
+  },
+  pageLifetimes: {
+    hide() {
+      if (this._modalLock) this._modalLock.hide();
+    },
+    show() {
+      if (this._modalLock) {
+        this._modalLock.set(!this.data.flag && !!this.data.content);
+        this._modalLock.show();
+      }
+    },
   },
   methods: {
     hidePopup: function () {

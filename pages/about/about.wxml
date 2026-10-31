@@ -1,3 +1,4 @@
+<page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
 <view class="about-page">
   <view class="about-brand">
     <image class="about-logo" src="/images/ui-about-logo.png" mode="aspectFit" />

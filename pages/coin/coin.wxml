@@ -1,3 +1,4 @@
+<page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
 <view class="history-page" style="padding-bottom: 32px;">
   <view class="coin-header"><view class="page-title">百科币明细</view><view class="page-subtitle">你的每一份收获与使用，都记录在这里</view></view>
   <view class="coin-records">

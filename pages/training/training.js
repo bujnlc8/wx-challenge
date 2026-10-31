@@ -1,13 +1,52 @@
+import {
+  createDailyReminder,
+  reminderSettings,
+} from "../../utils/daily-reminder";
 // pages/answer/answer.js
 const app = getApp();
 import {
   httpPOST,
+  httpGET,
   shareGetCoin,
   showToast,
   showLoading,
   hideLoading,
 } from "../../utils/util";
 Page({
+  initializeDailyReminder() {
+    this._unloaded = false;
+    this._dailyReminder = createDailyReminder({
+      platform: wx,
+      loadPreference: () =>
+        httpGET("api/daily-challenge/reminder", {}).then(reminderSettings),
+      recordAcceptance: (data) =>
+        httpPOST("api/daily-challenge/reminder/accept", data).then(
+          reminderSettings,
+        ),
+      onNativeOpen: () => {
+        this._subscriptionPanelOpen = true;
+      },
+      onNativeSettled: () => {
+        this._subscriptionPanelOpen = false;
+      },
+    });
+    this._dailyReminder.refresh();
+  },
+  promptDailyReminder() {
+    const option = Number(this.data.selected_option);
+    if (
+      this._unloaded ||
+      !Number.isInteger(option) ||
+      option < 1 ||
+      option > 4 ||
+      !this.data[
+        ["option_a", "option_b", "option_c", "option_d"][option - 1]
+      ] ||
+      !(Number(this.data.current_question_id) > 0)
+    )
+      return;
+    if (this._dailyReminder) this._dailyReminder.prompt();
+  },
   data: {
     questions: [],
     current_question_id: 0,
@@ -43,6 +82,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad() {
+    this.initializeDailyReminder();
     wx.setNavigationBarTitle({
       title: "练习模式",
     });
@@ -70,7 +110,9 @@ Page({
         if (res.data.code != 10000) {
           showToast(res.data.message);
           if (res.data.code == 11111) {
-            wx.clearStorageSync("uid");
+            wx.removeStorageSync("uid");
+            wx.removeStorageSync("token");
+            wx.removeStorageSync("mine_cache");
             this.setData({
               logined: 0,
             });
@@ -191,6 +233,7 @@ Page({
     this.setData({
       answer_result: -1,
     });
+    this.promptDailyReminder();
     this._submitAnswer();
   },
   _submitAnswer() {
@@ -309,6 +352,8 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    this._pageVisible = true;
+    if (this._dailyReminder) this._dailyReminder.refresh();
     app.playBgSound();
   },
 
@@ -316,6 +361,7 @@ Page({
    * 生命周期函数--监听页面隐藏
    */
   onHide() {
+    this._pageVisible = false;
     app.stopPlayBgSound();
   },
 
@@ -323,6 +369,8 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
+    this._unloaded = true;
+    if (this._dailyReminder) this._dailyReminder.dispose();
     this.stopCountDown();
     app.stopPlayBgSound();
   },

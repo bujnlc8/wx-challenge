@@ -1,3 +1,4 @@
+<page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
 <wxs src="../../utils/util.wxs" module="tools" />
 <view wx:if="{{logined}}" class="question-container">
 	<view class="question-toolbar">

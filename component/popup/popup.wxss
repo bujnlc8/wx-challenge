@@ -113,3 +113,17 @@
   background: #eef2f8;
   color: #4e5c72;
 }
+
+.wx-popup--transparent {
+  background: transparent;
+}
+.popup-mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+.wx-popup-con {
+  overscroll-behavior: contain;
+}

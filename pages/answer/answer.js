@@ -1,8 +1,13 @@
+import {
+  createDailyReminder,
+  reminderSettings,
+} from "../../utils/daily-reminder";
 import { parseQuestionEntry } from "../../utils/question-entry";
 // pages/answer/answer.js
 const app = getApp();
 import {
   httpPOST,
+  httpGET,
   shareGetCoin,
   showToast,
   showLoading,
@@ -10,6 +15,41 @@ import {
 } from "../../utils/util";
 
 Page({
+  initializeDailyReminder() {
+    this._unloaded = false;
+    this._dailyReminder = createDailyReminder({
+      platform: wx,
+      loadPreference: () =>
+        httpGET("api/daily-challenge/reminder", {}).then(reminderSettings),
+      recordAcceptance: (data) =>
+        httpPOST("api/daily-challenge/reminder/accept", data).then(
+          reminderSettings,
+        ),
+      onNativeOpen: () => {
+        this._subscriptionPanelOpen = true;
+      },
+      onNativeSettled: () => {
+        this._subscriptionPanelOpen = false;
+        this.resumeDailyAdvance();
+      },
+    });
+    this._dailyReminder.refresh();
+  },
+  promptDailyReminder() {
+    const option = Number(this.data.selected_option);
+    if (
+      this._unloaded ||
+      !Number.isInteger(option) ||
+      option < 1 ||
+      option > 4 ||
+      !this.data[
+        ["option_a", "option_b", "option_c", "option_d"][option - 1]
+      ] ||
+      !(Number(this.data.current_question_id) > 0)
+    )
+      return;
+    if (this._dailyReminder) this._dailyReminder.prompt();
+  },
   data: {
     questions: [],
     entry_error: "",
@@ -52,15 +92,24 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
-    wx.setNavigationBarTitle({
-      title: "挑战模式",
-    });
     const questionId = parseQuestionEntry(options);
     if (questionId === null) {
       this.setData({ entry_error: "题目链接无效，请重新扫码" });
       return;
     }
-    if (questionId > 0) this.setData({ share_question_id: questionId });
+    if (questionId > 0) {
+      this._redirecting = true;
+      wx.redirectTo({
+        url:
+          "/pages/single/single?question_id=" +
+          questionId +
+          "&from=" +
+          (options && options.from === "daily" ? "daily" : "share"),
+      });
+      return;
+    }
+    this.initializeDailyReminder();
+    wx.setNavigationBarTitle({ title: "挑战模式" });
     this.setData({
       show_correct_answer: app.show_correct_answer,
       show_analysis: app.show_analysis,
@@ -97,7 +146,9 @@ Page({
               show_login: 0,
             });
           if (res.data.code == 11111) {
-            wx.clearStorageSync("uid");
+            wx.removeStorageSync("uid");
+            wx.removeStorageSync("token");
+            wx.removeStorageSync("mine_cache");
             this.setData({
               logined: 0,
               show_login: 1,
@@ -122,7 +173,32 @@ Page({
       })
       .finally(() => hideLoading(loading));
   },
+  resumeDailyAdvance() {
+    if (
+      !this._advanceAfterSubscription ||
+      this._subscriptionPanelOpen ||
+      this._unloaded ||
+      this._pageVisible === false ||
+      this.data.show_feedback ||
+      this.data.answer_result != 1
+    )
+      return;
+    this._advanceAfterSubscription = false;
+    this.startAnswer();
+  },
   startAnswer: function () {
+    if (
+      this._unloaded ||
+      (this._dailyReminder && !this._dailyReminder.isCurrentAccount())
+    )
+      return;
+    if (
+      this.data.answer_result == 1 &&
+      (this._subscriptionPanelOpen || this._pageVisible === false)
+    ) {
+      this._advanceAfterSubscription = true;
+      return;
+    }
     if (this._posterOpen && this.data.answer_result == 1) {
       this._advanceAfterPoster = true;
       return;
@@ -138,6 +214,7 @@ Page({
     }
   },
   _startAnswer: function (question) {
+    this._advanceAfterSubscription = false;
     this._advanceAfterPoster = false;
     this._posterOpen = false;
     const poster = this.selectComponent("#question-poster");
@@ -238,6 +315,7 @@ Page({
     if (this.data.interval_handle) {
       clearInterval(this.data.interval_handle);
     }
+    this.promptDailyReminder();
     this._submitAnswer(0);
   },
   _submitAnswer(timeout) {
@@ -285,9 +363,9 @@ Page({
               right_answer: res.data.data.right_answer,
               continue_correct_num: 0,
             });
-            var t = "未回答正确";
+            var t = "本题未答对";
             if (timeout == 1) {
-              t = "回答超时";
+              t = "答题超时";
               app.playSound("timeout");
             } else {
               app.wrongSound();
@@ -295,7 +373,13 @@ Page({
             if (this.data.last_relive_times > 0) {
               setTimeout(() => {
                 this.popup.setData({
-                  content: t + "，原地复活？",
+                  title: t,
+                  content:
+                    "消耗1000百科币可复活，继续本轮挑战。\n本轮剩余" +
+                    this.data.last_relive_times +
+                    "次复活机会。",
+                  btn_no: "结束本轮",
+                  btn_ok: "复活继续",
                   show_modal: false,
                 });
                 this.setData({
@@ -320,9 +404,9 @@ Page({
   },
   hideQuestion: function (e) {
     var t = e.target.dataset.t || 0;
-    var body = "以后不再答此题?";
+    var body = "以后不再显示这道题？";
     if (t == 1) {
-      body = "本轮不答此题?";
+      body = "本轮跳过这道题？";
       if (this.data.last_skip_chance <= 0) {
         app.playSound("warn");
         showToast("今日跳过次数已用完");
@@ -341,7 +425,10 @@ Page({
     }
     app.clickSound();
     this.popup.setData({
+      title: t == 1 ? "跳过本题" : "不再显示本题",
       content: body,
+      btn_no: "取消",
+      btn_ok: "确认",
     });
     this.setData({
       pop_type: 3,
@@ -362,7 +449,7 @@ Page({
     this.setData({
       show_feedback: true,
     });
-    this.report.getCaptCha();
+    this.report.getCaptcha();
   },
   nextQuestionAfterCloseFeedback: function () {
     if (this.data.answer_result == 1) {
@@ -383,7 +470,15 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    if (this._redirecting) return;
     this._pageVisible = true;
+    if (this._dailyReminder) {
+      this._dailyReminder.refresh();
+      this._subscriptionPanelOpen = this._dailyReminder.isNativeOpen();
+      if (!this._dailyReminder.isCurrentAccount())
+        this._advanceAfterSubscription = false;
+    }
+    this.resumeDailyAdvance();
     if (
       this._advanceAfterPoster &&
       !this._posterOpen &&
@@ -410,6 +505,7 @@ Page({
   onUnload() {
     this._pageVisible = false;
     this._unloaded = true;
+    if (this._dailyReminder) this._dailyReminder.dispose();
     if (this.data.interval_handle) {
       clearInterval(this.data.interval_handle);
     }
@@ -488,8 +584,15 @@ Page({
       app.playSound("try_again");
     }, 150);
     this.popup.setData({
-      title: "答题结束",
-      content: "恭喜你，本轮排第" + this.data.rank + "名，再挑战一次吧？",
+      title: "本轮挑战结束",
+      content:
+        "本轮得分" +
+        this.data.current_score +
+        "分，排名第" +
+        this.data.rank +
+        "名。\n再来一轮，继续挑战吧。",
+      btn_no: "返回首页",
+      btn_ok: "再来一轮",
       show_modal: false,
     });
     this.popup.showPopup();

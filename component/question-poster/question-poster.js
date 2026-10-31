@@ -1,3 +1,4 @@
+import { createModalLock } from "../../utils/modal-lock";
 import { httpPOST } from "../../utils/util";
 import { showToast } from "../../utils/feedback";
 import {
@@ -121,11 +122,14 @@ Component({
   },
   lifetimes: {
     attached() {
+      this._modalLock = createModalLock();
+      this._modalLock.set(this.data.visible);
       this._session = createPosterSession(identity);
       this._disposed = false;
       this._renderQueue = Promise.resolve();
     },
     detached() {
+      if (this._modalLock) this._modalLock.dispose();
       this._disposed = true;
       if (this._session) this._session.cancel();
       this._current = null;
@@ -135,8 +139,10 @@ Component({
   pageLifetimes: {
     hide() {
       this.close("page-hide");
+      if (this._modalLock) this._modalLock.hide();
     },
     show() {
+      if (this._modalLock) this._modalLock.show();
       if (this._current) this._current();
     },
   },
@@ -177,6 +183,7 @@ Component({
         albumDenied: false,
         saveMessage: "",
       });
+      if (this._modalLock) this._modalLock.set(true);
       try {
         const id = Number(question && question.id);
         if (!appMode && (!Number.isSafeInteger(id) || id <= 0))
@@ -294,6 +301,7 @@ Component({
       }
     },
     close(reason) {
+      if (this._modalLock) this._modalLock.set(false);
       const wasVisible = this.data.visible;
       if (this._session) this._session.cancel();
       this._current = null;

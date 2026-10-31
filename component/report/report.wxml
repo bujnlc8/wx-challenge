@@ -1,5 +1,5 @@
-<view class="board" wx:if="{{show_feedback}}" catchtouchmove="catchtouchmove"></view>
-<view wx:if="{{show_feedback}}" class="feedback" aria-role="dialog" aria-label="问题反馈">
+<view class="board" wx:if="{{show_feedback}}" catchtap="catchtouchmove" catchtouchmove="catchtouchmove"></view>
+<view wx:if="{{show_feedback}}" class="feedback" catchtap="catchtouchmove" aria-role="dialog" aria-label="问题反馈">
   <view class="feedback-header"><view class="feedback-title">问题反馈</view><view class="feedback-caption">一起让每一道题更准确</view><button class="feedback-close" bindtap="closeFeedback" aria-label="关闭问题反馈" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button></view>
   <view class="feedback-body">
     <view class="feedback-label-title">遇到了什么问题？</view>

@@ -1,5 +1,6 @@
-<view class="{{show_modal ? 'wx-popup': ''}}" hidden="{{flag}}" wx:if="{{content}}">
-  <view class="popup-container">
+<view class="wx-popup {{show_modal ? '' : 'wx-popup--transparent'}}" hidden="{{flag}}" wx:if="{{content}}">
+  <view class="popup-mask" catchtap="catchtouchmove" catchtouchmove="catchtouchmove"></view>
+  <view class="popup-container" catchtap="catchtouchmove">
     <view class="popup-header">
       <view class="wx-popup-title" wx:if="{{title}}">{{title}}</view>
       <button class="popup-close" bindtap="popupCancel" aria-label="取消并关闭" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button>

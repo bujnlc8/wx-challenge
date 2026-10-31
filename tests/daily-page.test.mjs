@@ -22,6 +22,7 @@ function harness(overrides = {}) {
   vm.runInContext(source, context);
   const page = {
     ...definition,
+    loadActivity() {},
     data: { ...definition.data },
     setData(v) {
       Object.assign(this.data, v);

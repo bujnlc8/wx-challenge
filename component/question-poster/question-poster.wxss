@@ -264,3 +264,7 @@ button.poster-close {
 button.poster-button {
   font-size: 15px;
 }
+
+.poster-scroll {
+  overscroll-behavior: contain;
+}
