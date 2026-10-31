@@ -64,9 +64,11 @@ Component({
   },
   pageLifetimes: {
     show() {
+      const restoring = this._reportHidden && this.data.show_feedback;
       this._reportHidden = false;
       this.syncFeedbackSession();
       if (this._modalLock) this._modalLock.show();
+      if (restoring) this.getCaptcha();
     },
     hide() {
       this._reportHidden = true;

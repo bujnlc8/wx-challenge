@@ -226,3 +226,23 @@ test("captcha requested just before the parent opens is loaded only for the newl
   await flush();
   assert.equal(s.c.data.captcha_token, "B-token");
 });
+
+test("returning to an open feedback dialog refreshes its invalidated captcha once", async () => {
+  const s = report();
+  s.c.getCaptcha();
+  s.definition.pageLifetimes.hide.call(s.c);
+  s.gets[0].resolve(success({ token: "old-token", image_data: "old-image" }));
+  await flush();
+  assert.equal(s.c.data.captcha_token, "");
+  s.definition.pageLifetimes.show.call(s.c);
+  assert.equal(s.gets.length, 2);
+  s.definition.pageLifetimes.show.call(s.c);
+  assert.equal(s.gets.length, 2);
+  s.gets[1].resolve(
+    success({ token: "fresh-token", image_data: "fresh-image" }),
+  );
+  await flush();
+  assert.equal(s.c.data.captcha_token, "fresh-token");
+  assert.equal(s.c.data.show_feedback, true);
+  assert.equal(s.ownerPage.data.modal_locked, true);
+});
