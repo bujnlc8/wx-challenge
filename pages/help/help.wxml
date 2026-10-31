@@ -1,0 +1,28 @@
+<view class="page-shell help-page">
+  <view class="page-title">使用帮助</view>
+  <view class="page-subtitle">从第一道题开始，熟悉你的知识挑战</view>
+  <view class="help-section surface">
+    <view class="help-heading"><text>开始挑战</text></view>
+    <view class="help-copy">在“挑战”页面点击“开始挑战”进入限时答题。点击“挑战规则”，可以查看计分方式、百科币奖励和跳过规则。</view>
+  </view>
+  <view class="help-section surface">
+    <view class="help-heading"><text>自在练习</text></view>
+    <view class="help-copy">在“练习”页面点击“开始练习”，按自己的节奏答题，不限时、不计分。点击“练习规则”查看详细说明。</view>
+  </view>
+  <view class="help-section surface">
+    <view class="help-heading"><text>管理我的知识档案</text></view>
+    <view class="help-item"><view class="help-item-title">头像与昵称</view><view class="help-copy">点击头像或昵称进行修改。</view></view>
+    <view class="help-item"><view class="help-item-title">百科币与等级</view><view class="help-copy">点击百科币数量查看明细，点击等级区域查看等级说明。</view></view>
+    <view class="help-item"><view class="help-item-title">错题集</view><view class="help-copy">点击“错题集”查看答错的题目；点击题干显示答案，长按题干可删除记录。</view></view>
+    <view class="help-item"><view class="help-item-title">题目类型</view><view class="help-copy">点击“题目类型”，选中感兴趣的类型后点击“确认”。点击“取消”或右上角关闭按钮，会保留原来的选择。</view></view>
+    <view class="help-item"><view class="help-item-title">答题设置</view><view class="help-copy">点击“设置”，调整正确答案、答案解析和音效的显示方式。</view></view>
+  </view>
+  <view class="help-section surface">
+    <view class="help-heading"><text>反馈题目问题</text></view>
+    <view class="help-copy">对题目有疑问，可以在作答后点击答题界面的“反馈”，或在错题集中点击“这题有问题”。其他建议也欢迎通过小程序客服交流。</view>
+  </view>
+  <view class="help-section surface"><view class="help-heading">每日挑战与提醒</view><view class="help-copy">在“我的”页面进入“每日挑战”，每天与大家作答同一道题。可以开启早上 08:00 提醒，并主动订阅消息；当前模板为一次性订阅，每次允许后可收到一条提醒。</view></view>
+  <view class="help-section surface"><view class="help-heading">把题目分享给朋友</view><view class="help-copy">点击“生成分享海报”，可预览并保存带小程序码的题目海报。挑战模式需先完成本题；打开海报时，已答对题目的自动切换会等待关闭海报后继续。练习和错题集也可以生成海报。</view></view>
+</view>
+
+<ui-feedback state="{{ui_feedback}}" />

@@ -1,10 +1,18 @@
+import { parseQuestionEntry } from "../../utils/question-entry";
 // pages/answer/answer.js
 const app = getApp();
-import { httpPOST, shareGetCoin, showToast } from "../../utils/util";
+import {
+  httpPOST,
+  shareGetCoin,
+  showToast,
+  showLoading,
+  hideLoading,
+} from "../../utils/util";
 
 Page({
   data: {
     questions: [],
+    entry_error: "",
     current_question_id: 0,
     round_id: 0,
     total_index: 0,
@@ -47,11 +55,12 @@ Page({
     wx.setNavigationBarTitle({
       title: "挑战模式",
     });
-    if (options && options.question_id) {
-      this.setData({
-        share_question_id: options.question_id,
-      });
+    const questionId = parseQuestionEntry(options);
+    if (questionId === null) {
+      this.setData({ entry_error: "题目链接无效，请重新扫码" });
+      return;
     }
+    if (questionId > 0) this.setData({ share_question_id: questionId });
     this.setData({
       show_correct_answer: app.show_correct_answer,
       show_analysis: app.show_analysis,
@@ -70,7 +79,7 @@ Page({
       showToast("请点击登录");
       return;
     }
-    wx.showLoading({
+    const loading = showLoading({
       title: "加载中...",
     });
     httpPOST("api/question/start-challenge", {
@@ -81,6 +90,12 @@ Page({
       .then((res) => {
         if (res.data.code != 10000) {
           showToast(res.data.message);
+          if (this.data.share_question_id > 0 && res.data.code != 11111)
+            this.setData({
+              entry_error: res.data.message || "题目暂时不可用",
+              logined: 0,
+              show_login: 0,
+            });
           if (res.data.code == 11111) {
             wx.clearStorageSync("uid");
             this.setData({
@@ -101,13 +116,17 @@ Page({
           });
           this.startAnswer();
         }
-        wx.hideLoading();
       })
       .catch(() => {
         showToast("网络异常");
-      });
+      })
+      .finally(() => hideLoading(loading));
   },
   startAnswer: function () {
+    if (this._posterOpen && this.data.answer_result == 1) {
+      this._advanceAfterPoster = true;
+      return;
+    }
     if (this.data.interval_handle) {
       clearInterval(this.data.interval_handle);
     }
@@ -119,6 +138,10 @@ Page({
     }
   },
   _startAnswer: function (question) {
+    this._advanceAfterPoster = false;
+    this._posterOpen = false;
+    const poster = this.selectComponent("#question-poster");
+    if (poster) poster.close("question-change");
     var options = question.options.split("|");
     var option_a = "";
     var option_b = "";
@@ -360,6 +383,15 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    this._pageVisible = true;
+    if (
+      this._advanceAfterPoster &&
+      !this._posterOpen &&
+      this.data.answer_result == 1
+    ) {
+      this._advanceAfterPoster = false;
+      this.startAnswer();
+    }
     app.playBgSound();
   },
 
@@ -367,6 +399,7 @@ Page({
    * 生命周期函数--监听页面隐藏
    */
   onHide() {
+    this._pageVisible = false;
     app.stopPlayBgSound();
     app.stopInnerAudio();
   },
@@ -375,6 +408,8 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
+    this._pageVisible = false;
+    this._unloaded = true;
     if (this.data.interval_handle) {
       clearInterval(this.data.interval_handle);
     }
@@ -395,6 +430,43 @@ Page({
   /**
    * 用户点击右上角分享
    */
+  openQuestionPoster() {
+    if (this.data.answer_result != 0 && this.data.answer_result != 1) {
+      showToast("请先完成本题再分享");
+      return;
+    }
+    if (!this.data.current_question_id) return;
+    this._posterOpen = true;
+    this.selectComponent("#question-poster").open({
+      id: Number(this.data.current_question_id),
+      content: this.data.current_question,
+      options: [
+        this.data.option_a,
+        this.data.option_b,
+        this.data.option_c,
+        this.data.option_d,
+      ].filter((value) => value !== "" && value != null),
+      question_image: this.data.question_image,
+      option_type: this.data.option_type,
+    });
+  },
+  onQuestionPosterClose(event) {
+    this._posterOpen = false;
+    const reason = (event && event.detail && event.detail.reason) || "user";
+    if (
+      this._advanceAfterPoster &&
+      reason === "user" &&
+      this._pageVisible !== false &&
+      !this._unloaded &&
+      this.data.answer_result == 1
+    ) {
+      this._advanceAfterPoster = false;
+      this.startAnswer();
+    }
+  },
+  returnToChallenge() {
+    wx.switchTab({ url: "/pages/index/index" });
+  },
   onShareAppMessage() {
     shareGetCoin();
     return {
@@ -480,7 +552,7 @@ Page({
             showToast(res.data.message);
             return;
           }
-          wx.showToast({
+          showToast({
             title: "操作成功",
             icon: "success",
           });

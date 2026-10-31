@@ -7,44 +7,51 @@
     "pages/wrong/wrong",
     "pages/training/training",
     "pages/coin/coin",
-    "pages/setting/setting"
+    "pages/setting/setting",
+    "pages/help/help",
+    "pages/about/about",
+    "pages/daily/daily"
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#f3f3f2",
+    "navigationBarBackgroundColor": "#f5f7fb",
     "navigationBarTitleText": "百科知识挑战",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f3f3f2"
+    "backgroundColor": "#f5f7fb"
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
   "tabBar": {
     "borderStyle": "white",
-    "selectedColor": "#b59b69",
-    "color": "#999",
-    "backgroundColor": "#f3f3f2",
+    "selectedColor": "#2864eb",
+    "color": "#68758a",
+    "backgroundColor": "#ffffff",
     "list": [
       {
         "pagePath": "pages/index/index",
         "text": "挑战",
-        "iconPath": "images/challenge.png",
-        "selectedIconPath": "images/challenge_active.png"
+        "iconPath": "images/ui-challenge.png",
+        "selectedIconPath": "images/ui-challenge-active.png"
       },
       {
         "pagePath": "pages/train/train",
         "text": "练习",
-        "iconPath": "images/train.png",
-        "selectedIconPath": "images/train_active.png"
+        "iconPath": "images/ui-train.png",
+        "selectedIconPath": "images/ui-train-active.png"
       },
       {
         "pagePath": "pages/mine/mine",
         "text": "我的",
-        "iconPath": "images/mine.png",
-        "selectedIconPath": "images/mine_active.png"
+        "iconPath": "images/ui-mine.png",
+        "selectedIconPath": "images/ui-mine-active.png"
       }
     ]
   },
   "requiredBackgroundModes": ["audio"],
-  "resizable": true
+  "resizable": true,
+  "usingComponents": {
+    "ui-feedback": "/component/ui-feedback/ui-feedback",
+    "question-poster": "/component/question-poster/question-poster"
+  }
 }

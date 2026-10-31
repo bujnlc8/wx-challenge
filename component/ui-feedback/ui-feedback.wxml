@@ -1,0 +1,17 @@
+<view wx:if="{{state && state.loading}}" class="feedback-layer feedback-layer--loading">
+  <view wx:if="{{state.loading.mask}}" class="feedback-mask" catchtouchmove="preventTouch" catchtap="preventTouch"></view>
+  <view class="feedback-loading" role="status" aria-label="{{state.loading.title}}">
+    <view class="feedback-spinner"></view>
+    <text class="feedback-loading__title">{{state.loading.title}}</text>
+  </view>
+</view>
+<view wx:if="{{state && state.toast}}" class="feedback-layer feedback-layer--toast">
+  <view wx:if="{{state.toast.mask}}" class="feedback-mask feedback-mask--toast" catchtouchmove="preventTouch" catchtap="preventTouch"></view>
+  <view class="feedback-toast" role="alert" aria-label="{{state.toast.title}}">
+    <view wx:if="{{state.toast.icon && state.toast.icon !== 'none'}}" class="feedback-icon feedback-icon--{{state.toast.icon}}">
+      <view wx:if="{{state.toast.icon === 'loading'}}" class="feedback-spinner feedback-spinner--small"></view>
+      <text wx:elif="{{state.toast.icon !== 'success' && state.toast.icon !== 'error'}}" class="feedback-icon__info">i</text>
+    </view>
+    <text class="feedback-toast__title">{{state.toast.title}}</text>
+  </view>
+</view>

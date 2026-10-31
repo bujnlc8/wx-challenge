@@ -1,15 +1,10 @@
-<view style="background-color: white;">
-	<view class="menu" bindtap="operateShowCorrectAnswer" style="cursor: pointer;">
-		<text style="flex: 4;cursor: pointer;">显示正确答案</text>
-		<switch checked="{{show_correct_answer}}"></switch>
-	</view>
-	<view class="menu" bindtap="operateShowAnalysis" style="cursor: pointer;">
-		<text style="flex: 4;cursor: pointer;">显示答案解析</text>
-		<switch checked="{{show_analysis}}"></switch>
-	</view>
-	<view class="menu" bindtap="operateSound" style="cursor: pointer;">
-		<text style="flex: 4;cursor: pointer;" wx:if="{{is_ios}}">开启音效提示</text>
-		<text style="flex: 4;cursor: pointer;" wx:else>开启音效背景</text>
-		<switch checked="{{sound_close == 0}}"></switch>
-	</view>
+<view class="page-shell">
+  <view class="page-title">按你的习惯来</view><view class="page-subtitle">调整作答体验，找到舒服的节奏</view>
+  <view class="settings-group surface">
+    <view class="menu" bindtap="operateShowCorrectAnswer" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">显示正确答案</view><view class="setting-description">作答后查看正确选项</view></view><switch color="#2864eb" checked="{{show_correct_answer}}"></switch></view>
+    <view class="menu" bindtap="operateShowAnalysis" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">显示答案解析</view><view class="setting-description">了解答案背后的知识</view></view><switch color="#2864eb" checked="{{show_analysis}}"></switch></view>
+    <view class="menu" bindtap="operateSound" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title" wx:if="{{is_ios}}">开启音效提示</view><view class="setting-title" wx:else>开启音效背景</view><view class="setting-description">按自己的喜好选择答题声音</view></view><switch color="#2864eb" checked="{{sound_close == 0}}"></switch></view>
+  </view>
 </view>
+
+<ui-feedback state="{{ui_feedback}}" />

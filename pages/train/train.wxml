@@ -1,9 +1,35 @@
-<view class="train-text">
-	<view style="text-align: center;font-size: 18px;font-weight: 700;margin-top: 10px;margin-bottom: 10px;">练习模式说明</view>
-	<view class="rule-item">（1）每题不限时，计时但不计分；</view>
-	<view class="rule-item">（2）答错的题将计入错题集，但不计入“我的”页面“错题数”等数据；</view>
-	<view class="rule-item">（3）每日练习达<text class="hi-num">300</text>题，送<text class="hi-num">10000</text>百科币；</view>
-	<view class="rule-item">（4）长按题目可永久跳过，每日限<text class="hi-num">5</text>次机会；</view>
-	<view class="rule-item">（5）对题目有任何疑问，欢迎点击左上角按钮进行反馈<text style="font-size: 14px;color: gray;">（作答之后反馈）。</text></view>
-	<view bindtap="goToTrain" class="train-btn" style="cursor: pointer;">开始练习</view>
+<view class="practice-page">
+  <scroll-view class="practice-content" scroll-y="true" enhanced="true" show-scrollbar="false">
+<view class="page-shell">
+  <view class="practice-heading"><view class="practice-heading-copy"><view class="page-title">把好奇，变成知识</view><view class="page-subtitle">放慢节奏，享受每一次发现</view></view><button class="practice-rules-link" bindtap="openRules" hover-class="button-pressed">练习规则</button></view>
+  <view class="practice-intro">
+    <view class="practice-symbol" aria-hidden="true"><view></view><view></view></view>
+    <view class="practice-title">自在练习，慢慢积累</view>
+    <view class="practice-copy">没有倒计时的压力，按自己的节奏探索</view>
+  </view>
+  <view class="practice-features">
+    <view class="practice-feature"><text class="feature-value">不限时</text><text class="feature-label">从容思考</text></view>
+    <view class="practice-feature"><text class="feature-value">不计分</text><text class="feature-label">专注知识</text></view>
+    <view class="practice-feature"><text class="feature-value">错题收录</text><text class="feature-label">温故知新</text></view>
+  </view>
 </view>
+  </scroll-view>
+  <view class="practice-dock">
+    <view bindtap="goToTrain" class="train-btn primary-button" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">开始练习</view>
+    <view class="practice-footnote">每天进步一点点，知识积累看得见</view>
+  </view>
+</view>
+<view class="board" wx:if="{{show_rules}}" catchtouchmove="catchtouchmove"></view>
+<view class="pop-tip" wx:if="{{show_rules}}">
+  <view class="dialog-header"><view class="pop-tip-title">练习模式说明</view><button class="dialog-close" bindtap="closeRules" aria-label="关闭练习规则" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button><view class="dialog-intro">按自己的节奏，慢慢积累知识</view></view>
+  <view class="dialog-scroll"><view class="dialog-body">
+    <view class="rule-item">（1）每题不限时，计时但不计分；</view>
+    <view class="rule-item">（2）答错的题将计入错题集，但不计入“我的”页面“错题数”等数据；</view>
+    <view class="rule-item">（3）每日练习达<text class="hi-num">300</text>题，送<text class="hi-num">10000</text>百科币；</view>
+    <view class="rule-item">（4）长按题目可永久跳过，每日限<text class="hi-num">5</text>次机会；</view>
+    <view class="rule-item">（5）对题目有任何疑问，欢迎点击左上角按钮进行反馈<text class="common-gray">（作答之后反馈）。</text></view>
+  </view></view>
+  <view class="dialog-footer"><view class="iknow" bindtap="closeRules" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">知道了</view></view>
+</view>
+
+<ui-feedback state="{{ui_feedback}}" />

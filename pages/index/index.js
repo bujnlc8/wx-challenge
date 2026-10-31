@@ -1,5 +1,11 @@
 const app = getApp();
-import { httpGET, shareGetCoin, showToast } from "../../utils/util";
+import {
+  httpGET,
+  shareGetCoin,
+  showToast,
+  showLoading,
+  hideLoading,
+} from "../../utils/util";
 Page({
   data: {
     week_rank_list: [],
@@ -43,34 +49,28 @@ Page({
     wx.getStorage({
       key: "is_show_help_tip",
       fail: () => {
-        this.setData({
-          is_show_help_tip: 1,
-        });
+        this.openHelpPage();
       },
     });
   },
-  closeHelpTip: function () {
-    app.clickSound();
-    wx.setStorageSync("is_show_help_tip", 1);
-    this.setData({
-      is_show_help_tip: 0,
+  openHelpPage: function () {
+    if (this._openingHelp) return;
+    this._openingHelp = true;
+    wx.navigateTo({
+      url: "/pages/help/help",
+      complete: () => {
+        this._openingHelp = false;
+      },
     });
-    if (app.show_help_tip) {
-      app.show_help_tip = 0;
-      wx.switchTab({
-        url: "/pages/mine/mine",
-      });
-    }
   },
   getCurrentWeekRanking: function () {
-    wx.showLoading({
+    const loading = showLoading({
       title: "加载中...",
     });
     httpGET("api/question/ranking-list", {
       type: 0,
     })
       .then((res) => {
-        wx.hideLoading();
         wx.stopPullDownRefresh();
         if (res.data.code == 10000) {
           this.setData({
@@ -98,7 +98,8 @@ Page({
       .catch(() => {
         showToast("网络异常");
         wx.stopPullDownRefresh();
-      });
+      })
+      .finally(() => hideLoading(loading));
   },
   getTotalRanking: function () {
     httpGET("api/question/ranking-list", {
@@ -205,9 +206,8 @@ Page({
       }
     }
     if (app.show_help_tip) {
-      this.setData({
-        is_show_help_tip: 1,
-      });
+      app.show_help_tip = 0;
+      this.openHelpPage();
     }
   },
   goToLogin: function () {

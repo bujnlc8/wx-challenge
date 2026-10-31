@@ -1,0 +1,114 @@
+.daily-card {
+  margin-top: 24px;
+  padding: 24px;
+  text-align: center;
+}
+.daily-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.daily-date {
+  font-size: 13px;
+  color: #68758a;
+}
+.daily-tag {
+  border-radius: 7px;
+  padding: 3px 9px;
+  background: #edf3ff;
+  color: #2056ce;
+  font-size: 12px;
+}
+.daily-illustration {
+  width: 168px;
+  height: 144px;
+  margin: 24px auto 16px;
+}
+.daily-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+.daily-description {
+  color: #68758a;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.daily-start {
+  margin-top: 24px;
+  width: 100%;
+}
+.reminder-card {
+  margin-top: 16px;
+  padding: 24px;
+}
+.reminder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.reminder-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.reminder-time {
+  font-size: 13px;
+  color: #68758a;
+  margin-top: 6px;
+}
+.reminder-time text {
+  margin-left: 4px;
+  color: #2056ce;
+  font-size: 20px;
+  font-weight: 700;
+}
+.reminder-divider {
+  height: 1px;
+  margin: 20px 0 16px;
+  background: #edf1f6;
+}
+.reminder-copy {
+  font-size: 14px;
+  color: #4e5c72;
+  line-height: 1.9;
+}
+.reminder-link {
+  color: #2056ce;
+  font-weight: 600;
+  padding: 8px 3px;
+}
+.reminder-status {
+  margin-top: 10px;
+  color: #19764d;
+  font-size: 12px;
+}
+.reminder-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #68758a;
+  line-height: 1.85;
+}
+.daily-state {
+  text-align: center;
+  padding: 40px 12px;
+}
+.daily-state image {
+  width: 180px;
+  height: 140px;
+}
+.state-title {
+  margin-top: 20px;
+  font-weight: 600;
+  font-size: 18px;
+}
+.state-description {
+  color: #68758a;
+  font-size: 14px;
+  margin: 10px 0 24px;
+}
+.state-retry {
+  background: #edf3ff;
+  color: #2056ce;
+  border-radius: 12px;
+  line-height: 46px;
+  font-size: 14px;
+}

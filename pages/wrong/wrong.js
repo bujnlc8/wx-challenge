@@ -57,7 +57,7 @@ Page({
         res.data.data.forEach((item) => {
           item.options = item.options.split("|");
           item.option_type = item.options[0].startsWith(
-            "https://bucket-1256650966"
+            "https://bucket-1256650966",
           )
             ? 1
             : 0;
@@ -79,6 +79,7 @@ Page({
         }
       })
       .catch(() => {
+        this.setData({ loading_str: "" });
         wx.stopPullDownRefresh();
         showToast("网络异常");
       });
@@ -234,6 +235,20 @@ Page({
   },
   popupCancel: function () {
     this.popup.hidePopup();
+  },
+  openWrongQuestionPoster(e) {
+    const question = this.data.question_list[e.mark.ii];
+    if (!question || !question.question_id) {
+      showToast("题目信息暂不可用");
+      return;
+    }
+    this.selectComponent("#question-poster").open({
+      id: Number(question.question_id),
+      content: question.content,
+      options: question.options,
+      question_image: question.question_image,
+      option_type: question.option_type,
+    });
   },
   previewImg: function (e) {
     var src = e.currentTarget.dataset.image_src;

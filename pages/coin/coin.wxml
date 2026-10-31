@@ -1,5 +1,7 @@
-<view style="padding-bottom: 42px;">
-	<view class="record">
+<view class="history-page" style="padding-bottom: 32px;">
+  <view class="coin-header"><view class="page-title">百科币明细</view><view class="page-subtitle">你的每一份收获与使用，都记录在这里</view></view>
+  <view class="coin-records">
+	<view class="record record-heading">
 		<text class="item-text item-text1" style="font-weight: normal;">数量</text>
 		<text class="item-text item-text2">来源</text>
 		<text class="item-text item-text3">时间</text>
@@ -9,7 +11,10 @@
 		<text class="item-text item-text2"> {{item.source_text}}</text>
 		<text class="item-text item-text3">{{item.create_time}}</text>
 	</view>
-	<view wx:if="{{no_more_data == 1 && record_list.length > 0}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">我是有底线滴 :)</view>
-	<view wx:if="{{record_list.length == 0 && !loading_str}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">没有更多数据啦 :(</view>
-	<view wx:if="{{loading_str}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">{{loading_str}}</view>
+  </view>
+	<view wx:if="{{no_more_data == 1 && record_list.length > 0}}" class="list-footer">我是有底线滴 :)</view>
+	<view wx:if="{{record_list.length == 0 && !loading_str}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-coin.png" mode="aspectFit" /><view class="empty-title">还没有百科币记录</view><view class="empty-description">参与挑战，积累你的第一份收获</view></view>
+	<view wx:if="{{loading_str}}" class="list-footer">{{loading_str}}</view>
 </view>
+
+<ui-feedback state="{{ui_feedback}}" />

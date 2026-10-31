@@ -1,0 +1,23 @@
+<view class="page-shell daily-page">
+  <view class="page-title">每日挑战</view>
+  <view class="page-subtitle">每天一道题，给好奇心一点回应</view>
+  <view wx:if="{{view_state == 'ready'}}">
+    <view class="daily-card surface">
+      <view class="daily-card-top"><text class="daily-date">{{today.date}}</text><text class="daily-tag">今日一题</text></view>
+      <image class="daily-illustration" src="/images/ui-daily.png" mode="aspectFit" />
+      <view class="daily-title">今天的知识挑战，已就绪</view>
+      <view class="daily-description">与大家一起，发现一个新的知识点</view>
+      <button class="primary-button daily-start" bindtap="startDaily" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">开始今日挑战</button>
+    </view>
+    <view class="reminder-card surface">
+      <view class="reminder-row"><view><view class="reminder-title">每日提醒</view><view class="reminder-time">早上 <text>08:00</text></view></view><switch color="#2864eb" checked="{{enabled}}" disabled="{{pending}}" bindchange="toggleReminder" aria-label="每日八点提醒" /></view>
+      <view class="reminder-divider"></view>
+      <view class="reminder-copy">请允许<text class="reminder-link" bindtap="subscribeReminder" aria-role="button">订阅消息</text>，接收下一次题目提醒</view>
+      <view class="reminder-status" wx:if="{{enabled && credits > 0}}">已获得 {{credits}} 次提醒授权</view>
+      <view class="reminder-note">当前为一次性订阅，每次允许后可收到一条提醒；可在这里再次订阅。</view>
+    </view>
+  </view>
+  <view class="daily-state" wx:elif="{{view_state == 'logged-out'}}"><image src="/images/ui-empty-question.png" mode="aspectFit" /><view class="state-title">登录后开启每日挑战</view><view class="state-description">每天一道题，也可以订阅早上八点的提醒</view><button class="primary-button" bindtap="loginAndLoad" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">去登录</button></view>
+  <view class="daily-state" wx:elif="{{view_state == 'error'}}"><image src="/images/ui-empty-question.png" mode="aspectFit" /><view class="state-title">今日挑战暂时打不开</view><view class="state-description">{{error_message}}</view><button class="state-retry" bindtap="loadDaily">重新加载</button></view>
+</view>
+<ui-feedback state="{{ui_feedback}}" />

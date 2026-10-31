@@ -1,0 +1,46 @@
+.help-page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+.help-page > .page-subtitle {
+  margin-bottom: 24px;
+}
+.help-section {
+  padding: 24px 20px;
+  margin-bottom: 16px;
+}
+.help-heading {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 17px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.help-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  margin-right: 12px;
+  color: #2056ce;
+  background: #edf3ff;
+  font-size: 13px;
+}
+.help-copy {
+  font-size: 14px;
+  line-height: 1.9;
+  color: #68758a;
+}
+.help-item + .help-item {
+  margin-top: 18px;
+}
+.help-item-title {
+  color: #35435a;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}

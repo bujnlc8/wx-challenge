@@ -49,6 +49,7 @@ Page({
         }
       })
       .catch(() => {
+        this.setData({ loading_str: "" });
         showToast("网络异常");
       });
   },

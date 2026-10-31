@@ -1,11 +1,13 @@
-<!-- <view class="board" wx:if="{{!flag}}" catchtouchmove="catchtouchmove"></view> -->
 <view class="{{show_modal ? 'wx-popup': ''}}" hidden="{{flag}}" wx:if="{{content}}">
-	<view class='popup-container'>
-		<view class="wx-popup-title" wx:if="{{title}}">{{title}}</view>
-		<view class="wx-popup-con">{{content}}</view>
-		<view class="wx-popup-btn">
-			<text class="btn-no btn" bindtap='popupCancel' style="cursor: pointer;">{{btn_no}}</text>
-			<text class="btn" bindtap='popupConfirm' style="cursor: pointer;">{{btn_ok}}</text>
-		</view>
-	</view>
+  <view class="popup-container">
+    <view class="popup-header">
+      <view class="wx-popup-title" wx:if="{{title}}">{{title}}</view>
+      <button class="popup-close" bindtap="popupCancel" aria-label="取消并关闭" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button>
+    </view>
+    <view class="wx-popup-con">{{content}}</view>
+    <view class="wx-popup-btn">
+      <text class="btn-no btn" bindtap="popupCancel" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_no}}</text>
+      <text class="btn" bindtap="popupConfirm" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_ok}}</text>
+    </view>
+  </view>
 </view>

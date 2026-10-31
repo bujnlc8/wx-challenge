@@ -1,73 +1,55 @@
-/* pages/answer/answer.wxss */
-
-.current_score {
-  font-size: 25px;
-  color: green;
-}
-
-.skip {
-  font-size: 18px;
-  color: #61ac85;
-  height: 36px;
-  line-height: 36px;
-}
-
 .count_down_class {
-  margin-top: 16px;
-  font-size: 16px;
-  height: 42px;
-  line-height: 42px;
+  color: #68758a;
+  font-size: 14px;
 }
-
-.sub_button {
-  margin-top: 16px;
-  width: 45%;
-  border: 1px solid #61ac85;
-  text-align: center;
-  line-height: 42px;
-  height: 42px;
-  margin-left: auto;
-  border-radius: 20px;
-}
-
-.sub_button_active {
-  background-color: #61ac85;
-  color: white;
-}
-
-.right_answer_class {
-  margin-top: 16px;
-  font-size: 16px;
-  height: 42px;
-  line-height: 42px;
-}
-
-.next-question {
-  margin-top: 16px;
-  width: 45%;
-  border: 1px solid #61ac85;
-  text-align: center;
-  line-height: 42px;
-  height: 42px;
-  margin-left: 10%;
-  border-radius: 20px;
-}
-
-.up-question {
-  margin-top: 16px;
-  width: 45%;
-  border: 1px solid #61ac85;
-  text-align: center;
-  line-height: 42px;
-  height: 42px;
-  margin-left: 0px;
-  border-radius: 20px;
-}
-
 .count-down-stop {
-  color: #ed9db2;
+  color: #68758a;
+  font-size: 22px;
+  font-weight: 700;
+  margin-left: 4px;
 }
-
 .count-down {
-  color: #61ac85;
+  color: #2056ce;
+  font-size: 22px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+.sub_button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  width: 50%;
+  min-height: 50px;
+  border: 1px solid #d4dff5;
+  border-radius: 14px;
+  background: #edf3ff;
+  color: #2056ce;
+  font-size: 16px;
+  font-weight: 600;
+}
+.sub_button_active {
+  background: #2864eb;
+  border-color: #2864eb;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(40, 100, 235, 0.16);
+}
+.question-pagination {
+  display: flex;
+  margin-top: 16px;
+}
+.up-question,
+.next-question {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 46px;
+  border: 1px solid #e3e9f2;
+  border-radius: 12px;
+  color: #4e5c72;
+  font-size: 14px;
+}
+.next-question {
+  margin-left: 12px;
 }

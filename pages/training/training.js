@@ -1,6 +1,12 @@
 // pages/answer/answer.js
 const app = getApp();
-import { httpPOST, shareGetCoin, showToast } from "../../utils/util";
+import {
+  httpPOST,
+  shareGetCoin,
+  showToast,
+  showLoading,
+  hideLoading,
+} from "../../utils/util";
 Page({
   data: {
     questions: [],
@@ -54,7 +60,7 @@ Page({
       showToast("请先登录");
       return;
     }
-    wx.showLoading({
+    const loading = showLoading({
       title: "加载中...",
     });
     httpPOST("api/question/training-question", {
@@ -76,11 +82,11 @@ Page({
           });
           this.startAnswer(1);
         }
-        wx.hideLoading();
       })
       .catch(() => {
         showToast("网络异常");
-      });
+      })
+      .finally(() => hideLoading(loading));
   },
   stopCountDown: function () {
     this.setData({
@@ -215,7 +221,7 @@ Page({
             }
             if (
               this.data.correct_question_ids.indexOf(
-                this.data.current_question_id
+                this.data.current_question_id,
               ) == -1
             ) {
               var data = this.data.correct_question_ids;
@@ -330,6 +336,21 @@ Page({
    * 页面上拉触底事件的处理函数
    */
   onReachBottom() {},
+  openQuestionPoster() {
+    if (!this.data.current_question_id) return;
+    this.selectComponent("#question-poster").open({
+      id: Number(this.data.current_question_id),
+      content: this.data.current_question,
+      options: [
+        this.data.option_a,
+        this.data.option_b,
+        this.data.option_c,
+        this.data.option_d,
+      ].filter((value) => value !== "" && value != null),
+      question_image: this.data.question_image,
+      option_type: this.data.option_type,
+    });
+  },
   onShareAppMessage() {
     shareGetCoin();
     return {
@@ -360,7 +381,7 @@ Page({
           showToast(res.data.message);
           return;
         }
-        wx.showToast({
+        showToast({
           title: "操作成功",
           icon: "success",
         });

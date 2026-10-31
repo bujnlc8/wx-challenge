@@ -2,6 +2,8 @@ import {
   background_music,
   inner_audio_context,
   showToast,
+  showLoading,
+  hideLoading,
   httpJsonPOST,
   httpGET,
 } from "./utils/util";
@@ -53,7 +55,7 @@ App({
           }
         })
         .catch((e) => {
-          showToast("登录失败" + e.errMsg);
+          showToast((e && (e.errMsg || e.message)) || "登录失败");
         });
     } else {
       if (cb) {
@@ -62,7 +64,7 @@ App({
     }
   },
   getUid() {
-    wx.showLoading({
+    const loading = showLoading({
       title: "登录中...",
     });
     return new Promise((resolve, reject) => {
@@ -81,7 +83,7 @@ App({
               encrypted_data: this.global_data.encrypted_data,
             })
               .then((res) => {
-                wx.hideLoading();
+                hideLoading(loading);
                 if (res.data.code == 10000) {
                   try {
                     wx.setStorageSync("uid", res.data.data.uid);
@@ -95,18 +97,22 @@ App({
                 }
               })
               .catch((err) => {
-                wx.hideLoading();
+                hideLoading(loading);
                 reject(err);
               });
           } else {
-            wx.showToast({
+            hideLoading(loading);
+            reject(e.detail);
+            showToast({
               title: "登录失败",
               icon: "none",
             });
           }
         })
         .catch((err) => {
-          wx.showToast({
+          hideLoading(loading);
+          reject(err);
+          showToast({
             title: "登录失败",
             icon: "none",
           });

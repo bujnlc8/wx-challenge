@@ -1,0 +1,197 @@
+/* One-shot entry effects. No retained transform on page wrappers: their fixed
+   descendants must return to viewport positioning after the entry finishes. */
+.page-shell,
+.home,
+.practice-page,
+.about-page,
+.question-container,
+.history-page {
+  animation: ui-page-enter 220ms ease-out;
+}
+
+.practice-page .page-shell {
+  animation: none;
+}
+
+.primary-button,
+.sub_button,
+.skip,
+.iknow,
+.dialog-action,
+.dialog-close,
+.menu,
+.category-option,
+.question-share-button,
+.practice-rules-link,
+.about-share,
+.about-logout,
+.avatar-wrapper,
+.wallet-heading,
+.grade-row,
+.upgrade-note,
+.logout-menu,
+.btn,
+.feedback-submit,
+.poster-button,
+.popup-close,
+.poster-close {
+  transition:
+    transform 140ms ease-out,
+    opacity 140ms ease-out,
+    background-color 140ms ease-out,
+    border-color 140ms ease-out,
+    color 140ms ease-out;
+}
+
+.option-common,
+.option {
+  transition:
+    background-color 160ms ease-out,
+    border-color 160ms ease-out,
+    color 160ms ease-out;
+}
+
+.button-pressed {
+  transform: scale(0.98);
+  opacity: 0.85;
+}
+
+.pop-tip,
+.popup-container,
+.feedback {
+  animation: ui-centered-dialog-enter 180ms ease-out;
+}
+
+.category-sheet {
+  animation: ui-sheet-enter 220ms ease-out;
+}
+
+/* Poster dialogs are centered vertically but use left/right for horizontal
+   placement, so they must not inherit the centered-dialog transform. */
+.poster-dialog {
+  animation: ui-poster-enter 180ms ease-out;
+}
+
+.board,
+.poster-mask,
+.feedback-mask {
+  animation: ui-backdrop-enter 180ms ease-out;
+}
+
+.feedback-loading,
+.feedback-toast {
+  animation: ui-feedback-enter 160ms ease-out;
+}
+
+@keyframes ui-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ui-centered-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes ui-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ui-poster-enter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-50% + 12px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+@keyframes ui-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ui-feedback-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-shell,
+  .home,
+  .practice-page,
+  .about-page,
+  .question-container,
+  .pop-tip,
+  .popup-container,
+  .feedback,
+  .category-sheet,
+  .poster-dialog,
+  .board,
+  .poster-mask,
+  .feedback-mask,
+  .feedback-loading,
+  .feedback-toast {
+    animation: none;
+  }
+
+  .primary-button,
+  .sub_button,
+  .skip,
+  .iknow,
+  .dialog-action,
+  .dialog-close,
+  .menu,
+  .category-option,
+  .question-share-button,
+  .practice-rules,
+  .avatar-wrapper,
+  .wallet-heading,
+  .grade-row,
+  .upgrade-note,
+  .logout-menu,
+  .btn,
+  .feedback-submit,
+  .poster-button,
+  .popup-close,
+  .poster-close,
+  .option-common,
+  .option {
+    transition: none;
+  }
+
+  .button-pressed {
+    transform: none;
+  }
+}

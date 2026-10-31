@@ -1,10 +1,11 @@
 <wxs src="../../utils/util.wxs" module="tools" />
 <view class="board" wx:if="{{show_tip == 1 || show_analysis}}" catchtouchmove="catchtouchmove"></view>
-<view style="padding-bottom: 42px;">
-	<view style="display: flex;margin-left: 12%;margin-top: 5px;margin-bottom: 16px;" wx:if="{{question_list}}">
-		<view style="height: 18px;width: 18px;background-color: #ed9db2;"></view>
-		<text style="margin-left: 5px;font-size: 12px;color: gray;">您的答案</text>
-		<view style="height: 18px;width: 18px;background-color:#61ac85;margin-left: 62px;"></view><text style="margin-left: 5px;font-size: 12px;color: gray;">正确答案</text>
+<view class="history-page" style="padding-bottom: 32px;">
+  <view class="wrong-heading"><view class="page-title">把错题，变成收获</view><view class="page-subtitle">点击题干查看答案，长按题目删除记录</view></view>
+	<view class="answer-legend" wx:if="{{question_list}}">
+		<view class="legend-swatch"></view>
+		<text >您的答案</text>
+		<view class="legend-swatch legend-correct"></view><text >正确答案</text>
 	</view>
 	<view wx:for="{{question_list}}" wx:key="id" class="question" bindlongpress="longpressQuestion" mark:i="{{item.id}}" mark:ii="{{index}}" style="cursor: pointer;">
 		<view class="question_body" bindtap="showAnswer" style="cursor: pointer;">{{index + 1}}、
@@ -37,33 +38,42 @@
 				<image src="{{option}}" class="image-option" mode="widthFix" />
 			</view>
 		</view>
-		<view style="display: flex; align-items: center;">
-			<text style="font-size: 10px;color: gray;display: flex;">{{item.create_time}} {{item.answer == 0 ? '(超时)' : ''}}</text>
-			<image wx:if="{{item.analysis}}" src="/images/analysis.png" style="display: flex;width: 17px;height: 17px;margin-left: auto;cursor: pointer;" bindtap="showAnalysis" /><text bindtap="showAnalysis" style="font-size: 10px;color: gray; margin-left: 5px;cursor: pointer;" wx:if="{{item.analysis}}">答案解析</text>
-			<image src="/images/report_error.png" style="display: flex;width: 17px;height: 17px;margin-left: auto;cursor: pointer;" bindtap="reportErr" /><text bindtap="reportErr" style="font-size: 10px;color: gray; margin-left: 5px;cursor: pointer;">这题有问题</text>
+		<view class="question-share-row"><button class="question-share-button" bindtap="openWrongQuestionPoster" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><image src="/images/ui-share.png" class="question-share-icon" />生成分享海报</button></view>
+		<view class="question-footer">
+			<text class="question-date">{{item.create_time}} {{item.answer == 0 ? '(超时)' : ''}}</text>
+			<image wx:if="{{item.analysis}}" src="/images/analysis.png" class="question-action-icon" bindtap="showAnalysis" /><text bindtap="showAnalysis" class="question-action" wx:if="{{item.analysis}}">答案解析</text>
+			<image src="/images/report_error.png" class="question-action-icon report-action-icon" bindtap="reportErr" /><text bindtap="reportErr" class="question-action">这题有问题</text>
 		</view>
 	</view>
-	<view wx:if="{{no_more_data == 1 && question_list.length > 0}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">我是有底线滴 :)</view>
-	<view wx:if="{{question_list.length == 0 && !loading_str}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">没有更多数据啦 :(</view>
-	<view wx:if="{{loading_str}}" style="text-align: center;color: gray;margin-top: 10px;font-size: 15px;">{{loading_str}}</view>
+	<view wx:if="{{no_more_data == 1 && question_list.length > 0}}" class="list-footer">我是有底线滴 :)</view>
+	<view wx:if="{{question_list.length == 0 && !loading_str}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-question.png" mode="aspectFit" /><view class="empty-title">还没有错题记录</view><view class="empty-description">每一次认真思考，都是新的积累</view></view>
+	<view wx:if="{{loading_str}}" class="list-footer">{{loading_str}}</view>
 </view>
-<view class="pop-tip" bindlongpress="closeTip" wx:if="{{show_tip == 1}}" style="cursor: pointer;">
-	<view class="pop-tip-title">错题集说明</view>
+<view class="pop-tip" wx:if="{{show_tip == 1}}" bindlongpress="closeTip">
+  <view class="dialog-header"><view class="pop-tip-title">错题集说明</view><button class="dialog-close" bindtap="closeTip" aria-label="关闭错题集说明" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button></view>
+  <view class="dialog-scroll dialog-scroll-short"><view class="dialog-body">
 	<view class="rule-item">（1）点击题干显示正确答案</view>
 	<view class="rule-item">（2）长按题干可删除该条记录</view>
 	<view class="rule-item">（3）点击“这题有问题”可以对题目进行反馈</view>
 	<view class="rule-item">（4）点击“答案解析”可以查看答案解析</view>
-	<view class="iknow" bindtap="closeTip" style="cursor: pointer;">知道了</view>
+  </view></view>
+  <view class="dialog-footer"><view class="iknow" bindtap="closeTip" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">知道了</view></view>
 </view>
-<view class="pop-tip" bindlongpress="closeAnalysis" wx:if="{{show_analysis}}" style="cursor: pointer;">
-	<view class="pop-tip-title">答案解析</view>
+<view class="pop-tip" wx:if="{{show_analysis}}" bindlongpress="closeAnalysis">
+  <view class="dialog-header"><view class="pop-tip-title">答案解析</view><button class="dialog-close" bindtap="closeAnalysis" aria-label="关闭答案解析" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button></view>
+  <view class="dialog-scroll"><view class="dialog-body">
 	<view class="rule-item" wx:if="{{ tools.indexOf(analysis, '/>') || tools.indexOf(analysis, '</')}}">
 		<rich-text space="true" nodes="{{analysis}}"></rich-text>
 	</view>
 	<view class="rule-item" wx:if="{{ !(tools.indexOf(analysis, '/>') || tools.indexOf(analysis, '</'))}}" style="text-indent: 31px;">
 		<text decode="true">{{analysis}}</text>
 	</view>
-	<view style="cursor: pointer;" class="iknow" bindtap="closeAnalysis">关闭</view>
+  </view></view>
+  <view class="dialog-footer"><view class="iknow" bindtap="closeAnalysis" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">知道了</view></view>
 </view>
 <popup class="popup_compon" bind:error="popupCancel" bind:success="popupConfirm"></popup>
 <report show_feedback="{{show_feedback}}" question_id="{{current_question_id}}" class="report" />
+
+<ui-feedback state="{{ui_feedback}}" />
+
+<question-poster id="question-poster" />

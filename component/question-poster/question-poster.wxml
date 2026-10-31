@@ -1,0 +1,34 @@
+<canvas type="2d" id="question-poster-canvas" class="poster-canvas"></canvas>
+<view wx:if="{{visible}}" class="poster-overlay">
+  <view class="poster-mask" bindtap="close" catchtouchmove="preventTouch"></view>
+  <view class="poster-dialog" aria-role="dialog" aria-label="{{appMode ? '分享小程序' : '分享这道题'}}">
+    <view class="poster-heading">
+      <view><text class="poster-heading__title">{{appMode ? '分享小程序' : '分享这道题'}}</text><text class="poster-heading__caption">{{appMode ? '与朋友一起，探索更多知识' : '把好题分享给朋友，一起挑战'}}</text></view>
+      <button class="poster-close" bindtap="close" aria-label="关闭海报" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view></view></button>
+    </view>
+    <view wx:if="{{loading}}" class="poster-state">
+      <view class="poster-spinner"></view>
+      <text class="poster-state__title">{{appMode ? '正在生成分享海报' : '正在生成题目海报'}}</text>
+      <text class="poster-state__description">{{appMode ? '正在准备小程序码，稍等片刻' : '正在准备完整题目和专属小程序码'}}</text>
+    </view>
+    <view wx:elif="{{error}}" class="poster-state">
+      <image class="poster-empty" src="/images/ui-empty-question.svg" mode="aspectFit"></image>
+      <text class="poster-state__title">海报暂时无法生成</text>
+      <text class="poster-state__description">{{error}}</text>
+      <button class="poster-button poster-button--primary poster-retry" bindtap="retry" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">重新生成</button>
+    </view>
+    <block wx:elif="{{imagepath}}">
+      <view class="poster-scroll">
+        <image class="poster-image" src="{{imagepath}}" mode="widthFix" show-menu-by-longpress="{{true}}" bindtap="preview" binderror="handleImageError" aria-label="{{appMode ? '小程序海报，点击放大预览' : '题目海报，点击放大预览'}}"></image>
+      </view>
+      <text class="poster-hint">点击放大预览，长按海报也可以分享</text>
+      <text wx:if="{{environmentNote}}" class="poster-environment">{{environmentNote}}</text>
+      <view class="poster-actions">
+        <button class="poster-button poster-button--secondary" bindtap="preview" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">预览海报</button>
+        <button class="poster-button poster-button--primary" bindtap="save" disabled="{{saving}}" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{saving ? '正在保存…' : '保存到相册'}}</button>
+      </view>
+      <text wx:if="{{saveMessage}}" class="poster-save-message">{{saveMessage}}</text>
+      <button wx:if="{{albumDenied}}" class="poster-setting" bindtap="openAlbumSettings">前往相册权限设置</button>
+    </block>
+  </view>
+</view>

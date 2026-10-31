@@ -16,7 +16,8 @@ Page({
     category: 0,
     category_lables: app.category_lables,
     categories: app.categories,
-    show_about_me: 0,
+    category_sheet_visible: false,
+    category_draft: 0,
     is_ios: app.is_ios,
   },
 
@@ -42,7 +43,7 @@ Page({
             correct_rate = Math.ceil(
               (1 -
                 res.data.data.wrong_question / res.data.data.total_question) *
-                100
+                100,
             );
           }
           this.setData({
@@ -70,15 +71,6 @@ Page({
     app.clickSound();
     app.checkLogin(this.getUserMine);
   },
-  logout: function () {
-    app.clickSound();
-    wx.clearStorageSync("uid");
-    wx.clearStorageSync("mine_cache");
-    this.setData({
-      logined: 0,
-      user_info: {},
-    });
-  },
   chooseAvatar: function (e) {
     uploadImage(e.detail.avatarUrl, this.uploadAvatarCb);
   },
@@ -99,7 +91,7 @@ Page({
           showToast(res.data.message);
           return;
         } else {
-          wx.showToast({
+          showToast({
             title: "头像更新成功",
             icon: "success",
             duration: 2000,
@@ -124,7 +116,7 @@ Page({
           showToast(res.data.message);
           return;
         } else {
-          wx.showToast({
+          showToast({
             title: "昵称更新成功",
             icon: "success",
             duration: 2000,
@@ -150,6 +142,10 @@ Page({
     wx.navigateTo({
       url: "/pages/wrong/wrong",
     });
+  },
+  goToDaily: function () {
+    app.clickSound();
+    wx.navigateTo({ url: "/pages/daily/daily" });
   },
   goToSetting: function () {
     app.clickSound();
@@ -190,6 +186,40 @@ Page({
     app.category = category;
     wx.setStorageSync("question_category", app.category);
   },
+  openCategorySheet: function () {
+    app.clickSound();
+    this.setData({
+      category_draft: Number(this.data.category),
+      category_sheet_visible: true,
+    });
+  },
+  chooseCategoryDraft: function (e) {
+    var category = Number(e.currentTarget.dataset.index);
+    if (
+      !this.data.category_sheet_visible ||
+      !Number.isInteger(category) ||
+      category < 0 ||
+      category >= this.data.category_lables.length
+    ) {
+      return;
+    }
+    this.setData({ category_draft: category });
+  },
+  cancelCategorySheet: function () {
+    app.clickSound();
+    this.setData({
+      category_sheet_visible: false,
+      category_draft: Number(this.data.category),
+    });
+  },
+  confirmCategorySheet: function () {
+    if (!this.data.category_sheet_visible) {
+      return;
+    }
+    app.clickSound();
+    this.selectQuestionType({ detail: { value: this.data.category_draft } });
+    this.setData({ category_sheet_visible: false });
+  },
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
@@ -214,6 +244,11 @@ Page({
       this.setUserInfoFromCache();
       this.getUserMine();
     } else {
+      this.setData({
+        logined: 0,
+        user_info: {},
+        category_sheet_visible: false,
+      });
       showToast("请点击头像登录");
     }
     this.setData({
@@ -277,33 +312,15 @@ Page({
   },
   showHelp: function () {
     app.clickSound();
-    app.show_help_tip = 1;
-    wx.switchTab({
-      url: "/pages/index/index",
-    });
-  },
-  closeAbdoutMe: function () {
-    app.clickSound();
-    this.setData({
-      show_about_me: 0,
+    wx.navigateTo({
+      url: "/pages/help/help",
     });
   },
   aboutMe: function () {
     app.clickSound();
-    this.setData({
-      show_about_me: 1,
+    wx.navigateTo({
+      url: "/pages/about/about",
     });
   },
   catchtouchmove: function () {},
-  copyUrl: function () {
-    wx.setClipboardData({
-      data: "https://igsc.admin.haihui.site",
-      success: function () {
-        wx.showToast({
-          title: "链接已复制",
-          icon: "none",
-        });
-      },
-    });
-  },
 });
