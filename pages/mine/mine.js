@@ -138,9 +138,6 @@ Page({
   },
   goToWrongQuestion: function () {
     app.clickSound();
-    if (this.data.user_info.wrong_question == 0) {
-      return;
-    }
     wx.navigateTo({
       url: "/pages/wrong/wrong",
     });

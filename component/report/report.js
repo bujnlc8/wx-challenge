@@ -2,6 +2,12 @@ import { createModalLock } from "../../utils/modal-lock";
 import { httpPOST, httpGET, showToast } from "../../utils/util";
 
 const app = getApp();
+function feedbackAccount() {
+  return JSON.stringify([
+    wx.getStorageSync("uid") || "",
+    wx.getStorageSync("token") || "",
+  ]);
+}
 Component({
   properties: {
     show_feedback: {
@@ -22,48 +28,124 @@ Component({
     feedback_remark: "",
     feedback_checked_value: [],
     captcha_data: "",
+    submit_pending: false,
   },
   observers: {
-    show_feedback(visible) {
-      if (this._modalLock) this._modalLock.set(visible);
+    "show_feedback, question_id"() {
+      this.syncFeedbackSession();
+      if (
+        this._captchaAwaitingVisible &&
+        this.data.show_feedback &&
+        !this._reportHidden
+      ) {
+        this._captchaAwaitingVisible = false;
+        this.getCaptcha();
+      }
     },
   },
   lifetimes: {
     attached() {
       this._modalLock = createModalLock();
-      this._modalLock.set(this.data.show_feedback);
+      this._reportAttached = true;
+      this._reportDisposed = false;
+      this._reportHidden = false;
+      this._reportGeneration = 0;
+      this._captchaSequence = 0;
+      this.syncFeedbackSession();
     },
     detached() {
+      this._reportDisposed = true;
+      this._captchaAwaitingVisible = false;
+      this._reportGeneration++;
+      this._captchaSequence++;
+      this._pendingFeedback = null;
       if (this._modalLock) this._modalLock.dispose();
     },
   },
   pageLifetimes: {
-    show: function () {
-      if (this._modalLock) {
-        this._modalLock.set(this.data.show_feedback);
-        this._modalLock.show();
-      }
+    show() {
+      this._reportHidden = false;
+      this.syncFeedbackSession();
+      if (this._modalLock) this._modalLock.show();
     },
-    hide: function () {
+    hide() {
+      this._reportHidden = true;
+      this._captchaAwaitingVisible = false;
+      this.invalidateFeedback();
       if (this._modalLock) this._modalLock.hide();
-      this.setData({
-        feedback_remark: "",
-        captcha_token: "",
-        captcha_image: "",
-        feedback_checked_value: [],
-        captcha_data: "",
-      });
     },
   },
   /**
    * 组件的方法列表
    */
   methods: {
-    getCaptcha: function () {
+    invalidateFeedback() {
+      this._reportGeneration = (this._reportGeneration || 0) + 1;
+      this._captchaSequence = (this._captchaSequence || 0) + 1;
+      this._pendingFeedback = null;
+      this.setData({
+        feedback_remark: "",
+        captcha_token: "",
+        captcha_image: "",
+        feedback_checked_value: [],
+        captcha_data: "",
+        submit_pending: false,
+      });
+    },
+    syncFeedbackSession() {
+      if (!this._reportAttached || this._reportDisposed) return;
+      const owner = feedbackAccount();
+      const visible = !!this.data.show_feedback;
+      const questionId = Number(this.data.question_id);
+      if (
+        owner !== this._reportOwner ||
+        visible !== this._reportVisible ||
+        questionId !== this._reportQuestion
+      ) {
+        this._reportOwner = owner;
+        this._reportVisible = visible;
+        this._reportQuestion = questionId;
+        this.invalidateFeedback();
+      }
+      if (this._modalLock) this._modalLock.set(visible);
+    },
+    feedbackSession() {
+      return {
+        generation: this._reportGeneration,
+        owner: this._reportOwner,
+        questionId: Number(this.data.question_id),
+      };
+    },
+    isFeedbackCurrent(session) {
+      return (
+        !this._reportDisposed &&
+        !this._reportHidden &&
+        this.data.show_feedback &&
+        session.generation === this._reportGeneration &&
+        session.owner === feedbackAccount() &&
+        session.owner === this._reportOwner &&
+        session.questionId === Number(this.data.question_id)
+      );
+    },
+    getCaptcha() {
+      if (this._reportDisposed || this._reportHidden) return;
+      this.syncFeedbackSession();
+      if (!this.data.show_feedback) {
+        this._captchaAwaitingVisible = true;
+        return;
+      }
+      if (this.data.submit_pending) return;
+      const session = this.feedbackSession();
+      const sequence = ++this._captchaSequence;
+      const current = () =>
+        this.isFeedbackCurrent(session) && sequence === this._captchaSequence;
       httpGET("api/common/captcha")
         .then((res) => {
-          if (res.data.code != 10000) {
-            showToast(res.data.message);
+          if (!current()) return;
+          if (!res || !res.data || res.data.code != 10000) {
+            showToast(
+              (res && res.data && res.data.message) || "验证码暂时不可用",
+            );
             return;
           }
           this.setData({
@@ -72,25 +154,36 @@ Component({
           });
         })
         .catch(() => {
-          showToast("网络异常");
+          if (current()) showToast("网络异常");
         });
     },
     feedbackRemarkInput: function (e) {
+      if (this.data.submit_pending) return;
       this.setData({
         feedback_remark: e.detail.value,
       });
     },
     feedbackChecked: function (e) {
+      if (this.data.submit_pending) return;
       this.setData({
         feedback_checked_value: e.detail.value,
       });
     },
     captchaInput: function (e) {
+      if (this.data.submit_pending) return;
       this.setData({
         captcha_data: e.detail.value,
       });
     },
     feedbackSubmit: function () {
+      this.syncFeedbackSession();
+      if (
+        !this.data.show_feedback ||
+        this._reportDisposed ||
+        this._reportHidden ||
+        this.data.submit_pending
+      )
+        return;
       if (
         this.data.feedback_checked_value.length == 0 &&
         this.data.feedback_remark.replaceAll(/\s/g, "").length == 0
@@ -110,6 +203,12 @@ Component({
       for (var i = 0; i < feedback_checked_value.length; i++) {
         feedback_value += parseInt(feedback_checked_value[i]);
       }
+      const session = this.feedbackSession();
+      const submission = {};
+      this._pendingFeedback = submission;
+      this.setData({ submit_pending: true });
+      const current = () =>
+        this.isFeedbackCurrent(session) && this._pendingFeedback === submission;
       httpPOST("api/common/feedback", {
         token: this.data.captcha_token,
         question_id: this.data.question_id,
@@ -118,6 +217,7 @@ Component({
         type: feedback_value,
       })
         .then((res) => {
+          if (!current()) return;
           if (res.data.code != 10000) {
             showToast(res.data.message);
             return;
@@ -126,10 +226,17 @@ Component({
           this.closeFeedback();
         })
         .catch(() => {
-          showToast("网络异常");
+          if (current()) showToast("网络异常");
+        })
+        .finally(() => {
+          if (current()) {
+            this._pendingFeedback = null;
+            this.setData({ submit_pending: false });
+          }
         });
     },
     closeFeedback: function () {
+      if (!this.data.show_feedback || this._reportDisposed) return;
       app.clickSound();
       this.setData({
         show_feedback: false,

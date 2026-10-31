@@ -12,9 +12,19 @@ import {
 } from "../../utils/daily-subscription";
 const app = getApp();
 function payload(response) {
-  if (!response || response.data.code !== 10000)
+  if (
+    response &&
+    (response.statusCode === 401 ||
+      (response.data && Number(response.data.code) === 11111))
+  ) {
+    const error = new Error("登录已失效，请重新登录");
+    error.authentication = true;
+    throw error;
+  }
+  if (!response || !response.data || response.data.code !== 10000)
     throw new Error(
-      (response && response.data.message) || "暂时无法连接，请稍后重试",
+      (response && response.data && response.data.message) ||
+        "暂时无法连接，请稍后重试",
     );
   return response.data.data;
 }
@@ -40,10 +50,36 @@ Page({
     activity_scroll_target: "",
   },
   onLoad() {
+    this.initializeSubscriptions();
+  },
+  initializeSubscriptions() {
     this._subscriptions = createDailySubscription({
       platform: wx,
       recordAcceptance: (data) =>
         httpPOST("api/daily-challenge/reminder/accept", data).then(payload),
+    });
+  },
+  expireDailySession(owner) {
+    if (this._disposed || this._visible === false || owner !== account())
+      return;
+    ["uid", "token", "mine_cache"].forEach((key) => wx.removeStorageSync(key));
+    this._operation = (this._operation || 0) + 1;
+    this._activityOperation = (this._activityOperation || 0) + 1;
+    this._loginOperation = (this._loginOperation || 0) + 1;
+    this._owner = account();
+    this._templateId = null;
+    this.setData({
+      view_state: "logged-out",
+      today: null,
+      enabled: false,
+      credits: 0,
+      pending: false,
+      error_message: "",
+      next_send_time: "",
+      activity_state: "idle",
+      activity: null,
+      activity_selected: null,
+      activity_scroll_target: "",
     });
   },
   onShow() {
@@ -120,11 +156,14 @@ Page({
         next_send_time: reminder.next_send_time || "",
       });
     } catch (error) {
-      if (this.isCurrent(operation, owner))
-        this.setData({
-          view_state: "error",
-          error_message: error.message || "今日挑战暂时打不开",
-        });
+      if (this.isCurrent(operation, owner)) {
+        if (error.authentication) this.expireDailySession(owner);
+        else
+          this.setData({
+            view_state: "error",
+            error_message: error.message || "今日挑战暂时打不开",
+          });
+      }
     } finally {
       hideLoading(loading);
     }
@@ -166,12 +205,15 @@ Page({
         },
       );
     } catch (error) {
-      if (current())
-        this.setData({
-          activity_state: "error",
-          activity: null,
-          activity_selected: null,
-        });
+      if (current()) {
+        if (error.authentication) this.expireDailySession(owner);
+        else
+          this.setData({
+            activity_state: "error",
+            activity: null,
+            activity_selected: null,
+          });
+      }
     }
   },
   selectActivityDay(event) {
@@ -186,7 +228,19 @@ Page({
     }
   },
   loginAndLoad() {
+    const login = (this._loginOperation = (this._loginOperation || 0) + 1);
     app.checkLogin(() => {
+      if (
+        this._disposed ||
+        this._visible === false ||
+        login !== this._loginOperation
+      )
+        return;
+      this._owner = account();
+      this._operation = (this._operation || 0) + 1;
+      this._activityOperation = (this._activityOperation || 0) + 1;
+      this.initializeSubscriptions();
+      this.setData({ pending: false });
       this.loadDaily();
       this.loadActivity();
     });
@@ -196,7 +250,8 @@ Page({
     wx.navigateTo({
       url:
         "/pages/single/single?question_id=" +
-        encodeURIComponent(this.data.today.question_id) + "&from=daily",
+        encodeURIComponent(this.data.today.question_id) +
+        "&from=daily",
     });
   },
   async toggleReminder(event) {
@@ -225,6 +280,10 @@ Page({
           credits: Number(reminder.credits) || 0,
         });
     } catch (error) {
+      if (error.authentication && this.isCurrent(operation, owner)) {
+        this.expireDailySession(owner);
+        return;
+      }
       saveError = error;
     }
     // A native request already in flight can still accept and enable the server preference.
@@ -259,7 +318,10 @@ Page({
       const result = await request;
       if (this.isCurrent(operation, owner)) this.notifySubscription({ result });
     } catch (error) {
-      if (this.isCurrent(operation, owner)) this.notifySubscription({ error });
+      if (this.isCurrent(operation, owner)) {
+        if (error.authentication) this.expireDailySession(owner);
+        else this.notifySubscription({ error });
+      }
     } finally {
       if (this.isCurrent(operation, owner)) {
         this.setData({ pending: false });
@@ -268,6 +330,10 @@ Page({
     }
   },
   notifySubscription(outcome) {
+    if (outcome.error && outcome.error.authentication) {
+      this.expireDailySession(account());
+      return;
+    }
     if (outcome.error) {
       showToast(outcome.error.message || "订阅未完成，请重试");
       return;

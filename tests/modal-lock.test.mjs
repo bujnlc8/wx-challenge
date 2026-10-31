@@ -108,6 +108,7 @@ function component(name, initial = {}) {
   vm.runInNewContext(source, {
     getCurrentPages: () => [s.a],
     getApp: () => ({ clickSound() {} }),
+    wx: { getStorageSync: (key) => (key === "uid" ? "u1" : "t1") },
     Component(value) {
       definition = value;
     },
