@@ -4,7 +4,7 @@
     <image class="about-logo" src="/images/ui-about-logo.png" mode="aspectFit" />
     <view class="about-name">百科知识挑战</view>
     <view class="about-slogan">知识无界，挑战不停</view>
-    <view class="about-version" wx:if="{{version}}">版本 {{version}}</view>
+    <view class="about-version">版本 {{version}}</view>
   </view>
   <button class="about-share" bindtap="openSharePoster" hover-class="button-pressed"><image src="/images/ui-share.png" class="about-share-icon" /><text>分享小程序</text></button>
   <button wx:if="{{logined}}" class="about-logout" bindtap="logout" hover-class="button-pressed">退出当前账号</button>

@@ -113,6 +113,7 @@ function setup(remaining = 3) {
 }
 
 async function showFailure(state, timeout = 0) {
+  state.page.setData({ answer_result: -2 });
   state.page._submitAnswer(timeout);
   await new Promise((resolve) => setImmediate(resolve));
   state.runTimer(1000);

@@ -207,6 +207,13 @@ function answeringPage(mode = "answer") {
   vm.runInNewContext(
     sources() +
       "\n" +
+      fs
+        .readFileSync(
+          new URL("../utils/challenge-settings.js", import.meta.url),
+          "utf8",
+        )
+        .replace(/export\s*\{[\s\S]*?\};?/g, "") +
+      "\n" +
       strip(
         fs.readFileSync(
           new URL(`../pages/${mode}/${mode}.js`, import.meta.url),

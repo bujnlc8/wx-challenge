@@ -4,7 +4,7 @@
   <view class="page-subtitle">从第一道题开始，熟悉你的知识挑战</view>
   <view class="help-section surface">
     <view class="help-heading"><text>开始挑战</text></view>
-    <view class="help-copy">在“挑战”页面点击“开始挑战”进入限时答题。点击“挑战规则”，可以查看计分方式、百科币奖励和跳过规则。</view>
+    <view class="help-copy">在“挑战”页面点击“开始挑战”进入限时答题。可在“答题设置”中自定义每轮1–100题，默认10题，下一轮生效；跳过也计入题数，达到数量后结束本轮。点击“挑战规则”，可查看计分方式、百科币奖励和跳过规则。</view>
   </view>
   <view class="help-section surface">
     <view class="help-heading"><text>自在练习</text></view>
@@ -13,7 +13,7 @@
   <view class="help-section surface">
     <view class="help-heading"><text>单题作答</text></view>
     <view class="help-item"><view class="help-item-title">每日一题与分享题目</view><view class="help-copy">从“每日挑战”或题目分享海报进入，只作答当前这一题。选择选项后提交，答完停留在结果页，没有轮次、复活或自动下一题。</view></view>
-    <view class="help-item"><view class="help-item-title">单题得分</view><view class="help-copy">答对得1000分，答错得0分。单题分数独立展示，不计入挑战排行榜，也不发放百科币。</view></view>
+    <view class="help-item"><view class="help-item-title">单题得分与百科币</view><view class="help-copy">答对得1000分，同时奖励1000百科币。每人每题只奖励一次，重复答对仍有本题得分，不重复加币。答错得0分，不获得百科币。单题分数独立展示，不计入挑战排行榜；百科币入账后计入余额与等级。</view></view>
     <view class="help-item"><view class="help-item-title">作答计时</view><view class="help-copy">题目加载完成后开始正向计时，提交答案时停止。切到后台的时间也会计入；网络等待和重试不增加作答用时。没有超时限制，用时仅供参考，不影响得分。</view></view>
   </view>
   <view class="help-section surface">

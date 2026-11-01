@@ -56,11 +56,15 @@ function questionPresentation(detail, questionId) {
   };
 }
 function checkedResult(detail, questionId, options) {
+  const rewardCoins =
+    detail && detail.reward_coins !== undefined ? detail.reward_coins : 0;
   if (
     !detail ||
     Number(detail.question_id) !== questionId ||
     ![0, 1].includes(detail.result) ||
     !(detail.result === 1 ? [1000, 100] : [0]).includes(detail.score) ||
+    ![0, 1000].includes(rewardCoins) ||
+    (rewardCoins > 0 && (detail.result !== 1 || detail.score !== 1000)) ||
     !options.some((option) => option.number === Number(detail.right_answer)) ||
     (detail.analysis != null && typeof detail.analysis !== "string")
   )
@@ -70,6 +74,7 @@ function checkedResult(detail, questionId, options) {
     right_answer: Number(detail.right_answer),
     analysis: detail.analysis || "",
     score: detail.score,
+    reward_coins: rewardCoins,
   };
 }
 Page({
@@ -88,6 +93,7 @@ Page({
     right_answer: 0,
     analysis: "",
     score: 0,
+    reward_coins: 0,
     elapsed_text: "00:00",
     error_message: "",
     submit_error: "",
@@ -236,6 +242,7 @@ Page({
       result: null,
       analysis: "",
       score: 0,
+      reward_coins: 0,
       submit_error: "",
       show_feedback: false,
     });
@@ -261,6 +268,7 @@ Page({
       right_answer: 0,
       analysis: "",
       score: 0,
+      reward_coins: 0,
       submit_error: "",
       show_feedback: false,
     });
@@ -390,6 +398,13 @@ Page({
         this.data.options,
       );
       this.setData({ ...result, phase: "completed", submit_error: "" });
+      if (result.reward_coins > 0) {
+        try {
+          wx.removeStorageSync("mine_cache");
+        } catch (error) {
+          // Local cache failures cannot invalidate an accepted server reward.
+        }
+      }
     } catch (error) {
       if (this.isCurrent(generation, owner) && this._submission === payload)
         this.setData({

@@ -1,5 +1,12 @@
 const app = getApp();
 import { showToast } from "../../utils/util";
+import {
+  DEFAULT_CHALLENGE_QUESTION_COUNT,
+  getChallengeQuestionCount,
+  parseChallengeQuestionCount,
+  setChallengeQuestionCount,
+} from "../../utils/challenge-settings";
+import { createModalLock } from "../../utils/modal-lock";
 
 Page({
   data: {
@@ -7,6 +14,12 @@ Page({
     show_correct_answer: 1,
     is_ios: app.is_ios,
     show_analysis: app.show_analysis,
+    challenge_question_count: DEFAULT_CHALLENGE_QUESTION_COUNT,
+    question_count_sheet_visible: false,
+    question_count_draft: "",
+    question_count_error: "",
+    question_count_options: [10, 20, 50, 100],
+    modal_locked: false,
   },
 
   /**
@@ -14,8 +27,10 @@ Page({
    */
   onLoad() {
     wx.setNavigationBarTitle({
-      title: "设置",
+      title: "答题设置",
     });
+    this._questionCountModalLock = createModalLock(this);
+    this.setData({ challenge_question_count: getChallengeQuestionCount() });
     if (wx.getStorageSync("sound_close")) {
       this.setData({
         sound_close: 1,
@@ -27,6 +42,77 @@ Page({
       });
     }
   },
+  openQuestionCountSheet() {
+    app.clickSound();
+    this.setData({
+      question_count_sheet_visible: true,
+      question_count_draft: String(this.data.challenge_question_count),
+      question_count_error: "",
+    });
+    this._questionCountModalLock.set(true);
+  },
+  chooseQuestionCount(event) {
+    if (!this.data.question_count_sheet_visible) return;
+    const count = parseChallengeQuestionCount(
+      event.currentTarget.dataset.count,
+    );
+    if (count === null) return;
+    this.setData({
+      question_count_draft: String(count),
+      question_count_error: "",
+    });
+  },
+  inputQuestionCount(event) {
+    if (!this.data.question_count_sheet_visible) return;
+    this.setData({
+      question_count_draft: event.detail.value,
+      question_count_error: "",
+    });
+  },
+  stepQuestionCount(event) {
+    if (!this.data.question_count_sheet_visible) return;
+    const step = Number(event.currentTarget.dataset.step);
+    if (step !== -1 && step !== 1) return;
+    const count = parseChallengeQuestionCount(this.data.question_count_draft);
+    if (count === null) {
+      this.setData({ question_count_error: "请输入 1–100 的整数" });
+      return;
+    }
+    this.setData({
+      question_count_draft: String(Math.max(1, Math.min(100, count + step))),
+      question_count_error: "",
+    });
+  },
+  cancelQuestionCountSheet() {
+    app.clickSound();
+    this.setData({
+      question_count_sheet_visible: false,
+      question_count_draft: String(this.data.challenge_question_count),
+      question_count_error: "",
+    });
+    this._questionCountModalLock.set(false);
+  },
+  confirmQuestionCountSheet() {
+    if (!this.data.question_count_sheet_visible) return;
+    const count = parseChallengeQuestionCount(this.data.question_count_draft);
+    if (count === null) {
+      this.setData({ question_count_error: "请输入 1–100 的整数" });
+      return;
+    }
+    if (!setChallengeQuestionCount(count)) {
+      this.setData({ question_count_error: "保存失败，请重试" });
+      return;
+    }
+    app.clickSound();
+    this.setData({
+      challenge_question_count: count,
+      question_count_sheet_visible: false,
+      question_count_error: "",
+    });
+    this._questionCountModalLock.set(false);
+    showToast("已保存，下一次普通挑战生效");
+  },
+  catchtouchmove() {},
   operateSound: function () {
     app.clickSound();
     if (this.data.sound_close) {
@@ -97,12 +183,20 @@ Page({
   /**
    * 生命周期函数--监听页面隐藏
    */
-  onHide() {},
+  onHide() {
+    if (this._questionCountModalLock) this._questionCountModalLock.hide();
+  },
+
+  onShow() {
+    if (this._questionCountModalLock) this._questionCountModalLock.show();
+  },
 
   /**
    * 生命周期函数--监听页面卸载
    */
-  onUnload() {},
+  onUnload() {
+    if (this._questionCountModalLock) this._questionCountModalLock.dispose();
+  },
 
   /**
    * 页面相关事件处理函数--监听用户下拉动作

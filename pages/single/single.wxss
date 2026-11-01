@@ -87,11 +87,47 @@ button.single-submit {
   font-size: 14px;
   line-height: 1.7;
 }
+.single-result__reward {
+  display: block;
+  margin-top: 8px;
+  color: #9b702c;
+  font-size: 14px;
+  line-height: 1.7;
+}
 .single-completed-actions {
   display: flex;
   flex-direction: column;
   gap: 14px;
   margin-top: 22px;
+}
+.single-share-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.single-share-actions .single-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.single-share-actions .question-share-button {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
+  white-space: nowrap;
+  line-height: 1.7;
+}
+.single-feedback__icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
 }
 button.single-feedback {
   margin: 0;

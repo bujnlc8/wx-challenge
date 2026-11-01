@@ -16,12 +16,20 @@ function load(name) {
     category_lables: [],
     categories: {},
   };
-  const src = fs
+  let src = fs
     .readFileSync(
       new URL("../pages/" + name + "/" + name + ".js", import.meta.url),
       "utf8",
     )
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
+  if (name === "about") {
+    src =
+      fs
+        .readFileSync(new URL("../utils/version.js", import.meta.url), "utf8")
+        .replace(/export\s*\{[\s\S]*?\};?/g, "") +
+      "\n" +
+      src;
+  }
   vm.runInNewContext(src, {
     Page: (d) => (definition = d),
     getApp: () => app,

@@ -17,6 +17,13 @@ function gateway(entry) {
   const source =
     strip(
       fs.readFileSync(
+        new URL("../utils/challenge-settings.js", import.meta.url),
+        "utf8",
+      ),
+    ) +
+    "\n" +
+    strip(
+      fs.readFileSync(
         new URL("../utils/question-entry.js", import.meta.url),
         "utf8",
       ),
@@ -637,4 +644,41 @@ test("legacy accepted correct score is displayed as frozen rather than retried o
   await flush();
   assert.equal(s.page.data.phase, "completed");
   assert.equal(s.page.data.score, 100);
+});
+
+test("confirmed single-question reward is shown and invalidates the cached wallet profile", async () => {
+  const s = single();
+  s.load();
+  await flush();
+  s.page.tapOption({ currentTarget: { dataset: { number: 3 } } });
+  s.page.submitAnswer();
+  const response = answer(1);
+  response.data.data.reward_coins = 1000;
+  s.posts[0].resolve(response);
+  await flush();
+  assert.equal(s.page.data.phase, "completed");
+  assert.equal(s.page.data.reward_coins, 1000);
+  assert.equal(s.storage.has("mine_cache"), false);
+  assert.equal(s.storage.get("uid"), "u1");
+});
+
+test("invalid wallet rewards cannot be presented as accepted single-question results", async () => {
+  for (const [result, reward] of [
+    [1, 2000],
+    [1, "1000"],
+    [0, 1000],
+  ]) {
+    const s = single();
+    s.load();
+    await flush();
+    s.page.tapOption({ currentTarget: { dataset: { number: 3 } } });
+    s.page.submitAnswer();
+    const response = answer(result);
+    response.data.data.reward_coins = reward;
+    s.posts[0].resolve(response);
+    await flush();
+    assert.equal(s.page.data.phase, "uncertain");
+    assert.equal(s.page.data.reward_coins, 0);
+    assert.equal(s.storage.has("mine_cache"), true);
+  }
 });

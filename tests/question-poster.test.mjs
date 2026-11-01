@@ -385,9 +385,9 @@ test("successful generation draws genuine server-code image and exports a comple
   assert.equal(harness.instance.data.error, "");
   assert.equal(harness.instance.data.imagepath, "/tmp/generated-poster.png");
   assert.ok(draws.includes("https://a/question.png"));
-  assert.ok(draws.some((path) => /question-share-code-.*\.png$/.test(path)));
+  assert.ok(draws.includes("data:image/png;base64,iVBORw0KGgoAAA=="));
   assert.ok(draws.includes("/images/ui-about-logo.png"));
-  assert.ok(removed.some((path) => /question-share-code-/.test(path)));
+  assert.equal(removed.length, 0);
 });
 test("album denial explains permission and delayed save callbacks cannot affect a closed modal", async () => {
   const harness = componentHarness();
@@ -486,7 +486,7 @@ test("share code accepts matching JPEG and rejects MIME mismatches, invalid payl
   }
 });
 
-test("JPEG server code is written as jpg with its original payload, drawn and exported", async () => {
+test("JPEG server code is decoded from its original in-memory payload, drawn and exported", async () => {
   const harness = componentHarness();
   const { draws, removed, writes } = installCanvas(harness);
   const response = validCode(6);
@@ -501,12 +501,11 @@ test("JPEG server code is written as jpg with its original payload, drawn and ex
   await task;
   assert.equal(harness.instance.data.error, "");
   assert.equal(harness.instance.data.imagepath, "/tmp/generated-poster.png");
-  assert.equal(writes.length, 1);
-  assert.match(writes[0].filePath, /question-share-code-.*\.jpg$/);
-  assert.equal(writes[0].data, response.data.data.image_base64);
-  assert.equal(writes[0].encoding, "base64");
-  assert.ok(draws.includes(writes[0].filePath));
-  assert.ok(removed.includes(writes[0].filePath));
+  assert.ok(
+    draws.includes("data:image/jpeg;base64," + response.data.data.image_base64),
+  );
+  assert.equal(writes.length, 0);
+  assert.equal(removed.length, 0);
 });
 
 function appCode() {
@@ -604,3 +603,35 @@ test("app share retries its public endpoint and never overwrites a newer questio
   assert.equal(harness.instance.data.visible, false);
   assert.equal(harness.instance.data.imagepath, "");
 });
+
+for (const [mime, base64] of [
+  ["image/png", "iVBORw0KGgoAAA=="],
+  ["image/jpeg", "/9j/4AAQSkZJRg=="],
+]) {
+  test(`poster renders ${mime} even when persistent file storage refuses every write`, async () => {
+    const harness = componentHarness();
+    const { draws } = installCanvas(harness);
+    harness.platform.getFileSystemManager = () => ({
+      writeFile(options) {
+        options.fail({
+          errMsg:
+            "writeFile:fail the maximum size of the file storage limit is exceeded",
+        });
+      },
+      unlink() {},
+    });
+    const task = harness.instance.open({
+      id: 6,
+      content: "存储受限题目",
+      options: ["甲", "乙"],
+    });
+    const response = validCode(6);
+    response.data.data.mime_type = mime;
+    response.data.data.image_base64 = base64;
+    harness.requests[0].resolve(response);
+    await task;
+    assert.equal(harness.instance.data.error, "");
+    assert.equal(harness.instance.data.imagepath, "/tmp/generated-poster.png");
+    assert.ok(draws.includes(`data:${mime};base64,${base64}`));
+  });
+}

@@ -12,7 +12,6 @@ import {
   createPosterSession,
 } from "../../utils/question-poster-render";
 
-let codeSequence = 0;
 function identity() {
   let env = "";
   try {
@@ -236,27 +235,9 @@ Component({
       }
     },
     async renderPoster(question, code, env, current, appMode = false) {
-      let codePath = "";
       let canvas;
       try {
         canvas = await getCanvas(this);
-        if (!current()) return "";
-        codePath =
-          wx.env.USER_DATA_PATH +
-          "/question-share-code-" +
-          Date.now() +
-          "-" +
-          ++codeSequence +
-          (code.mime_type === "image/jpeg" ? ".jpg" : ".png");
-        await new Promise((resolve, reject) =>
-          wx.getFileSystemManager().writeFile({
-            filePath: codePath,
-            data: code.image_base64,
-            encoding: "base64",
-            success: resolve,
-            fail: () => reject(Error("小程序码保存失败，请清理存储空间后重试")),
-          }),
-        );
         if (!current()) return "";
         const sources = [];
         const blocks = appMode
@@ -274,7 +255,10 @@ Component({
           images[source] = await loadImage(canvas, source);
           if (!current()) return "";
         }
-        const qr = await loadImage(canvas, codePath);
+        const qr = await loadImage(
+          canvas,
+          "data:" + code.mime_type + ";base64," + code.image_base64,
+        );
         if (!current()) return "";
         const logo = await loadImage(canvas, "/images/ui-about-logo.png");
         if (!current()) return "";
@@ -293,7 +277,6 @@ Component({
         }
         return path;
       } finally {
-        removeTemporary(codePath);
         if (canvas) {
           canvas.width = 1;
           canvas.height = 1;

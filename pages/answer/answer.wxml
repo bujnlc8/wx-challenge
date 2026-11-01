@@ -2,13 +2,15 @@
 <wxs src="../../utils/util.wxs" module="tools" />
 <view wx:if="{{logined}}" class="question-container">
 	<view class="question-toolbar">
-		<text class="skip top-text feedback-action" bindtap="doFeedback" wx:if="{{answer_result != -1 && answer_result != -2}}">反馈</text>
+		<text class="skip top-text" wx:if="{{challenge_finished}}">本轮结束</text>
+		<text class="skip top-text feedback-action" bindtap="doFeedback" wx:elif="{{answer_result != -1 && answer_result != -2}}">纠错</text>
 		<text class="skip top-text" wx:else="">{{correct_question_num}} | {{continue_correct_num}}</text>
 		<text class="current_score">{{current_score}}分</text>
-		<text class="skip" bindtap="hideQuestion" data-t="1" style="cursor: pointer;">跳过x{{last_skip_chance}}</text>
+		<text wx:if="{{!challenge_finished}}" class="skip" bindtap="hideQuestion" data-t="1" style="cursor: pointer;">跳过x{{last_skip_chance}}</text>
+		<text wx:else class="skip">已完成</text>
 	</view>
 	<view class="question-common" bindlongpress="hideQuestion">
-    <view class="question-eyebrow">挑战模式</view>
+    <view class="question-eyebrow">挑战模式 · {{total_index}} / {{challenge_limit}}题</view>
 		<view class="question_body" wx:if="{{ tools.indexOf(current_question, '/>') || tools.indexOf(current_question, '</')}}">第{{total_index}}题：<rich-text space="true" nodes="{{current_question}}"></rich-text>
 		</view>
 		<view class="question_body" wx:if="{{ !(tools.indexOf(current_question, '/>') || tools.indexOf(current_question, '</')) }}">第{{total_index}}题：<text>{{current_question}}</text>
@@ -39,7 +41,7 @@
 				<image src="{{option_d}}" class="image-option" data-i="4" mode="widthFix" />
 			</view>
 		</view>
-		<view class="answer-actions">
+		<view wx:if="{{!challenge_finished}}" class="answer-actions">
 			<view class="count_down_num {{count_down <= 5 ? 'countdown-urgent' : ''}}">{{count_down}}</view>
 			<view style="cursor: pointer;" bindtap="submitAnswer" class="sub_button {{sub_button_active}}">确认</view>
 		</view>
@@ -49,6 +51,13 @@
 			<text wx:else="">{{analysis}}</text>
 		</view>
 	</view>
+  <view wx:if="{{challenge_finished}}" class="challenge-completion surface">
+    <view class="challenge-completion__title">本轮挑战已完成</view>
+    <view class="challenge-completion__description">本轮共{{total_index}}题，答对{{correct_question_num}}题</view>
+    <text wx:if="{{challenge_finish_state === 'saving'}}" class="challenge-completion__description">正在保存本轮结果…</text>
+    <block wx:elif="{{challenge_finish_state === 'error'}}"><text class="challenge-completion__description">本轮已停止，保存状态暂未确认，请重试。</text><button class="challenge-completion__primary" bindtap="finishChallenge">重试保存</button></block>
+    <view wx:else class="challenge-completion__actions"><button bindtap="returnToChallenge">返回首页</button><button class="challenge-completion__primary" bindtap="restartChallenge">再来一轮</button></view>
+  </view>
   <view class="question-share-row"><button class="question-share-button" bindtap="openQuestionPoster" disabled="{{answer_result == -1 || answer_result == -2}}" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><image src="/images/ui-share.png" class="question-share-icon" />{{answer_result == -1 || answer_result == -2 ? '作答后生成海报' : '生成分享海报'}}</button></view>
 </view>
 <view wx:if="{{show_login}}">

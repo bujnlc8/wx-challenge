@@ -3,6 +3,7 @@ import {
   reminderSettings,
 } from "../../utils/daily-reminder";
 import { parseQuestionEntry } from "../../utils/question-entry";
+import { getChallengeQuestionCount } from "../../utils/challenge-settings";
 // pages/answer/answer.js
 const app = getApp();
 import {
@@ -13,6 +14,10 @@ import {
   showLoading,
   hideLoading,
 } from "../../utils/util";
+
+function challengeAccount() {
+  return JSON.stringify([wx.getStorageSync("uid"), wx.getStorageSync("token")]);
+}
 
 Page({
   initializeDailyReminder() {
@@ -87,6 +92,9 @@ Page({
     is_video: false,
     analysis: "",
     show_analysis: app.show_analysis,
+    challenge_limit: 10,
+    challenge_finished: false,
+    challenge_finish_state: "",
   },
   /**
    * 生命周期函数--监听页面加载
@@ -108,6 +116,9 @@ Page({
       });
       return;
     }
+    this._challengeOwner = challengeAccount();
+    this._questionViewSequence = 0;
+    this.setData({ challenge_limit: getChallengeQuestionCount() });
     this.initializeDailyReminder();
     wx.setNavigationBarTitle({ title: "挑战模式" });
     this.setData({
@@ -120,6 +131,8 @@ Page({
     app.checkLogin(this.getChallengeQuestions);
   },
   getChallengeQuestions() {
+    if (this._unloaded || this.data.challenge_finished || this._questionLoad)
+      return;
     if (!wx.getStorageSync("uid")) {
       this.setData({
         logined: 0,
@@ -128,6 +141,13 @@ Page({
       showToast("请点击登录");
       return;
     }
+    const load = { owner: this._challengeOwner };
+    this._questionLoad = load;
+    const current = () =>
+      this._questionLoad === load &&
+      !this._unloaded &&
+      !this.data.challenge_finished &&
+      (!load.owner || load.owner === challengeAccount());
     const loading = showLoading({
       title: "加载中...",
     });
@@ -137,6 +157,7 @@ Page({
       category: app.category,
     })
       .then((res) => {
+        if (!current()) return;
         if (res.data.code != 10000) {
           showToast(res.data.message);
           if (this.data.share_question_id > 0 && res.data.code != 11111)
@@ -169,9 +190,12 @@ Page({
         }
       })
       .catch(() => {
-        showToast("网络异常");
+        if (current()) showToast("网络异常");
       })
-      .finally(() => hideLoading(loading));
+      .finally(() => {
+        hideLoading(loading);
+        if (this._questionLoad === load) this._questionLoad = null;
+      });
   },
   resumeDailyAdvance() {
     if (
@@ -189,9 +213,14 @@ Page({
   startAnswer: function () {
     if (
       this._unloaded ||
+      this.data.challenge_finished ||
       (this._dailyReminder && !this._dailyReminder.isCurrentAccount())
     )
       return;
+    if (this.data.total_index >= this.data.challenge_limit) {
+      this.finishChallenge();
+      return;
+    }
     if (
       this.data.answer_result == 1 &&
       (this._subscriptionPanelOpen || this._pageVisible === false)
@@ -214,6 +243,7 @@ Page({
     }
   },
   _startAnswer: function (question) {
+    this._questionViewSequence = (this._questionViewSequence || 0) + 1;
     this._advanceAfterSubscription = false;
     this._advanceAfterPoster = false;
     this._posterOpen = false;
@@ -319,6 +349,20 @@ Page({
     this._submitAnswer(0);
   },
   _submitAnswer(timeout) {
+    if (
+      this._pendingAnswer ||
+      this._unloaded ||
+      this.data.challenge_finished ||
+      ![-2, -1].includes(this.data.answer_result)
+    )
+      return;
+    const attempt = {
+      question: this.data.current_question_id,
+      round: this.data.round_id,
+      view: this._questionViewSequence,
+    };
+    this._pendingAnswer = attempt;
+    this.setData({ answer_result: -1 });
     httpPOST("api/question/check-answer", {
       timeout: timeout,
       count_down: this.data.count_down,
@@ -327,6 +371,15 @@ Page({
       answer: this.data.selected_option,
     })
       .then((res) => {
+        if (
+          this._unloaded ||
+          this._pendingAnswer !== attempt ||
+          attempt.question !== this.data.current_question_id ||
+          attempt.round !== this.data.round_id ||
+          attempt.view !== this._questionViewSequence ||
+          (this._challengeOwner && this._challengeOwner !== challengeAccount())
+        )
+          return;
         if (res.data.code == 10000) {
           this.setData({
             answer_result: res.data.data.result,
@@ -353,11 +406,9 @@ Page({
               correct_question_num: this.data.correct_question_num + 1,
               continue_correct_num: this.data.continue_correct_num + 1,
             });
-            setTimeout(() => {
-              if (!this.data.show_feedback) {
-                this.startAnswer();
-              }
-            }, 2000);
+            if (this.data.total_index >= this.data.challenge_limit)
+              this.finishChallenge();
+            else this.queueNextQuestion(2000);
           } else {
             this.setData({
               right_answer: res.data.data.right_answer,
@@ -369,6 +420,10 @@ Page({
               app.playSound("timeout");
             } else {
               app.wrongSound();
+            }
+            if (this.data.total_index >= this.data.challenge_limit) {
+              this.finishChallenge();
+              return;
             }
             if (this.data.last_relive_times > 0) {
               setTimeout(() => {
@@ -400,9 +455,74 @@ Page({
       })
       .catch(() => {
         showToast("网络异常");
+      })
+      .finally(() => {
+        if (this._pendingAnswer === attempt) this._pendingAnswer = null;
       });
   },
+  queueNextQuestion(delay) {
+    const view = this._questionViewSequence;
+    setTimeout(() => {
+      if (
+        !this._unloaded &&
+        view === this._questionViewSequence &&
+        !this.data.show_feedback
+      )
+        this.startAnswer();
+    }, delay);
+  },
+  async finishChallenge() {
+    if (
+      this._unloaded ||
+      ["saving", "done"].includes(this.data.challenge_finish_state) ||
+      !(this.data.round_id > 0)
+    )
+      return;
+    if (this.data.interval_handle) clearInterval(this.data.interval_handle);
+    this._advanceAfterSubscription = false;
+    this._advanceAfterPoster = false;
+    this.setData({
+      challenge_finished: true,
+      challenge_finish_state: "saving",
+    });
+    const roundId = this.data.round_id;
+    const owner = this._challengeOwner;
+    const current = () =>
+      !this._unloaded &&
+      roundId === this.data.round_id &&
+      (!owner || owner === challengeAccount());
+    try {
+      const response = await httpPOST("api/question/finish-challenge", {
+        round_id: roundId,
+      });
+      if (!current()) return;
+      const body = response && response.data;
+      const result = body && body.data;
+      if (
+        !body ||
+        body.code !== 10000 ||
+        !result ||
+        result.finished !== true ||
+        result.round_id !== roundId ||
+        !Number.isInteger(result.total_score) ||
+        !Number.isInteger(result.correct_question)
+      )
+        throw Error("结束状态暂未确认");
+      this.setData({
+        challenge_finish_state: "done",
+        current_score: result.total_score,
+        correct_question_num: result.correct_question,
+      });
+    } catch (error) {
+      if (current()) this.setData({ challenge_finish_state: "error" });
+    }
+  },
+  restartChallenge() {
+    if (this.data.challenge_finish_state === "done")
+      wx.redirectTo({ url: "/pages/answer/answer" });
+  },
   hideQuestion: function (e) {
+    if (this.data.challenge_finished || this._unloaded) return;
     var t = e.target.dataset.t || 0;
     var body = "以后不再显示这道题？";
     if (t == 1) {
@@ -453,9 +573,7 @@ Page({
   },
   nextQuestionAfterCloseFeedback: function () {
     if (this.data.answer_result == 1) {
-      setTimeout(() => {
-        this.startAnswer();
-      }, 1000);
+      this.queueNextQuestion(1000);
     }
   },
   /**
@@ -629,9 +747,7 @@ Page({
                 current_index: this.data.current_index + 1,
                 last_relive_times: this.data.last_relive_times - 1,
               });
-              setTimeout(() => {
-                this.startAnswer();
-              }, 2000);
+              this.queueNextQuestion(2000);
             } else {
               showToast("很遗憾，复活失败:(");
             }
@@ -669,9 +785,7 @@ Page({
                 ? this.data.last_skip_chance - 1
                 : this.data.last_skip_chance,
           });
-          setTimeout(() => {
-            this.startAnswer();
-          }, 1000);
+          this.startAnswer();
         })
         .catch(() => {
           showToast("网络异常");

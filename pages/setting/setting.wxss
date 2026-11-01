@@ -24,3 +24,142 @@
   font-size: 12px;
   margin-top: 4px;
 }
+.setting-value {
+  color: #68758a;
+  font-size: 14px;
+}
+.setting-arrow {
+  width: 24px;
+  height: 24px;
+  margin-left: 6px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.question-count-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10001;
+  background: rgba(20, 33, 54, 0.4);
+}
+.question-count-sheet {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10002;
+  max-height: 85vh;
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 -12px 48px rgba(20, 38, 70, 0.12);
+}
+.question-count-scroll {
+  height: auto;
+  max-height: calc(82vh - 190px);
+  min-height: 0;
+  flex: 0 1 auto;
+  overflow-y: auto;
+}
+.question-count-body {
+  padding: 0 24px 8px;
+}
+.count-presets {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.count-preset {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  margin: 0;
+  border: 1px solid #e3e9f2;
+  border-radius: 12px;
+  color: #4e5c72;
+  background: #f8faff;
+  font-size: 14px;
+  line-height: 44px;
+}
+.count-preset-selected {
+  color: #2056ce;
+  background: #edf3ff;
+  border-color: #2864eb;
+  font-weight: 600;
+}
+.count-custom-label {
+  color: #35435a;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.count-stepper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #e3e9f2;
+  border-radius: 14px;
+  background: #f8faff;
+}
+.count-stepper .count-step {
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  box-sizing: border-box;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border-radius: 10px;
+  background: #edf3ff;
+  color: #2864eb;
+  font-size: 22px;
+  line-height: 44px;
+}
+.count-step[disabled] {
+  color: #b4bfd0;
+  background: #f0f3f8;
+}
+.count-input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  height: 44px;
+  padding-left: 28px;
+  text-align: center;
+  color: #202b40;
+  font-size: 22px;
+  font-weight: 700;
+}
+.count-unit {
+  flex: 0 0 28px;
+  width: 28px;
+  color: #68758a;
+  font-size: 13px;
+}
+.count-hint,
+.count-error {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.count-hint {
+  color: #68758a;
+}
+.count-error {
+  color: #c34444;
+}
+.question-count-actions {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}

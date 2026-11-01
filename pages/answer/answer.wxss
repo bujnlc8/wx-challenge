@@ -53,3 +53,46 @@
   border-color: #f3ced2;
   background: #fff4f4;
 }
+
+.challenge-completion {
+  margin-top: 18px;
+  padding: 22px;
+}
+.challenge-completion__title {
+  color: #202b40;
+  font-size: 18px;
+  font-weight: 600;
+}
+.challenge-completion__description {
+  display: block;
+  margin-top: 8px;
+  color: #68758a;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.challenge-completion__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+.challenge-completion button {
+  flex: 1;
+  margin: 0;
+  padding: 11px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: #edf3ff;
+  color: #2056ce;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.challenge-completion button::after {
+  border: 0;
+}
+.challenge-completion button.challenge-completion__primary {
+  background: #2864eb;
+  color: #fff;
+}
+.challenge-completion > button {
+  margin-top: 18px;
+}

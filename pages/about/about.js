@@ -1,13 +1,9 @@
 import { showToast } from "../../utils/util";
+import { APP_VERSION, getAppVersion } from "../../utils/version";
 Page({
-  data: { version: "", logined: false },
+  data: { version: APP_VERSION, logined: false },
   onLoad() {
-    try {
-      const info = wx.getAccountInfoSync();
-      this.setData({ version: info.miniProgram.version || "" });
-    } catch (error) {
-      /* Development builds may not have a release version. */
-    }
+    this.setData({ version: getAppVersion() });
   },
   onShow() {
     this.setData({ logined: !!wx.getStorageSync("uid") });
