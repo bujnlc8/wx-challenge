@@ -26,6 +26,7 @@
     <view class="quiz-footer__primary-row"><button class="quiz-nav-button" bindtap="upQuestion" hover-class="button-pressed" disabled="{{current_index == 0}}">上一题</button><button class="quiz-submit" bindtap="primaryAction" disabled="{{answer_result == -1 || (answer_result == -2 && !selected_option)}}"><view wx:if="{{answer_result == -1}}" class="quiz-button-spinner"></view>{{answer_result == -1 ? '正在提交' : (answer_result >= 0 ? '下一题' : '确认答案')}}</button><button wx:if="{{answer_result < 0}}" class="quiz-nav-button" bindtap="nextQuestion" hover-class="button-pressed" disabled="{{answer_result == -1 || !tools.indexOf(answered_ids, current_question_id)}}">下一题</button></view>
       <view class="question-footer-actions">
         <button class="question-feedback-button" bindtap="doFeedback" hover-class="button-pressed"><image src="/images/report_error.png" class="question-footer-icon" />纠错</button>
+        <question-favorite question_id="{{current_question_id}}" />
         <button class="question-share-button" bindtap="openQuestionPoster" hover-class="button-pressed"><image src="/images/ui-share.png" class="question-share-icon" />分享</button>
       </view>
   </view></view>

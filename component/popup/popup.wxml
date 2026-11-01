@@ -11,5 +11,6 @@
       <button class="btn-no btn" bindtap="popupCancel" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_no}}</button>
       <button class="btn-ok btn" bindtap="popupConfirm" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_ok}}</button>
     </view>
+    <slot name="extra" />
   </view>
 </view>

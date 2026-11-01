@@ -96,3 +96,33 @@
 .challenge-completion > button {
   margin-top: 18px;
 }
+
+.popup-correction-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-shrink: 0;
+  padding: 0 23px 14px;
+}
+.popup-correction-entry .popup-correction-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 36px;
+  margin: 0;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: #68758a;
+  font-size: 13px;
+  line-height: 24px;
+}
+.popup-correction-button::after {
+  border: none;
+}
+.popup-correction-button image {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}

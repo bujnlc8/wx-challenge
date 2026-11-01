@@ -12,7 +12,8 @@
     "pages/about/about",
     "pages/daily/daily",
     "pages/single/single",
-    "pages/correction/correction"
+    "pages/correction/correction",
+    "pages/favorites/favorites"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -53,6 +54,7 @@
   "resizable": true,
   "usingComponents": {
     "ui-feedback": "/component/ui-feedback/ui-feedback",
-    "question-poster": "/component/question-poster/question-poster"
+    "question-poster": "/component/question-poster/question-poster",
+    "question-favorite": "/component/question-favorite/question-favorite"
   }
 }

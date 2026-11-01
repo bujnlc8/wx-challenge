@@ -42,6 +42,7 @@
 		<view class="question-footer">
 			<text class="question-date">{{item.create_time}} {{item.answer == 0 ? '(超时)' : ''}}</text>
 			<image wx:if="{{item.analysis}}" src="/images/analysis.png" class="question-action-icon" bindtap="showAnalysis" /><text bindtap="showAnalysis" class="question-action" wx:if="{{item.analysis}}">解析</text>
+			<view class="wrong-favorite-action" catchlongpress="catchtouchmove"><question-favorite question_id="{{item.question_id}}" compact="{{true}}" /></view>
 			<image src="/images/ui-share.png" class="question-action-icon question-footer-share" bindtap="openWrongQuestionPoster" /><text class="question-action" bindtap="openWrongQuestionPoster">分享</text>
 			<image src="/images/report_error.png" class="question-action-icon report-action-icon" bindtap="reportErr" /><text bindtap="reportErr" class="question-action">纠错</text>
 		</view>

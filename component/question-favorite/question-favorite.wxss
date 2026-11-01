@@ -1,0 +1,53 @@
+.favorite-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: auto;
+  min-width: 0;
+  min-height: 36px;
+  margin: 0;
+  padding: 8px 6px;
+  border: 0;
+  background: transparent;
+  color: #68758a;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.favorite-action::after {
+  border: 0;
+}
+.favorite-action image {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+.favorite-action-selected {
+  color: #2864eb;
+}
+.favorite-action[disabled] {
+  background: transparent;
+  color: #9aa5b5;
+}
+.favorite-action[disabled] image {
+  opacity: 0.5;
+}
+.favorite-action-pressed {
+  opacity: 0.65;
+}
+
+.favorite-action-compact {
+  min-width: 32px;
+  min-height: 36px;
+  padding: 8px;
+}
+.favorite-action-compact image {
+  margin-right: 0;
+}
+
+/* Retain natural width even with WeChat v2 default button width. */
+.favorite-action.favorite-action {
+  width: auto;
+}

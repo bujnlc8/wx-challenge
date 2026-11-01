@@ -1,0 +1,24 @@
+<page-meta page-style="{{modal_locked ? 'overflow: hidden;' : ''}}" />
+<wxs src="../../utils/util.wxs" module="tools" />
+<view class="page-shell favorites-page">
+  <view wx:if="{{view_state === 'ready'}}">
+    <view class="favorites-summary">共 {{total}} 道收藏题目</view>
+    <view wx:for="{{question_list}}" wx:key="question_id" class="favorite-card surface">
+      <view class="favorite-card-heading"><text class="favorite-question-label">收藏题目</text><image src="/images/ui-favorite-active.png" mode="aspectFit" aria-hidden="true" /></view>
+      <view class="favorite-question-content"><rich-text wx:if="{{tools.isRichQuestion(item.content)}}" nodes="{{tools.questionHtml(item.content)}}" space="true" /><text wx:else>{{item.content}}</text></view>
+      <image wx:if="{{item.question_image && !item.is_video}}" class="favorite-question-image" src="{{item.question_image}}" mode="aspectFit" />
+      <video wx:if="{{item.question_image && item.is_video}}" class="favorite-question-video" src="{{item.question_image}}" object-fit="contain" />
+      <view class="favorite-card-footer"><button class="favorite-remove" bindtap="removeFavorite" data-id="{{item.question_id}}" disabled="{{removing_id > 0 || loading_more}}" hover-class="button-pressed">{{removing_id === item.question_id ? '取消中…' : '取消收藏'}}</button><button class="favorite-start" bindtap="openQuestion" data-id="{{item.question_id}}" disabled="{{removing_id > 0}}" hover-class="button-pressed">去答题</button></view>
+    </view>
+    <view class="favorites-pagination"><text wx:if="{{loading_more}}">加载中…</text><button wx:elif="{{more_error}}" class="favorites-retry-more" bindtap="retryMore">加载失败，点击重试</button><text wx:elif="{{no_more_data}}">已显示全部收藏</text><text wx:else>上拉加载更多</text></view>
+  </view>
+  <view wx:else class="favorites-state">
+    <view wx:if="{{view_state === 'loading'}}" class="favorites-spinner"></view>
+    <image wx:else src="/images/ui-empty-question.png" mode="aspectFit" />
+    <text class="favorites-state-title">{{view_state === 'loading' ? '正在打开收藏夹' : (view_state === 'logged-out' ? '登录后查看收藏夹' : (view_state === 'error' ? '收藏夹暂时打不开' : '还没有收藏题目'))}}</text>
+    <text wx:if="{{view_state !== 'loading'}}" class="favorites-state-copy">{{view_state === 'error' ? error_message : (view_state === 'logged-out' ? '收藏题目后，下次可以继续温习' : '答题时轻点收藏，把想温习的题目留在这里')}}</text>
+    <button wx:if="{{view_state === 'error'}}" class="primary-button" bindtap="retryFavorites" hover-class="button-pressed">重新加载</button>
+    <button wx:if="{{view_state === 'logged-out'}}" class="primary-button" bindtap="loginAndLoad" hover-class="button-pressed">去登录</button>
+  </view>
+</view>
+<ui-feedback state="{{ui_feedback}}" />

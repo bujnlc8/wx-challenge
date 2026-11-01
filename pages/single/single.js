@@ -105,9 +105,19 @@ Page({
     this._generation = 0;
     this._owner = account();
     const questionId = parseQuestionEntry(options);
-    const source = options && options.from === "daily" ? "daily" : "share";
+    const source =
+      options && options.from === "daily"
+        ? "daily"
+        : options && options.from === "favorite"
+          ? "favorite"
+          : "share";
     wx.setNavigationBarTitle({
-      title: source === "daily" ? "每日一题" : "单题答题",
+      title:
+        source === "daily"
+          ? "每日一题"
+          : source === "favorite"
+            ? "收藏答题"
+            : "单题答题",
     });
     this.setData({
       source,
@@ -478,7 +488,13 @@ Page({
   },
   returnToSource() {
     app.clickSound();
-    if (this.data.source === "daily") {
+    if (this.data.source === "favorite") {
+      const pages = getCurrentPages();
+      const previous = pages[pages.length - 2];
+      if (previous && previous.route === "pages/favorites/favorites")
+        wx.navigateBack({ delta: 1 });
+      else wx.redirectTo({ url: "/pages/favorites/favorites" });
+    } else if (this.data.source === "daily") {
       const pages = getCurrentPages();
       const previous = pages[pages.length - 2];
       if (previous && previous.route === "pages/daily/daily")

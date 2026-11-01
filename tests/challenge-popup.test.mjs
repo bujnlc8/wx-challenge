@@ -10,7 +10,10 @@ function setup(remaining = 3) {
   const timers = [];
   const requests = [];
   const navigations = [];
-  const storage = new Map([["uid", "u1"], ["token", "t1"]]);
+  const storage = new Map([
+    ["uid", "u1"],
+    ["token", "t1"],
+  ]);
   const app = new Proxy({}, { get: () => () => {} });
   const source = fs
     .readFileSync(new URL("../pages/answer/answer.js", import.meta.url), "utf8")
@@ -79,7 +82,9 @@ function setup(remaining = 3) {
     setData(patch) {
       Object.assign(this.data, patch);
     },
-    selectComponent() { return { close() {}, open() {} }; },
+    selectComponent() {
+      return { close() {}, open() {} };
+    },
     report: { getCaptcha() {} },
     startAnswer() {
       this.setData({ answer_result: -2 });
@@ -252,7 +257,8 @@ for (const change of ["question", "round", "unload", "account"]) {
     s.page._challengeOwner = s.owner();
     s.page._submitAnswer(1);
     await new Promise((resolve) => setImmediate(resolve));
-    if (change === "question") s.page._startAnswer({ id: 99, content: "新题", options: "甲|乙" });
+    if (change === "question")
+      s.page._startAnswer({ id: 99, content: "新题", options: "甲|乙" });
     if (change === "round") s.page.data.round_id++;
     if (change === "unload") s.page.onUnload();
     if (change === "account") s.storage.set("token", "t2");
@@ -261,3 +267,70 @@ for (const change of ["question", "round", "unload", "account"]) {
     assert.equal(s.popup.data.flag, true);
   });
 }
+
+test("visible failure popup offers correction without spending coins, reviving or changing the question", async () => {
+  const s = setup(3);
+  await showFailure(s);
+  let opened = 0;
+  s.page.report.getCaptcha = () => opened++;
+  s.page.correctFromPopup();
+  assert.equal(opened, 1);
+  assert.equal(s.popup.data.flag, true);
+  assert.equal(s.page.data.show_feedback, true);
+  assert.equal(s.requests.length, 1);
+  assert.equal(s.page.data.current_question_id, 42);
+  assert.equal(s.page.data.last_relive_times, 3);
+  s.page.onHide();
+  s.page.nextQuestionAfterCloseFeedback();
+  assert.equal(s.popup.data.flag, true);
+  s.page.onShow();
+  assert.equal(s.popup.data.flag, false);
+  assert.equal(s.popup.data.title, "本题未答对");
+  assert.equal(s.page.data.pop_type, 1);
+  s.popup.popupConfirm();
+  await new Promise((r) => setImmediate(r));
+  assert.equal(s.requests.length, 2);
+  assert.equal(s.requests[1].url, "api/coin/operate");
+});
+test("no-revival result also allows correction and returns to the same ending choices", async () => {
+  const s = setup(0);
+  s.page._submitAnswer(0);
+  await new Promise((r) => setImmediate(r));
+  s.runTimer(2000);
+  let opened = 0;
+  s.page.report.getCaptcha = () => opened++;
+  s.page.correctFromPopup();
+  s.page.nextQuestionAfterCloseFeedback();
+  assert.equal(opened, 1);
+  assert.equal(s.popup.data.flag, false);
+  assert.equal(s.page.data.pop_type, 2);
+  assert.equal(s.popup.data.btn_ok, "再来一轮");
+  assert.equal(s.navigations.length, 0);
+});
+for (const change of ["question", "round", "account", "unload"])
+  test(`correction cannot restore an old failure popup after ${change} changes`, async () => {
+    const s = setup(3);
+    await showFailure(s);
+    s.page.correctFromPopup();
+    if (change === "question") s.page.data.current_question_id = 99;
+    if (change === "round") s.page.data.round_id++;
+    if (change === "account") s.storage.set("token", "t2");
+    if (change === "unload") s.page.onUnload();
+    s.page.nextQuestionAfterCloseFeedback();
+    s.page.onShow();
+    assert.equal(s.popup.data.flag, true);
+    assert.equal(s.requests.length, 1);
+  });
+test("failure correction is explicit inside the popup while the full-screen hit barrier remains", () => {
+  const p = fs.readFileSync(
+    new URL("../pages/answer/answer.wxml", import.meta.url),
+    "utf8",
+  );
+  const c = fs.readFileSync(
+    new URL("../component/popup/popup.wxml", import.meta.url),
+    "utf8",
+  );
+  assert.match(p, /slot="extra"[\s\S]*?bindtap="correctFromPopup"/);
+  assert.match(c, /<slot name="extra"\s*\/>/);
+  assert.match(c, /class="popup-mask"[^>]*catchtap=/);
+});

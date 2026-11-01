@@ -1,0 +1,126 @@
+.favorites-page {
+  padding-bottom: 28px;
+}
+.favorites-summary {
+  margin: 20px 2px 14px;
+  color: #68758a;
+  font-size: 13px;
+}
+.favorite-card {
+  margin-bottom: 16px;
+  padding: 20px;
+}
+.favorite-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.favorite-question-label {
+  color: #8793a6;
+  font-size: 12px;
+}
+.favorite-card-heading image {
+  width: 18px;
+  height: 18px;
+}
+.favorite-question-content {
+  color: #202b40;
+  font-size: 16px;
+  line-height: 1.8;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.favorite-question-image,
+.favorite-question-video {
+  display: block;
+  width: 100%;
+  height: 180px;
+  margin-top: 14px;
+  border-radius: 10px;
+}
+.favorite-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  margin-top: 18px;
+  border-top: 1px solid #edf1f6;
+}
+.favorite-card-footer button {
+  width: auto;
+  min-height: 40px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 24px;
+}
+.favorite-card-footer button::after,
+.favorites-retry-more::after {
+  border: 0;
+}
+.favorite-remove {
+  padding: 8px 0;
+  background: transparent;
+  color: #68758a;
+}
+.favorite-start {
+  padding: 8px 20px;
+  border-radius: 10px;
+  background: #edf3ff;
+  color: #2056ce;
+}
+.favorite-card-footer button[disabled] {
+  opacity: 0.5;
+}
+.favorites-pagination {
+  padding: 8px 0 18px;
+  text-align: center;
+  color: #8793a6;
+  font-size: 12px;
+}
+.favorites-retry-more {
+  width: auto;
+  padding: 8px;
+  background: transparent;
+  color: #2056ce;
+  font-size: 13px;
+}
+.favorites-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 70px 16px 40px;
+  text-align: center;
+}
+.favorites-state image {
+  width: 180px;
+  height: 140px;
+}
+.favorites-state-title {
+  margin-top: 24px;
+  color: #202b40;
+  font-size: 18px;
+  font-weight: 600;
+}
+.favorites-state-copy {
+  margin: 12px 0 24px;
+  color: #68758a;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.favorites-state .primary-button {
+  width: 100%;
+}
+.favorites-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #dce7fd;
+  border-top-color: #2864eb;
+  border-radius: 50%;
+  animation: favorite-spin 0.8s linear infinite;
+}
+@keyframes favorite-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

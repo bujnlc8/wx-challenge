@@ -725,7 +725,8 @@ test("single utilities require a ready valid target and current live account", a
     await flush();
     s.page.data.phase = "completed";
     if (invalid === "target") s.page.data.question_id = 0;
-    if (["loading", "error"].includes(invalid)) s.page.data.view_state = invalid;
+    if (["loading", "error"].includes(invalid))
+      s.page.data.view_state = invalid;
     if (invalid === "disposed") s.page.onUnload();
     if (invalid === "account") s.storage.set("token", "new-account");
     s.page.openFeedback();
@@ -733,4 +734,17 @@ test("single utilities require a ready valid target and current live account", a
     assert.equal(s.page.data.show_feedback, false);
     assert.equal(s.posters.length, 0);
   }
+});
+
+test("favorite entry keeps standalone answering and returns to the collection instead of starting a challenge", async () => {
+  const s = single();
+  s.page.onLoad({ question_id: "42", from: "favorite" });
+  await flush();
+  assert.equal(s.page.data.source, "favorite");
+  assert.equal(s.posts.length, 0);
+  s.page.returnToSource();
+  assert.ok(
+    s.nav.some((x) => JSON.stringify(x).includes("/pages/favorites/favorites")),
+  );
+  assert.equal(s.posts.length, 0);
 });

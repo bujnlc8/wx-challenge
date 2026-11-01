@@ -34,13 +34,16 @@
     </block>
       <view class="question-footer-actions">
         <button class="question-feedback-button" bindtap="doFeedback" hover-class="button-pressed"><image src="/images/report_error.png" class="question-footer-icon" />纠错</button>
+        <question-favorite question_id="{{current_question_id}}" />
         <button class="question-share-button" bindtap="openQuestionPoster" hover-class="button-pressed"><image src="/images/ui-share.png" class="question-share-icon" />分享</button>
       </view>
   </view></view>
 </view>
 <view wx:if="{{show_login}}"><view class="login" bindtap="toLogin">点击登录</view></view>
 <report class="report" show_feedback="{{show_feedback}}" bindnextQuestion="nextQuestionAfterCloseFeedback" question_id="{{current_question_id}}" />
-<popup class="popup_compon" binderror="popupCancel" bindsuccess="popupConfirm" />
+<popup class="popup_compon" binderror="popupCancel" bindsuccess="popupConfirm">
+  <view slot="extra" wx:if="{{answer_result == 0 && (pop_type == 1 || pop_type == 2)}}" class="popup-correction-entry"><button class="popup-correction-button" bindtap="correctFromPopup" hover-class="button-pressed"><image src="/images/report_error.png" />纠错</button><question-favorite question_id="{{current_question_id}}" /></view>
+</popup>
 <ui-feedback state="{{ui_feedback}}" />
 <question-poster id="question-poster" bind:close="onQuestionPosterClose" />
 <view class="page-shell illustrated-empty" wx:if="{{entry_error}}"><image class="empty-illustration" src="/images/ui-empty-question.png" mode="aspectFit" /><view class="empty-title">这道题暂时打不开</view><view class="empty-description">{{entry_error}}</view><button class="question-share-button" bindtap="returnToChallenge">返回挑战首页</button></view>

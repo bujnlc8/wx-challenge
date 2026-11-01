@@ -76,3 +76,9 @@
 .question-footer-share {
   margin-left: 12px;
 }
+
+.wrong-favorite-action {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: 8px;
+}

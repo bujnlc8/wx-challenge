@@ -142,6 +142,10 @@ Page({
       url: "/pages/wrong/wrong",
     });
   },
+  goToFavorites: function () {
+    app.clickSound();
+    wx.navigateTo({ url: "/pages/favorites/favorites" });
+  },
   goToDaily: function () {
     app.clickSound();
     wx.navigateTo({ url: "/pages/daily/daily" });

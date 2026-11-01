@@ -36,6 +36,7 @@ Page({
       onNativeSettled: () => {
         this._subscriptionPanelOpen = false;
         this.resumeDailyAdvance();
+        this.resumeCorrectionPrompt();
         this.resumeFailurePrompt();
       },
     });
@@ -611,6 +612,60 @@ Page({
     });
     this.popup.showPopup();
   },
+  correctFromPopup() {
+    if (
+      this._unloaded ||
+      this.data.answer_result !== 0 ||
+      ![1, 2].includes(this.data.pop_type) ||
+      !this.popup ||
+      this.popup.data.flag
+    )
+      return;
+    const data = this.popup.data;
+    this._correctionPrompt = {
+      question: this.data.current_question_id,
+      round: this.data.round_id,
+      view: this._questionViewSequence,
+      owner: challengeAccount(),
+      type: this.data.pop_type,
+      properties: {
+        title: data.title,
+        content: data.content,
+        btn_no: data.btn_no,
+        btn_ok: data.btn_ok,
+        show_modal: data.show_modal,
+      },
+    };
+    this.popup.hidePopup();
+    this.doFeedback();
+  },
+  resumeCorrectionPrompt() {
+    const prompt = this._correctionPrompt;
+    if (!prompt) return false;
+    if (
+      this._unloaded ||
+      this.data.answer_result !== 0 ||
+      prompt.question !== this.data.current_question_id ||
+      prompt.round !== this.data.round_id ||
+      prompt.view !== this._questionViewSequence ||
+      prompt.owner !== challengeAccount()
+    ) {
+      this._correctionPrompt = null;
+      return false;
+    }
+    if (
+      this._pageVisible === false ||
+      this.data.show_feedback ||
+      this._posterOpen ||
+      this._subscriptionPanelOpen
+    )
+      return false;
+    this._correctionPrompt = null;
+    this.popup.setData(prompt.properties);
+    this.setData({ pop_type: prompt.type });
+    if (this.popup.data.flag) this.popup.showPopup();
+    return true;
+  },
   doFeedback: function () {
     if (this._unloaded || !(Number(this.data.current_question_id) > 0)) return;
     app.clickSound();
@@ -626,8 +681,14 @@ Page({
       event &&
       event.detail &&
       ["account-change", "question-change"].includes(event.detail.reason)
-    )
+    ) {
+      this._correctionPrompt = null;
       return;
+    }
+    if (this._correctionPrompt) {
+      this.resumeCorrectionPrompt();
+      return;
+    }
     this.resumeFailurePrompt();
     if (this.data.answer_result == 1) {
       this.queueNextQuestion(1000);
@@ -657,6 +718,7 @@ Page({
         this._advanceAfterSubscription = false;
     }
     this.resumeDailyAdvance();
+    this.resumeCorrectionPrompt();
     this.resumeFailurePrompt();
     if (
       this._advanceAfterPoster &&
@@ -683,6 +745,7 @@ Page({
   onUnload() {
     this._pageVisible = false;
     this._unloaded = true;
+    this._correctionPrompt = null;
     this._pendingFailurePrompt = null;
     if (this._dailyReminder) this._dailyReminder.dispose();
     if (this.data.interval_handle) {
