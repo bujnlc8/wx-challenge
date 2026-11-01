@@ -210,49 +210,65 @@ button {
   z-index: 10002;
   top: 50%;
   left: 50%;
-  width: 90%;
-  max-width: 440px;
+  width: calc(100% - 32px);
+  max-width: 420px;
   max-height: 82vh;
   overflow: hidden;
   transform: translate(-50%, -50%);
   padding: 0;
-  border-radius: 20px;
+  border: 1px solid rgba(226, 235, 249, 0.8);
+  border-radius: 24px;
   background: #fff;
-  box-shadow: 0 24px 80px rgba(20, 38, 70, 0.18);
+  box-shadow: 0 24px 80px rgba(20, 38, 70, 0.2);
 }
 .pop-tip-title {
+  position: relative;
   margin: 0;
-  padding-right: 44px;
-  font-size: 20px;
+  padding-right: 34px;
+  padding-left: 14px;
+  color: #202b40;
+  font-size: 18px;
   line-height: 1.5;
   font-weight: 700;
   text-align: left;
+  word-break: break-word;
+}
+.pop-tip-title::before {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 4px;
+  height: 19px;
+  border-radius: 3px;
+  background: #3978f5;
+  content: "";
 }
 .dialog-header {
   position: relative;
   flex-shrink: 0;
-  padding: 24px 24px 16px;
-  background: #fff;
+  padding: 23px 22px 18px;
+  background: linear-gradient(135deg, #f1f6ff 0%, #fff 94%);
 }
 .dialog-intro {
-  margin-top: 8px;
-  color: #68758a;
-  font-size: 13px;
+  margin-top: 7px;
+  color: #7b88a0;
+  font-size: 12px;
   line-height: 1.7;
 }
-.dialog-close {
+.dialog-header .dialog-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 11px;
+  right: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px !important;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   margin: 0;
-  border-radius: 12px;
-  background: #f2f5fa;
+  border-radius: 50%;
+  background: transparent;
+  line-height: normal;
 }
 .close-mark {
   position: relative;
@@ -268,7 +284,7 @@ button {
   width: 16px;
   height: 2px;
   border-radius: 1px;
-  background: #68758a;
+  background: #8a97ac;
   transform: rotate(45deg);
 }
 .close-mark::after {
@@ -280,6 +296,7 @@ button {
   min-height: 0;
   flex: 0 1 auto;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 .dialog-scroll-short {
@@ -287,38 +304,52 @@ button {
   max-height: calc(82vh - 190px);
 }
 .dialog-body {
-  padding: 0 24px 8px;
+  padding: 0 22px 16px;
+  color: #69768c;
+  font-size: 14px;
+  line-height: 1.85;
 }
 .dialog-footer {
   flex-shrink: 0;
-  padding: 16px 24px 24px;
-  border-top: 1px solid #f0f3f8;
+  padding: 16px 22px 20px;
+  border-top: 1px solid #edf1f7;
   background: #fff;
 }
 .dialog-footer .iknow {
+  min-height: 48px;
   margin: 0;
+  border-radius: 13px;
+  background: linear-gradient(110deg, #3978f5, #2864eb);
+  box-shadow: 0 4px 10px rgba(40, 100, 235, 0.14);
+  line-height: 48px;
 }
 .dialog-actions {
   display: flex;
 }
-.dialog-action {
-  flex: 1;
+.dialog-actions .dialog-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  width: 0;
   min-width: 0;
   min-height: 48px;
-  line-height: 48px;
+  line-height: 1.7;
   margin: 0;
-  padding: 0 12px;
+  padding: 11px 8px;
+  border: 1px solid transparent;
   border-radius: 12px;
-  background: #2864eb;
+  background: linear-gradient(110deg, #3978f5, #2864eb);
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   text-align: center;
 }
-.dialog-action-secondary {
-  margin-right: 12px;
-  background: #eef2f8;
-  color: #4e5c72;
+.dialog-actions .dialog-action-secondary {
+  margin-right: 10px;
+  border-color: #e4eaf3;
+  background: #f5f7fb;
+  color: #65738a;
 }
 .skip {
   display: inline-block;

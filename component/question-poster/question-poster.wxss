@@ -268,3 +268,115 @@ button.poster-button {
 .poster-scroll {
   overscroll-behavior: contain;
 }
+
+/* Match the shared business dialogs without changing the generated poster. */
+.poster-mask {
+  background: rgba(20, 32, 53, 0.48);
+}
+.poster-dialog {
+  left: 16px;
+  right: 16px;
+  max-width: 420px;
+  padding: 0;
+  border: 1px solid rgba(226, 235, 249, 0.8);
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(20, 38, 70, 0.2);
+}
+.poster-heading {
+  position: relative;
+  gap: 0;
+  margin: 0;
+  padding: 23px 62px 19px 22px;
+  background: linear-gradient(135deg, #f1f6ff 0%, #fff 94%);
+}
+.poster-heading__title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.poster-heading__caption {
+  margin-top: 5px;
+  color: #7b88a0;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.poster-heading button.poster-close {
+  position: absolute;
+  top: 11px;
+  right: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: transparent;
+}
+.poster-close view::before,
+.poster-close view::after {
+  left: 14px;
+  top: 21px;
+  background: #8a97ac;
+}
+.poster-state {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 22px 28px;
+  overscroll-behavior: contain;
+}
+.poster-scroll {
+  margin: 0 22px;
+  border-radius: 14px;
+}
+.poster-hint,
+.poster-environment,
+.poster-save-message {
+  margin-right: 22px;
+  margin-left: 22px;
+}
+.poster-actions {
+  gap: 10px;
+  margin-top: 16px;
+  padding: 16px 22px 20px;
+  border-top: 1px solid #edf1f7;
+}
+.poster-actions button.poster-button {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 11px 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+button.poster-button--primary {
+  background: linear-gradient(110deg, #3978f5, #2864eb);
+}
+button.poster-button--secondary {
+  border-color: #e4eaf3;
+  background: #f5f7fb;
+  color: #65738a;
+}
+button.poster-button[disabled] {
+  background: #a7bce7;
+}
+.poster-state button.poster-retry {
+  width: auto;
+  min-height: 48px;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+.poster-save-message {
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+button.poster-setting {
+  flex-shrink: 0;
+  width: auto;
+  min-height: 44px;
+  margin: 0 22px 14px;
+  padding: 8px 0;
+  font-size: 13px;
+}

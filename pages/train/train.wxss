@@ -79,7 +79,6 @@
 .practice-dock {
   flex-shrink: 0;
   padding: 12px 20px 14px;
-  border-top: 1px solid #e8edf5;
   background: #f5f7fb;
 }
 .train-btn {
@@ -106,4 +105,65 @@
   .practice-meta {
     margin-top: 6px;
   }
+}
+
+.practice-progress {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #d4e1fa;
+}
+.practice-progress-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #48618d;
+  font-size: 13px;
+}
+.practice-progress-count {
+  color: #2056ce;
+  font-size: 20px;
+  font-weight: 800;
+}
+.practice-progress-target {
+  color: #687c9e;
+  font-size: 13px;
+}
+.practice-progress-track {
+  height: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #d4e1fa;
+}
+.practice-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #2864eb;
+}
+.practice-progress-caption,
+.practice-progress-error {
+  color: #48618d;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.practice-progress-track + .practice-progress-caption {
+  margin-top: 8px;
+}
+.practice-reward-received {
+  color: #19764d;
+}
+.practice-progress-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.practice-progress-retry {
+  margin: 0 0 0 8px;
+  padding: 4px 12px;
+  min-height: 28px;
+  border-radius: 7px;
+  background: #fff;
+  color: #2056ce;
+  font-size: 12px;
+  line-height: 20px;
 }

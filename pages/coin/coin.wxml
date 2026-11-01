@@ -1,21 +1,14 @@
-<page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
-<view class="history-page" style="padding-bottom: 32px;">
-  <view class="coin-header"><view class="page-title">百科币明细</view><view class="page-subtitle">你的每一份收获与使用，都记录在这里</view></view>
-  <view class="coin-records">
-	<view class="record record-heading">
-		<text class="item-text item-text1" style="font-weight: normal;">数量</text>
-		<text class="item-text item-text2">来源</text>
-		<text class="item-text item-text3">时间</text>
-	</view>
-	<view wx:for="{{record_list}}" wx:key="index" class="record">
-		<text class="item-text item-text1 {{item.amount > 0 ? 'text-red' : 'text-green'}}">{{item.amount > 0 ? '+': ''}}{{item.amount}}</text>
-		<text class="item-text item-text2"> {{item.source_text}}</text>
-		<text class="item-text item-text3">{{item.create_time}}</text>
-	</view>
+<page-meta page-style="{{modal_locked ? 'overflow: hidden;' : ''}}" />
+<view class="history-page coin-page">
+  <view class="coin-header"><view class="page-title">百科币明细</view><view class="page-subtitle">收入与支出记录</view></view>
+  <view wx:if="{{record_list.length}}" class="coin-records">
+    <view wx:for="{{record_list}}" wx:key="index" class="coin-record">
+      <view class="coin-record__details"><text class="coin-record__source">{{item.source_text || '百科币变动'}}</text><text class="coin-record__time">{{item.create_time}}</text></view>
+      <text class="coin-record__amount {{item.amount > 0 ? 'coin-record__income' : ''}}">{{item.amount > 0 ? '+' : ''}}{{item.amount}}</text>
+    </view>
   </view>
-	<view wx:if="{{no_more_data == 1 && record_list.length > 0}}" class="list-footer">我是有底线滴 :)</view>
-	<view wx:if="{{record_list.length == 0 && !loading_str}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-coin.png" mode="aspectFit" /><view class="empty-title">还没有百科币记录</view><view class="empty-description">参与挑战，积累你的第一份收获</view></view>
-	<view wx:if="{{loading_str}}" class="list-footer">{{loading_str}}</view>
+  <view wx:if="{{no_more_data == 1 && record_list.length > 0}}" class="list-footer">已显示全部记录</view>
+  <view wx:if="{{record_list.length == 0 && !loading_str}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-coin.png" mode="aspectFit" /><view class="empty-title">还没有百科币记录</view><view class="empty-description">参与挑战，积累你的第一份收获</view></view>
+  <view wx:if="{{loading_str}}" class="list-footer">{{loading_str}}</view>
 </view>
-
 <ui-feedback state="{{ui_feedback}}" />

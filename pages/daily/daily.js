@@ -36,6 +36,7 @@ Page({
   data: {
     view_state: "loading",
     today: null,
+    daily_action_label: "开始今日挑战",
     enabled: false,
     credits: 0,
     pending: false,
@@ -148,10 +149,17 @@ Page({
         Number(today.question_id) <= 0
       )
         throw new Error("今日题目暂未准备好");
+      if (
+        Object.prototype.hasOwnProperty.call(today, "completed") &&
+        typeof today.completed !== "boolean"
+      )
+        throw new Error("今日完成状态暂时不可用");
       this._templateId = reminder.template_id || DAILY_TEMPLATE_ID;
       this.setData({
         view_state: "ready",
-        today,
+        today: { ...today, completed: today.completed === true },
+        daily_action_label:
+          today.completed === true ? "再答一次" : "开始今日挑战",
         enabled: reminder.enabled === true,
         credits: Number(reminder.credits) || 0,
         next_send_time: reminder.next_send_time || "",
@@ -162,6 +170,7 @@ Page({
         else
           this.setData({
             view_state: "error",
+            today: null,
             error_message: error.message || "今日挑战暂时打不开",
           });
       }

@@ -89,3 +89,10 @@
     display: none;
   }
 }
+
+.quiz-practice-line .quiz-time-value {
+  display: inline-block;
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

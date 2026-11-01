@@ -224,6 +224,12 @@ Page({
       });
     }
   },
+  primaryAction(event) {
+    if (this.data.answer_result === 0 || this.data.answer_result === 1) {
+      return this.nextQuestion(event);
+    }
+    return this.submitAnswer(event);
+  },
   submitAnswer: function () {
     this.setData({
       sub_button_active: "sub_button_active",
@@ -366,7 +372,6 @@ Page({
     }
     this._pageVisible = true;
     if (this._dailyReminder) this._dailyReminder.refresh();
-
   },
 
   /**
@@ -374,7 +379,6 @@ Page({
    */
   onHide() {
     this._pageVisible = false;
-
   },
 
   /**
@@ -384,7 +388,6 @@ Page({
     this._unloaded = true;
     if (this._dailyReminder) this._dailyReminder.dispose();
     this.stopCountDown();
-
   },
 
   /**

@@ -1,6 +1,5 @@
 <page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
-<view class="page-shell">
-  <view class="page-title">按你的习惯来</view><view class="page-subtitle">调整作答体验，找到舒服的节奏</view>
+<view class="page-shell settings-page">
   <view class="settings-group surface">
     <view class="menu" bindtap="openQuestionCountSheet" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">每次挑战题数</view><view class="setting-description">下一次普通挑战生效，可设置 1–100 题</view></view><text class="setting-value">{{challenge_question_count}}题</text><image src="../../images/right_arrow.png" class="setting-arrow" /></view>
     <view class="menu" bindtap="operateShowCorrectAnswer" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">显示正确答案</view><view class="setting-description">作答后查看正确选项</view></view><switch color="#2864eb" checked="{{show_correct_answer}}"></switch></view>

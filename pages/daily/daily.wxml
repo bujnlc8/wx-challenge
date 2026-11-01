@@ -4,11 +4,12 @@
   <view class="page-subtitle">每天一道题，给好奇心一点回应</view>
   <view wx:if="{{view_state == 'ready'}}">
     <view class="daily-card surface">
-      <view class="daily-card-top"><text class="daily-date">{{today.date}}</text><text class="daily-tag">今日一题</text></view>
-      <image class="daily-illustration" src="/images/ui-daily.png" mode="aspectFit" />
-      <view class="daily-title">今天的知识挑战，已就绪</view>
-      <view class="daily-description">与大家一起，发现一个新的知识点</view>
-      <button class="primary-button daily-start" bindtap="startDaily" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">开始今日挑战</button>
+      <view class="daily-card-top"><text class="daily-date">{{today.date}}</text><text class="daily-tag {{today.completed ? 'daily-tag-completed' : ''}}">{{today.completed ? '今日已完成' : '待作答'}}</text></view>
+      <view class="daily-card-content">
+        <view class="daily-card-copy"><view class="daily-title">{{today.completed ? '今日已完成' : '今日一题'}}</view><view class="daily-description">{{today.completed ? '再答一次，巩固今天的知识' : '准备好，发现一个新知识点'}}</view></view>
+        <image class="daily-illustration" src="/images/ui-daily.png" mode="aspectFit" />
+      </view>
+      <button class="primary-button daily-start" bindtap="startDaily" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{daily_action_label}}</button>
     </view>
     <view class="activity-card surface">
       <view class="activity-heading"><text class="activity-title">答题记录</text><text class="activity-range">近一年</text></view>

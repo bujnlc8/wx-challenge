@@ -1,14 +1,15 @@
 <view class="wx-popup {{show_modal ? '' : 'wx-popup--transparent'}}" hidden="{{flag}}" wx:if="{{content}}">
   <view class="popup-mask" catchtap="catchtouchmove" catchtouchmove="catchtouchmove"></view>
-  <view class="popup-container" catchtap="catchtouchmove">
+  <view class="popup-container" catchtap="catchtouchmove" aria-role="dialog" aria-label="{{title || '确认操作'}}">
     <view class="popup-header">
-      <view class="wx-popup-title" wx:if="{{title}}">{{title}}</view>
+      <view class="popup-title-mark"></view>
+      <view class="wx-popup-title">{{title || '确认操作'}}</view>
       <button class="popup-close" bindtap="popupCancel" aria-label="取消并关闭" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button>
     </view>
-    <view class="wx-popup-con">{{content}}</view>
+    <view class="wx-popup-con">{{display_content}}</view>
     <view class="wx-popup-btn">
-      <text class="btn-no btn" bindtap="popupCancel" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_no}}</text>
-      <text class="btn" bindtap="popupConfirm" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_ok}}</text>
+      <button class="btn-no btn" bindtap="popupCancel" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_no}}</button>
+      <button class="btn-ok btn" bindtap="popupConfirm" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{btn_ok}}</button>
     </view>
   </view>
 </view>

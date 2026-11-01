@@ -5,19 +5,26 @@ import fs from "node:fs";
 import vm from "node:vm";
 function harness(overrides = {}) {
   let definition,
-    uid = "old-user";
+    uid = "old-user",
+    navigate = () => {};
   const source = fs
     .readFileSync(new URL("../pages/daily/daily.js", import.meta.url), "utf8")
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
   const context = vm.createContext({
     getApp: () => ({ clickSound() {} }),
     Page: (d) => (definition = d),
-    wx: { getStorageSync: (key) => (key === "uid" ? uid : "token") },
+    wx: {
+      getStorageSync: (key) => (key === "uid" ? uid : "token"),
+      navigateTo: ({ url }) => navigate(url),
+    },
     Promise,
     Number,
     String,
     encodeURIComponent,
     showToast: () => {},
+    showLoading: () => ({}),
+    hideLoading() {},
+    DAILY_TEMPLATE_ID: "template",
     ...overrides,
   });
   installAuth(context);
@@ -30,7 +37,14 @@ function harness(overrides = {}) {
       Object.assign(this.data, v);
     },
   };
-  return { page, owner: () => context.getSessionIdentity(), setUid: (u) => (uid = u) };
+  return {
+    page,
+    owner: () => context.getSessionIdentity(),
+    setUid: (u) => (uid = u),
+    setNavigate: (fn) => {
+      navigate = fn;
+    },
+  };
 }
 test("returning after an account switch clears the previous pending state and preferences", () => {
   const s = harness();
@@ -94,3 +108,40 @@ test("failed preference save waits for the already-open subscription before rele
   assert.equal(loads, 1);
   assert.equal(notified, 1);
 });
+
+function dailyResponse(completed) {
+  const today = { date: "2026-11-01", question_id: 42 };
+  if (completed !== undefined) today.completed = completed;
+  return (path) =>
+    Promise.resolve({
+      data: {
+        code: 10000,
+        data: path.endsWith("/today") ? today : { enabled: true, credits: 1 },
+      },
+    });
+}
+for (const completed of [true, false, undefined])
+  test(`daily accepts completion ${completed} and keeps the original question action`, async () => {
+    const s = harness({ httpGET: dailyResponse(completed) });
+    await s.page.loadDaily();
+    assert.equal(s.page.data.view_state, "ready");
+    assert.equal(s.page.data.today.completed, completed === true);
+    assert.equal(
+      s.page.data.daily_action_label,
+      completed === true ? "再答一次" : "开始今日挑战",
+    );
+    let destination;
+    // Use the page's own action and native navigation boundary.
+    s.setNavigate((url) => {
+      destination = url;
+    });
+    s.page.startDaily();
+    assert.equal(destination, "/pages/single/single?question_id=42&from=daily");
+  });
+for (const completed of ["true", 1, null])
+  test(`daily rejects malformed completion ${JSON.stringify(completed)}`, async () => {
+    const s = harness({ httpGET: dailyResponse(completed) });
+    await s.page.loadDaily();
+    assert.equal(s.page.data.view_state, "error");
+    assert.equal(s.page.data.today, null);
+  });

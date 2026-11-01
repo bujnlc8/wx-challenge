@@ -1,57 +1,56 @@
+.coin-page {
+  padding-bottom: 32px;
+}
 .coin-header {
-  padding: 24px 20px;
+  padding: 20px;
 }
 .coin-records {
   margin: 0 20px;
-  background: #fff;
+  padding: 0 16px;
   border-radius: 20px;
-  padding: 4px 16px;
+  background: #fff;
 }
-.record {
+.coin-record {
   display: flex;
   align-items: center;
-  min-height: 74px;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 80px;
+  padding: 16px 0;
+  box-sizing: border-box;
   border-bottom: 1px solid #edf1f6;
-  font-size: 14px;
 }
-.record:last-child {
-  border-bottom: none;
+.coin-record:last-child {
+  border-bottom: 0;
 }
-.record-heading {
-  min-height: 48px;
-  color: #68758a;
-  font-size: 12px;
+.coin-record__details {
+  flex: 1;
+  min-width: 0;
 }
-.item-text {
-  display: flex;
-  align-items: center;
+.coin-record__source {
+  display: block;
+  color: #202b40;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
   word-break: break-word;
 }
-.item-text1 {
-  width: 24%;
-  flex-shrink: 0;
-  font-size: 17px;
-  font-weight: 700;
-}
-.record-heading .item-text1 {
-  font-size: 12px;
-  font-weight: 400;
-}
-.item-text2 {
-  flex: 1;
-  padding: 12px 8px;
-}
-.item-text3 {
-  width: 34%;
-  flex-shrink: 0;
+.coin-record__time {
+  display: block;
+  margin-top: 5px;
   color: #68758a;
   font-size: 12px;
-  text-align: right;
-  justify-content: flex-end;
+  line-height: 1.6;
+  word-break: break-word;
 }
-.text-green {
-  color: #19764d;
+.coin-record__amount {
+  flex-shrink: 0;
+  color: #68758a;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
-.text-red {
-  color: #ad3542;
+.coin-record__income {
+  color: #2864eb;
 }

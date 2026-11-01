@@ -1,5 +1,7 @@
 import { createModalLock } from "../../utils/modal-lock";
 const app = getApp();
+const confirmationText = (content) =>
+  content.replace(/[。.]+(?=[ \t]*(?:\r?\n|$))/g, "");
 Component({
   options: {
     multipleSlots: true,
@@ -32,14 +34,17 @@ Component({
   },
   data: {
     flag: true,
+    display_content: "",
   },
   observers: {
     "flag, content"(flag, content) {
+      this.setData({ display_content: confirmationText(content) });
       if (this._modalLock) this._modalLock.set(!flag && !!content);
     },
   },
   lifetimes: {
     attached() {
+      this.setData({ display_content: confirmationText(this.data.content) });
       this._modalLock = createModalLock();
       this._modalLock.set(!this.data.flag && !!this.data.content);
     },

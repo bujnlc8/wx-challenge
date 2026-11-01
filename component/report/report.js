@@ -27,8 +27,24 @@ Component({
     feedback_checked_value: [],
     captcha_data: "",
     submit_pending: false,
+    keyboard_height: 0,
+    feedback_options: [
+      { value: "1", label: "题干错误", checked: false },
+      { value: "2", label: "选项错误", checked: false },
+      { value: "4", label: "答案错误", checked: false },
+      { value: "16", label: "类型错误", checked: false },
+      { value: "8", label: "其他问题", checked: false },
+    ],
   },
   observers: {
+    feedback_checked_value(values) {
+      this.setData({
+        feedback_options: this.data.feedback_options.map((option) => ({
+          ...option,
+          checked: values.includes(option.value),
+        })),
+      });
+    },
     "show_feedback, question_id"() {
       this.syncFeedbackSession();
       if (
@@ -90,6 +106,7 @@ Component({
         feedback_checked_value: [],
         captcha_data: "",
         submit_pending: false,
+        keyboard_height: 0,
       });
     },
     syncFeedbackSession() {
@@ -157,6 +174,17 @@ Component({
         .catch(() => {
           if (current()) showToast("网络异常");
         });
+    },
+    feedbackKeyboardChange(e) {
+      if (
+        this._reportDisposed ||
+        this._reportHidden ||
+        !this.data.show_feedback
+      )
+        return;
+      this.setData({
+        keyboard_height: Math.max(0, Number(e.detail.height) || 0),
+      });
     },
     feedbackRemarkInput: function (e) {
       if (this.data.submit_pending) return;

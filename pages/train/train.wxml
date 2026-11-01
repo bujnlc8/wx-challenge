@@ -6,6 +6,16 @@
         <view class="practice-title">自在练习，慢慢积累</view>
         <view class="practice-copy">没有倒计时的压力，按自己的节奏探索</view>
         <view class="practice-meta"><text class="practice-chip">不限时</text><text class="practice-chip">不计分</text></view>
+        <view class="practice-progress">
+          <block wx:if="{{practice_progress_state == 'ready'}}">
+            <view class="practice-progress-heading"><text>今日已练</text><view><text class="practice-progress-count">{{practice_progress.answered_count}}</text><text class="practice-progress-target"> / {{practice_progress.target_count}}</text></view></view>
+            <view class="practice-progress-track" aria-label="今日已练{{practice_progress.answered_count}}道，目标{{practice_progress.target_count}}道"><view class="practice-progress-fill" style="width: {{practice_progress_percent}}%;"></view></view>
+            <view class="practice-progress-caption {{practice_progress.reward_received ? 'practice-reward-received' : ''}}">{{practice_reward_text}}</view>
+          </block>
+          <view wx:elif="{{practice_progress_state == 'logged-out'}}" class="practice-progress-caption">登录后记录今日进度</view>
+          <view wx:elif="{{practice_progress_state == 'error'}}" class="practice-progress-error"><text>今日进度暂时打不开</text><button class="practice-progress-retry" bindtap="loadPracticeProgress" hover-class="button-pressed">重试</button></view>
+          <view wx:else class="practice-progress-caption">正在加载今日进度…</view>
+        </view>
       </view>
       <view class="practice-guide surface">
         <view class="practice-guide-title">练习规则</view>

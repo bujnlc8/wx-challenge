@@ -117,3 +117,15 @@ function isRichQuestion(html) {
   return html.indexOf('/>') >= 0 || html.indexOf('</') >= 0 || questionHtml(html) !== html;
 }
 module.exports.isRichQuestion = isRichQuestion;
+
+function elapsedTime(value) {
+  var seconds = value - 0;
+  if (seconds - seconds !== 0 || seconds < 0) seconds = 0;
+  seconds = seconds - seconds % 1;
+  var minutes = (seconds - seconds % 60) / 60;
+  var hours = (minutes - minutes % 60) / 60;
+  var secondText = seconds % 60 < 10 ? '0' + seconds % 60 : '' + seconds % 60;
+  var minuteText = minutes % 60 < 10 ? '0' + minutes % 60 : '' + minutes % 60;
+  return hours > 0 ? hours + ':' + minuteText + ':' + secondText : minuteText + ':' + secondText;
+}
+module.exports.elapsedTime = elapsedTime;

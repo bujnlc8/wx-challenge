@@ -2,7 +2,7 @@
 <wxs src="../../utils/util.wxs" module="tools" />
 <view wx:if="{{logined}}" class="question-container quiz-page">
   <view class="quiz-header quiz-header--practice">
-    <view class="quiz-header__top quiz-practice-line"><text class="quiz-mode">练习模式</text><view class="quiz-practice-stats"><text>第{{total_index}}题</text><text class="quiz-stat-separator">/</text><text>答对{{question_corrent_num}}</text><text class="quiz-stat-separator">/</text><text>连对{{continue_correct_num}}</text></view><view class="quiz-clock"><view class="quiz-clock__icon"></view><text>{{count_down}}s</text></view></view>
+    <view class="quiz-header__top quiz-practice-line"><text class="quiz-mode">练习模式</text><view class="quiz-practice-stats"><text>第{{total_index}}题</text><text class="quiz-stat-separator">/</text><text>答对{{question_corrent_num}}</text><text class="quiz-stat-separator">/</text><text>连对{{continue_correct_num}}</text></view><view class="quiz-clock"><view class="quiz-clock__icon"></view><text class="quiz-time-value">{{tools.elapsedTime(count_down)}}</text></view></view>
   </view>
   <view class="question-common quiz-card" bindlongpress="hideQuestion">
     <view class="question_body"><rich-text wx:if="{{tools.isRichQuestion(current_question)}}" space="true" nodes="{{tools.questionHtml(current_question)}}" /><text wx:else>{{current_question}}</text></view>
@@ -23,7 +23,7 @@
     <text class="analysis-label">答案解析</text><rich-text wx:if="{{tools.indexOf(analysis, '/>') || tools.indexOf(analysis, '</')}}" space="true" nodes="{{analysis}}" /><text wx:else>{{analysis}}</text>
   </view>
   <view class="quiz-footer"><view class="quiz-footer__inner">
-    <view class="quiz-footer__primary-row"><button class="quiz-nav-button" bindtap="upQuestion" hover-class="button-pressed" disabled="{{current_index == 0}}">上一题</button><button class="quiz-submit" bindtap="submitAnswer" disabled="{{!selected_option || answer_result != -2}}"><view wx:if="{{answer_result == -1}}" class="quiz-button-spinner"></view>{{answer_result == -1 ? '正在提交' : (answer_result >= 0 ? '已作答' : '确认答案')}}</button><button class="quiz-nav-button" bindtap="nextQuestion" hover-class="button-pressed">下一题</button></view>
+    <view class="quiz-footer__primary-row"><button class="quiz-nav-button" bindtap="upQuestion" hover-class="button-pressed" disabled="{{current_index == 0}}">上一题</button><button class="quiz-submit" bindtap="primaryAction" disabled="{{answer_result == -1 || (answer_result == -2 && !selected_option)}}"><view wx:if="{{answer_result == -1}}" class="quiz-button-spinner"></view>{{answer_result == -1 ? '正在提交' : (answer_result >= 0 ? '下一题' : '确认答案')}}</button><button wx:if="{{answer_result < 0}}" class="quiz-nav-button" bindtap="nextQuestion" hover-class="button-pressed" disabled="{{answer_result == -1 || !tools.indexOf(answered_ids, current_question_id)}}">下一题</button></view>
       <view class="question-footer-actions">
         <button class="question-feedback-button" bindtap="doFeedback" hover-class="button-pressed"><image src="/images/report_error.png" class="question-footer-icon" />纠错</button>
         <button class="question-share-button" bindtap="openQuestionPoster" hover-class="button-pressed"><image src="/images/ui-share.png" class="question-share-icon" />分享</button>
