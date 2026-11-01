@@ -479,3 +479,130 @@ test("changing owner while a returned page waits for cancellation never starts a
   await flush();
   assert.equal(p.data.view_state, "empty");
 });
+function removalPopup(s, p) {
+  s.scope.createModalLock = () => ({
+    set() {},
+    dispose() {},
+    hide() {},
+    show() {},
+  });
+  vm.runInContext(
+    "(function(){" + read("component/popup/popup.js") + "\n})()",
+    s.scope,
+  );
+  const d = s.scope.component;
+  const popup = {
+    ...d.methods,
+    data: {
+      ...Object.fromEntries(
+        Object.entries(d.properties).map(([key, value]) => [key, value.value]),
+      ),
+      ...d.data,
+    },
+    setData(value) {
+      Object.assign(this.data, value);
+    },
+    triggerEvent(event) {
+      return event === "success"
+        ? p.confirmRemoveFavorite()
+        : p.cancelRemoveFavorite();
+    },
+  };
+  d.lifetimes.attached.call(popup);
+  p.selectComponent = () => popup;
+  return popup;
+}
+async function loadedFavorites(
+  s,
+  items = [{ question_id: 1, content: "题目", options: "甲|乙" }],
+) {
+  const p = page(s);
+  s.calls[0].resolve(ok({ items, total: items.length, page: 1, size: 12 }));
+  await flush();
+  return p;
+}
+test("favorite star opens confirmation and keeping the favorite sends no POST", async () => {
+  const s = runtime(),
+    p = await loadedFavorites(s),
+    popup = removalPopup(s, p);
+  assert.equal(
+    typeof p.requestRemoveFavorite,
+    "function",
+    "favorite star needs a confirmation-only action",
+  );
+  p.requestRemoveFavorite({ currentTarget: { dataset: { id: 1 } } });
+  assert.equal(popup.data.flag, false);
+  assert.equal(s.calls.length, 1);
+  assert.equal(s.sounds.length, 1);
+  popup.popupCancel();
+  assert.equal(popup.data.flag, true);
+  assert.equal(s.calls.length, 1);
+  assert.equal(s.sounds.length, 2);
+});
+test("confirming removal twice sends one POST and does not add a second handler sound", async () => {
+  const s = runtime(),
+    p = await loadedFavorites(s),
+    popup = removalPopup(s, p);
+  assert.equal(typeof p.requestRemoveFavorite, "function");
+  p.requestRemoveFavorite({ currentTarget: { dataset: { id: 1 } } });
+  popup.popupConfirm();
+  assert.equal(
+    s.sounds.length,
+    2,
+    "one star sound plus the popup confirmation sound",
+  );
+  popup.popupConfirm();
+  assert.equal(s.calls.filter((call) => call.method === "POST").length, 1);
+  assert.equal(s.calls[1].data.favorite, false);
+  s.calls[1].resolve(ok({ question_id: 1, favorite: false }));
+  await flush();
+  assert.equal(s.calls[2].data.page, 1);
+  s.calls[2].resolve(ok({ items: [], total: 0, page: 1, size: 12 }));
+  await flush();
+  assert.equal(p.data.view_state, "empty");
+});
+test("hidden, refreshed, unloaded or other-owner removal confirmations cannot delete a newer list", async () => {
+  for (const invalidate of [
+    (p) => p.onHide(),
+    (p) => p.refreshFavorites(),
+    (p) => p.onUnload(),
+    (p, s) => s.setOwner("account-b"),
+  ]) {
+    const s = runtime(),
+      p = await loadedFavorites(s),
+      popup = removalPopup(s, p);
+    assert.equal(typeof p.requestRemoveFavorite, "function");
+    p.requestRemoveFavorite({ currentTarget: { dataset: { id: 1 } } });
+    invalidate(p, s);
+    popup.popupConfirm();
+    assert.equal(s.calls.filter((call) => call.method === "POST").length, 0);
+  }
+});
+test("favorite cards show the recorded local timestamp without a clock or timezone replacement", async () => {
+  const s = runtime();
+  const p = await loadedFavorites(s, [
+    {
+      question_id: 1,
+      content: "题目",
+      created_at: "2026-11-01T08:09:10",
+      options: "甲|乙",
+    },
+    {
+      question_id: 2,
+      content: "题目",
+      created_at: "2026-10-31T23:45",
+      options: "甲|乙",
+    },
+    { question_id: 3, content: "题目", created_at: null, options: "甲|乙" },
+    {
+      question_id: 4,
+      content: "题目",
+      created_at: "invalid",
+      options: "甲|乙",
+    },
+  ]);
+  assert.deepEqual(
+    Array.from(p.data.question_list, (item) => item.created_at_text),
+    ["2026-11-01 08:09:10", "2026-10-31 23:45:00", "—", "—"],
+  );
+});

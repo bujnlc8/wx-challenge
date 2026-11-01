@@ -20,6 +20,25 @@
   color: #8793a6;
   font-size: 12px;
 }
+.favorite-remove-star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  margin: -13px -12px -13px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.favorite-remove-star::after {
+  border: 0;
+}
+.favorite-remove-star[disabled] {
+  background: transparent;
+  opacity: 0.5;
+}
 .favorite-card-heading image {
   width: 18px;
   height: 18px;
@@ -58,12 +77,16 @@
 .favorites-retry-more::after {
   border: 0;
 }
-.favorite-remove {
-  padding: 8px 0;
-  background: transparent;
-  color: #68758a;
+.favorite-created-at {
+  flex: 1;
+  min-width: 0;
+  color: #8793a6;
+  font-size: 12px;
+  line-height: 1.7;
 }
-.favorite-start {
+.favorite-card-footer .favorite-start {
+  flex-shrink: 0;
+  margin-left: 12px;
   padding: 8px 20px;
   border-radius: 10px;
   background: #edf3ff;

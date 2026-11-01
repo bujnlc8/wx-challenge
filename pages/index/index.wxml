@@ -2,19 +2,49 @@
 <view class="board" catchtap="catchtouchmove" wx:if="{{show_tip}}" catchtouchmove="catchtouchmove"></view>
 <view class="container home">
   <view class="challenge-intro">
-    <view class="intro-title">知识无界，挑战不停</view>
+    <view class="intro-brand">
+      <view class="intro-title">知识无界，挑战不停</view>
+      <image class="intro-logo" src="/images/ui-about-logo.png" mode="aspectFit" />
+    </view>
     <view class="intro-copy">用你的知识储备，刷新自己的纪录</view>
-    <view class="intro-meta"><text class="intro-chip">限时答题</text><text class="intro-chip">积分排行</text><text class="rules-link" bindtap="openTip">挑战规则</text></view>
+    <view class="intro-meta">
+      <view class="intro-settings">
+        <view class="intro-category"><text class="intro-label">题型</text><text>{{challenge_category}}</text></view>
+        <view class="intro-count"><text class="intro-label">每轮</text><text>{{challenge_question_count}} 题</text></view>
+      </view>
+      <text class="rules-link" bindtap="openTip">挑战规则</text>
+    </view>
   </view>
-  <view class="ranking-heading"><text class="section-title">排行榜</text><text class="section-caption">与答题高手一起进步</text></view>
-  <view class="ranking-tabs">
-    <view class="tab {{t == 0 ? 'tab-active': '' }}" data-t="0" bindtap="changeTab">本周排行榜</view>
-    <view class="tab {{t == 1 ? 'tab-active': '' }}" data-t="1" bindtap="changeTab">历史高分榜</view>
+  <view class="ranking-heading">
+    <text class="section-title">排行榜</text>
+    <view class="ranking-tabs">
+      <view class="tab {{t == 0 ? 'tab-active': '' }}" data-t="0" bindtap="changeTab">本周排行榜</view>
+      <view class="tab {{t == 1 ? 'tab-active': '' }}" data-t="1" bindtap="changeTab">历史高分榜</view>
+    </view>
   </view>
-  <view wx:if="{{t == 0}}" class="reset-note">下次重置：<text wx:if="{{reset_day > 0}}">{{reset_day}}天 </text>{{reset_hour}} 时 {{reset_minute}}分</view>
-  <view wx:if="{{t == 1}}" class="reset-note">高分榜不重置，上榜至少需要2000分</view>
+  <view class="ranking-info">
+    <view wx:if="{{t == 0}}" class="reset-note">下次重置：<block wx:if="{{ranking_loaded}}"><text wx:if="{{reset_day > 0}}">{{reset_day}}天 </text>{{reset_hour}} 时 {{reset_minute}}分</block><text wx:else="">—</text></view>
+    <view wx:else="" class="reset-note">高分榜不重置，上榜至少需要2000分</view>
+    <text wx:if="{{ranking_loaded && ranking_error}}" class="ranking-refresh ranking-retry" bindtap="retryRanking" aria-label="榜单更新失败，点击重试">重试</text>
+    <text wx:elif="{{ranking_loaded && ranking_loading}}" class="ranking-refresh">更新中…</text>
+  </view>
   <view class="ranking-labels"><text class="label-player">排名 / 挑战者</text><text class="label-score">积分</text><text class="label-count">答题</text></view>
   <scroll-view class="ranking-list" scroll-y="true" enhanced="true" show-scrollbar="false">
+    <block wx:if="{{!ranking_loaded && ranking_loading}}">
+      <view class="ranking-item ranking-skeleton" wx:for="{{skeleton_rows}}" wx:key="*this" aria-label="榜单加载中">
+        <view class="skeleton-rank"></view><view class="skeleton-avatar"></view><view class="skeleton-name"></view><view class="skeleton-score"></view>
+      </view>
+    </block>
+    <view wx:elif="{{!ranking_loaded && ranking_error}}" class="ranking-state">
+      <view class="state-title">榜单加载失败</view>
+      <view class="state-description">请检查网络后重试</view>
+      <button class="ranking-retry-button" bindtap="retryRanking" hover-class="button-pressed">重新加载</button>
+    </view>
+    <view wx:elif="{{ranking_loaded && current_rank_list.length == 0}}" class="ranking-state ranking-empty">
+      <image class="ranking-empty-image" src="/images/ui-empty-ranking.png" mode="aspectFit" />
+      <view class="state-title">暂无排行记录</view>
+    </view>
+    <block wx:else="">
     <view class="ranking-item" wx:for="{{current_rank_list}}" wx:key="index">
       <text class="index-class {{index == 0 ? 'first-place': index==1 ? 'second-place':index==2 ? 'third-place': 'other-place'}}">{{index + 1}}</text>
       <view class="avatar-wrap">
@@ -24,25 +54,28 @@
       </view>
       <text class="player-name">{{item.nickname}}</text><text class="player-score">{{item.total_score}}分</text><text class="player-count">{{item.total_question}}题</text>
     </view>
-    <view wx:if="{{current_rank_list.length == 0}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-ranking.png" mode="aspectFit" /><view class="empty-title">榜单还在等待第一位挑战者</view><view class="empty-description">开启挑战，让你的知识闪光</view></view>
+    </block>
   </scroll-view>
   <view class="home-bottom">
-    <view wx:if="{{logined == 1 && mine}}" class="ranking-item my-ranking">
-      <text class="index-class {{my_rank == 1 ? 'first-place': my_rank==2 ? 'second-place':my_rank==3 ? 'third-place': 'other-place'}}">{{my_rank}}</text>
+    <view class="ranking-item my-ranking" bindtap="onMyRankingTap">
+      <text wx:if="{{my_rank_state == 'ranked'}}" class="index-class {{my_rank == 1 ? 'first-place': my_rank==2 ? 'second-place':my_rank==3 ? 'third-place': 'other-place'}}">{{my_rank_label}}</text>
       <view class="avatar-wrap">
-        <image class="avatar_class" src="{{mine.avatar_url}}" />
-        <image src="/images/ui-grade-{{mine.grade}}.png" class="grade-icon" wx:if="{{mine.grade > 0}}" />
-        <image src="/images/ui-grade-0.png" class="grade-icon" wx:else="" />
+        <image class="avatar_class" src="{{mine.avatar_url || '/images/default_avatar.png'}}" />
+        <image src="/images/ui-grade-{{mine.grade > 0 ? mine.grade : 0}}.png" class="grade-icon" />
       </view>
-      <text class="player-name">{{mine.nickname || ''}}</text>
-      <text class="player-score" wx:if="{{mine.total_score != -1}}">{{mine.total_score || 0}}分</text>
-      <text class="player-count" wx:if="{{mine.total_score != -1}}">{{mine.total_question || 0}}题</text>
-      <text class="empty-record" wx:if="{{mine.total_score == -1}}">暂无答题记录</text>
-    </view>
-    <view wx:else="" class="ranking-item my-ranking" bindtap="goToLogin">
-      <text class="index-class other-place">99...</text>
-      <view class="avatar-wrap"><image class="avatar_class" src="/images/default_avatar.png" /><image src="/images/ui-grade-0.png" class="grade-icon" /></view>
-      <text class="player-name">请登录后答题</text>
+      <view class="personal-identity">
+        <view class="player-name">{{logined ? (mine.nickname || '我的排行') : '未登录'}}</view>
+        <view class="personal-note" wx:if="{{my_rank_state == 'guest'}}">登录后查看个人排行</view>
+        <view class="personal-note" wx:elif="{{my_rank_state == 'empty'}}">暂无答题记录</view>
+        <view class="personal-note" wx:elif="{{my_rank_state == 'loading'}}">正在加载个人排行</view>
+        <view class="personal-note ranking-retry" wx:elif="{{my_rank_state == 'error'}}">加载失败，点此重试</view>
+        <view class="personal-note" wx:else="">{{my_rank_state == 'unranked' ? '未上榜' : '我的排行'}}</view>
+      </view>
+      <block wx:if="{{logined && mine && mine.total_score != -1}}">
+        <text class="player-score">{{mine.total_score || 0}}分</text>
+        <text class="player-count">{{mine.total_question || 0}}题</text>
+      </block>
+      <text wx:if="{{my_rank_state == 'guest'}}" class="personal-login">登录</text>
     </view>
     <text bindtap="startChallenge" class="primary-button start_challenge_class" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">开始挑战</text>
   </view>
@@ -61,7 +94,7 @@
 		<view class="rule-item">（5）每答对1题送「该题得分 / 5」个百科币，每答对<text class="hi-num">100</text>题(去重)，额外送<text class="hi-num">10000</text>百科币。答的越多，送的越多！</view>
 		<view class="rule-item">（6）点击右上角按钮本轮可跳过该题，每日限<text class="hi-num">1</text>次机会<text class="common-gray underline-class" bindtap="goToClassIntro" style="cursor: pointer;">（见等级说明）</text>；</view>
 		<view class="rule-item">（7）长按题目可永久跳过，每日限<text class="hi-num">5</text>次机会；</view>
-		<view class="rule-item">（8）对题目有任何疑问，欢迎点击左上角按钮进行反馈，成功将送500百科币；<text class="common-gray">（不限次数）</text></view>
+		<view class="rule-item">（8）对题目有任何疑问，欢迎通过底部或答错弹窗中的纠错进行反馈，成功将送500百科币；<text class="common-gray">（不限次数）</text></view>
     </view></view>
     <view class="dialog-footer"><view class="iknow" bindtap="closeTip" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">知道了</view></view>
   </view>

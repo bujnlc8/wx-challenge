@@ -2,5 +2,8 @@
   "navigationBarTitleText": "收藏夹",
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
-  "backgroundColor": "#f5f7fb"
+  "backgroundColor": "#f5f7fb",
+  "usingComponents": {
+    "popup": "/component/popup/popup"
+  }
 }

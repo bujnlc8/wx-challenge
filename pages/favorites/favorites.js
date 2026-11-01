@@ -21,12 +21,39 @@ function favoriteListPayload(response) {
     throw Error("收藏列表异常，请重试");
   return data;
 }
+function favoriteCreatedAt(value) {
+  if (typeof value !== "string") return "—";
+  const parts =
+    /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/.exec(
+      value,
+    );
+  if (!parts) return "—";
+  const [, year, month, day, hour, minute, second = "00"] = parts;
+  const leap =
+    Number(year) % 4 === 0 &&
+    (Number(year) % 100 !== 0 || Number(year) % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (
+    Number(year) < 1 ||
+    Number(month) < 1 ||
+    Number(month) > 12 ||
+    Number(day) < 1 ||
+    Number(day) > days[Number(month) - 1] ||
+    Number(hour) > 23 ||
+    Number(minute) > 59 ||
+    Number(second) > 59
+  )
+    return "—";
+  // created_at is a local DATETIME. Preserve its clock fields without timezone conversion.
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
 function favoriteQuestion(item) {
   const id = Number(item.question_id);
   if (!Number.isSafeInteger(id) || id <= 0) throw Error("收藏题目异常，请重试");
   const [content, media = ""] = String(item.content || "").split("###");
   return {
     question_id: id,
+    created_at_text: favoriteCreatedAt(item.created_at),
     content: content.replace(/\n\n/g, "\n"),
     question_image: media,
     is_video: /\.(mp4|mov|m4v)(?:[?#]|$)/i.test(media),
@@ -61,6 +88,7 @@ Page({
     this.refreshFavorites();
   },
   onHide() {
+    this.clearRemoveFavoriteIntent();
     this._visible = false;
     this._generation++;
     this._listFlight = null;
@@ -78,6 +106,7 @@ Page({
     );
   },
   refreshFavorites() {
+    this.clearRemoveFavoriteIntent();
     this._generation++;
     this._listFlight = null;
     this._owner = getSessionIdentity();
@@ -168,6 +197,7 @@ Page({
   onReachBottom() {
     if (
       !this.data.removing_id &&
+      !this._removeFavoriteIntent &&
       this.data.view_state === "ready" &&
       !this.data.no_more_data &&
       !this._listFlight
@@ -202,6 +232,55 @@ Page({
       url: "/pages/single/single?question_id=" + id + "&from=favorite",
     });
   },
+  getRemoveFavoritePopup() {
+    if (!this._removeFavoritePopup && this.selectComponent)
+      this._removeFavoritePopup = this.selectComponent(
+        "#favorite-remove-popup",
+      );
+    return this._removeFavoritePopup;
+  },
+  clearRemoveFavoriteIntent() {
+    this._removeFavoriteIntent = null;
+    const popup = this.getRemoveFavoritePopup();
+    if (popup && popup.data.flag === false) popup.hidePopup();
+  },
+  requestRemoveFavorite(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (
+      this._removeFavoriteIntent ||
+      this.data.removing_id ||
+      this._listFlight ||
+      !this.isFavoritePageCurrent(this._owner, this._generation) ||
+      !this.data.question_list.some((item) => item.question_id === id)
+    )
+      return;
+    const popup = this.getRemoveFavoritePopup();
+    if (!popup) return;
+    app.clickSound();
+    this._removeFavoriteIntent = {
+      id,
+      owner: this._owner,
+      generation: this._generation,
+    };
+    if (popup.data.flag !== false) popup.showPopup();
+  },
+  cancelRemoveFavorite() {
+    this.clearRemoveFavoriteIntent();
+  },
+  confirmRemoveFavorite() {
+    const intent = this._removeFavoriteIntent;
+    this.clearRemoveFavoriteIntent();
+    if (
+      !intent ||
+      !this.isFavoritePageCurrent(intent.owner, intent.generation) ||
+      !this.data.question_list.some((item) => item.question_id === intent.id)
+    )
+      return;
+    // popup owns the confirmation click sound; this helper performs only the write.
+    return this.removeFavorite({
+      currentTarget: { dataset: { id: intent.id } },
+    });
+  },
   async removeFavorite(event) {
     const id = Number(event.currentTarget.dataset.id);
     if (
@@ -213,7 +292,6 @@ Page({
       this._owner !== getSessionIdentity()
     )
       return;
-    app.clickSound();
     const owner = this._owner,
       generation = this._generation;
     this.setData({ removing_id: id });
