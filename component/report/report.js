@@ -28,6 +28,8 @@ Component({
     captcha_data: "",
     submit_pending: false,
     keyboard_height: 0,
+    feedback_body_height: 310,
+    feedback_scroll_target: "",
     feedback_options: [
       { value: "1", label: "题干错误", checked: false },
       { value: "2", label: "选项错误", checked: false },
@@ -67,6 +69,9 @@ Component({
       this._captchaSequence = 0;
       this.syncFeedbackSession();
     },
+    ready() {
+      this.measureFeedbackBody();
+    },
     detached() {
       this._reportDisposed = true;
       this._captchaAwaitingVisible = false;
@@ -99,15 +104,20 @@ Component({
       this._reportGeneration = (this._reportGeneration || 0) + 1;
       this._captchaSequence = (this._captchaSequence || 0) + 1;
       this._pendingFeedback = null;
-      this.setData({
-        feedback_remark: "",
-        captcha_token: "",
-        captcha_image: "",
-        feedback_checked_value: [],
-        captcha_data: "",
-        submit_pending: false,
-        keyboard_height: 0,
-      });
+      this._feedbackActiveField = "";
+      this.setData(
+        {
+          feedback_remark: "",
+          captcha_token: "",
+          captcha_image: "",
+          feedback_checked_value: [],
+          captcha_data: "",
+          submit_pending: false,
+          keyboard_height: 0,
+          feedback_scroll_target: "",
+        },
+        () => this.measureFeedbackBody(),
+      );
     },
     syncFeedbackSession() {
       if (!this._reportAttached || this._reportDisposed) return;
@@ -175,6 +185,51 @@ Component({
           if (current()) showToast("网络异常");
         });
     },
+    measureFeedbackBody() {
+      if (
+        !this.data.show_feedback ||
+        this._reportDisposed ||
+        this._reportHidden ||
+        typeof this.createSelectorQuery !== "function"
+      )
+        return;
+      const session = this.feedbackSession();
+      this.createSelectorQuery()
+        .select(".feedback-fields")
+        .boundingClientRect((rect) => {
+          if (
+            this.isFeedbackCurrent(session) &&
+            rect &&
+            rect.height > 0 &&
+            Math.ceil(rect.height) !== this.data.feedback_body_height
+          ) {
+            this.setData({ feedback_body_height: Math.ceil(rect.height) });
+          }
+        })
+        .exec();
+    },
+    scrollFeedbackRemark() {
+      if (this._feedbackActiveField !== "remark" || !this.data.keyboard_height)
+        return;
+      const session = this.feedbackSession();
+      this.setData({ feedback_scroll_target: "" }, () => {
+        if (
+          this.isFeedbackCurrent(session) &&
+          this._feedbackActiveField === "remark"
+        )
+          this.setData({ feedback_scroll_target: "feedback-remark" });
+      });
+    },
+    feedbackFocus(e) {
+      if (
+        this._reportDisposed ||
+        this._reportHidden ||
+        !this.data.show_feedback
+      )
+        return;
+      this._feedbackActiveField = e.currentTarget.dataset.field;
+      this.scrollFeedbackRemark();
+    },
     feedbackKeyboardChange(e) {
       if (
         this._reportDisposed ||
@@ -182,9 +237,12 @@ Component({
         !this.data.show_feedback
       )
         return;
-      this.setData({
-        keyboard_height: Math.max(0, Number(e.detail.height) || 0),
-      });
+      const raw = Number(e.detail.height);
+      const height = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+      if (height === this.data.keyboard_height) return;
+      this.setData({ keyboard_height: height }, () =>
+        this.scrollFeedbackRemark(),
+      );
     },
     feedbackRemarkInput: function (e) {
       if (this.data.submit_pending) return;

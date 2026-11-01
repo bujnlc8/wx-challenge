@@ -145,11 +145,11 @@
 .practice-progress-error {
   color: #48618d;
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 22px;
 }
 .practice-progress-status {
   margin-top: 8px;
-  min-height: 41px;
+  min-height: 22px;
 }
 .practice-progress-placeholder {
   color: #687c9e;
@@ -163,10 +163,13 @@
   align-items: center;
   justify-content: space-between;
 }
-.practice-progress-retry {
+.practice-progress-error .practice-progress-retry {
+  flex-shrink: 0;
+  width: auto;
+  white-space: nowrap;
   margin: 0 0 0 8px;
-  padding: 4px 12px;
-  min-height: 28px;
+  padding: 0 10px;
+  min-height: 22px;
   border-radius: 7px;
   background: #fff;
   color: #2056ce;
