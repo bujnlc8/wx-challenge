@@ -8,4 +8,4 @@
 
 新增 `tests/practice-milestone-notice.test.mjs` 7 项行为测试先 RED 后 GREEN；旧 `practice-primary-action` fixture 仅改用真实 auth-loader。与现有下一题、每日订阅、纠错、滚动测试合计 50 项局部测试通过。官方 WCC 编译练习页、`utils/util.wxs` 和 popup/report/ui-feedback/question-poster 依赖通过，`git diff --check` 通过。测试覆盖正确/错误达标、空提示不猜测、所有遮挡关闭只消费一次、后台恢复、切号/卸载/过期丢弃，以及不增加 GET/答题 POST、不改变选项和时钟、不新增奖励音效。
 
-Node 验证响应/队列/调用契约；原生订阅、纠错导航及海报关闭后的可视提示仍需开发者工具/真机验收。本次前端变更未 stage、commit 或上传，后台钱包发奖契约由配套后端验证。
+Node 验证响应/队列/调用契约；原生订阅、纠错导航及海报关闭后的可视提示仍需开发者工具/真机验收。最初交付时尚未提交或上传；最终前端363项回归、官方编译与开发版上传已完成，后台228项测试及15项线上检查通过，发布状态以release-2026-11-01.md为准。
