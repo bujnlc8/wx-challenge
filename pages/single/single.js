@@ -60,7 +60,7 @@ function checkedResult(detail, questionId, options) {
     !detail ||
     Number(detail.question_id) !== questionId ||
     ![0, 1].includes(detail.result) ||
-    detail.score !== (detail.result === 1 ? 100 : 0) ||
+    !(detail.result === 1 ? [1000, 100] : [0]).includes(detail.score) ||
     !options.some((option) => option.number === Number(detail.right_answer)) ||
     (detail.analysis != null && typeof detail.analysis !== "string")
   )
@@ -88,6 +88,7 @@ Page({
     right_answer: 0,
     analysis: "",
     score: 0,
+    elapsed_text: "00:00",
     error_message: "",
     submit_error: "",
     show_feedback: false,
@@ -96,6 +97,7 @@ Page({
   },
   onLoad(options) {
     this._disposed = false;
+    this._visible = true;
     this._generation = 0;
     this._owner = account();
     const questionId = parseQuestionEntry(options);
@@ -130,6 +132,7 @@ Page({
   },
   onShow() {
     if (this._disposed) return;
+    this._visible = true;
     this.setData({
       show_correct_answer: app.show_correct_answer,
       show_analysis: app.show_analysis,
@@ -144,11 +147,70 @@ Page({
       if (this.data.question_id) this.loadQuestion();
     }
     if (this._dailyReminder) this._dailyReminder.refresh();
+    this.resumeElapsedClock();
+  },
+  onHide() {
+    this._visible = false;
+    this.clearElapsedTimer();
   },
   onUnload() {
     this._disposed = true;
+    this.clearElapsedTimer();
+    this._elapsedStartedAt = null;
     this._generation++;
     if (this._dailyReminder) this._dailyReminder.dispose();
+  },
+  clearElapsedTimer() {
+    if (this._elapsedTimer != null) clearInterval(this._elapsedTimer);
+    this._elapsedTimer = null;
+  },
+  resetElapsedClock() {
+    this.clearElapsedTimer();
+    this._elapsedStartedAt = null;
+    this._elapsedMilliseconds = 0;
+    this.setData({ elapsed_text: "00:00" });
+  },
+  updateElapsedClock() {
+    if (
+      this._disposed ||
+      this._owner !== account() ||
+      this._elapsedStartedAt == null
+    )
+      return;
+    this._elapsedMilliseconds = Math.max(
+      this._elapsedMilliseconds || 0,
+      Date.now() - this._elapsedStartedAt,
+    );
+    const seconds = Math.floor(this._elapsedMilliseconds / 1000);
+    this.setData({
+      elapsed_text:
+        String(Math.floor(seconds / 60)).padStart(2, "0") +
+        ":" +
+        String(seconds % 60).padStart(2, "0"),
+    });
+  },
+  resumeElapsedClock() {
+    if (
+      this._disposed ||
+      this._visible === false ||
+      this._elapsedStartedAt == null ||
+      this.data.view_state !== "ready" ||
+      this.data.phase !== "question"
+    )
+      return;
+    this.clearElapsedTimer();
+    this.updateElapsedClock();
+    this._elapsedTimer = setInterval(() => this.updateElapsedClock(), 1000);
+  },
+  startElapsedClock() {
+    this.resetElapsedClock();
+    this._elapsedStartedAt = Date.now();
+    this.resumeElapsedClock();
+  },
+  freezeElapsedClock() {
+    this.updateElapsedClock();
+    this.clearElapsedTimer();
+    this._elapsedStartedAt = null;
   },
   isCurrent(generation, owner) {
     return (
@@ -159,6 +221,7 @@ Page({
     );
   },
   expireSession() {
+    this.resetElapsedClock();
     ["uid", "token", "mine_cache"].forEach((key) => wx.removeStorageSync(key));
     this._generation++;
     this._owner = account();
@@ -190,6 +253,7 @@ Page({
     this._owner = owner;
     this._submission = null;
     this._questionRevision = null;
+    this.resetElapsedClock();
     this.setData({
       phase: "question",
       selected_option: 0,
@@ -225,6 +289,7 @@ Page({
       );
       this._questionRevision = response.data.data.question_revision;
       this.setData({ ...presentation, view_state: "ready", error_message: "" });
+      this.startElapsedClock();
     } catch (error) {
       if (this.isCurrent(generation, owner))
         this.setData({
@@ -281,6 +346,7 @@ Page({
     const generation = this._generation;
     const owner = this._owner;
     const firstAttempt = this.data.phase !== "uncertain";
+    this.freezeElapsedClock();
     this.setData({ phase: "submitting", submit_error: "" });
     if (firstAttempt && this._dailyReminder) this._dailyReminder.prompt();
     try {
@@ -305,6 +371,7 @@ Page({
           // Only this explicit server guarantee means no attempt was accepted.
           this._submission = null;
           this._questionRevision = null;
+          this.resetElapsedClock();
           this.setData({
             view_state: "error",
             phase: "question",

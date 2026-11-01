@@ -3,6 +3,7 @@
 <view class="single-page">
   <view wx:if="{{view_state === 'ready'}}">
     <view class="question-common single-question">
+      <view class="single-time"><text>{{phase === 'question' ? '作答用时' : '本题用时'}}</text><text class="single-time__value">{{elapsed_text}}</text></view>
       <view class="question_body"><rich-text wx:if="{{tools.indexOf(content, '/>') || tools.indexOf(content, '</')}}" nodes="{{content}}" space="true" /><text wx:else>{{content}}</text></view>
       <image wx:if="{{question_image && !is_video}}" src="{{question_image}}" class="image-question" mode="widthFix" bindtap="previewQuestionImage" />
       <video wx:if="{{question_image && is_video}}" src="{{question_image}}" class="video-option" object-fit="contain" />

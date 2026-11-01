@@ -4,6 +4,22 @@
 .single-question {
   margin: 0;
 }
+.single-time {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: #68758a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.single-time__value {
+  color: #2864eb;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 .single-option {
   display: flex;
   align-items: flex-start;

@@ -81,6 +81,9 @@ function single({ authenticated = true, question, deferredGet = false } = {}) {
     ["question_category", 3],
   ]);
   let requestCounter = 0;
+  let now = 100000;
+  let timerId = 0;
+  const timers = new Map();
   const detail = question || {
     question_id: 42,
     question_revision: "s1.opaque-question-revision",
@@ -114,6 +117,19 @@ function single({ authenticated = true, question, deferredGet = false } = {}) {
     {
       Page(value) {
         definition = value;
+      },
+      Date: class extends Date {
+        static now() {
+          return now;
+        }
+      },
+      setInterval(callback) {
+        const id = ++timerId;
+        timers.set(id, callback);
+        return id;
+      },
+      clearInterval(id) {
+        timers.delete(id);
       },
       getApp: () => app,
       getCurrentPages: () => [],
@@ -190,6 +206,11 @@ function single({ authenticated = true, question, deferredGet = false } = {}) {
     posters,
     storage,
     app,
+    timers,
+    advance(milliseconds) {
+      now += milliseconds;
+      for (const callback of [...timers.values()]) callback();
+    },
     load(options = { question_id: "42", from: "share" }) {
       page.onLoad(options);
       page.onShow();
@@ -204,7 +225,7 @@ const answer = (result) => ({
       result,
       right_answer: 3,
       analysis: "独立解析",
-      score: result ? 100 : 0,
+      score: result ? 1000 : 0,
     },
   },
 });
@@ -257,7 +278,7 @@ for (const result of [1, 0])
     s.posts[0].resolve(answer(result));
     await flush();
     assert.equal(s.page.data.phase, "completed");
-    assert.equal(s.page.data.score, result ? 100 : 0);
+    assert.equal(s.page.data.score, result ? 1000 : 0);
     assert.equal(s.page.data.analysis, "独立解析");
     s.page.submitAnswer();
     s.page.onShow();
@@ -525,4 +546,95 @@ test("generic conflicts and incomplete reload flags preserve the frozen UUID and
     s.page.submitAnswer();
     assert.deepEqual(s.posts[1].body, original);
   }
+});
+
+test("elapsed clock starts after loading, includes time away, and freezes before network submission", async () => {
+  const s = single({ deferredGet: true });
+  s.load();
+  s.advance(30000);
+  assert.equal(s.page.data.elapsed_text, "00:00");
+  s.gets[0].resolve({
+    data: {
+      code: 10000,
+      data: {
+        question_id: 42,
+        question_revision: "s1.clock-view",
+        content: "计时题",
+        options: "甲|乙|丙",
+        level: 1,
+        category: 2,
+      },
+    },
+  });
+  await flush();
+  s.advance(65432);
+  assert.equal(s.page.data.elapsed_text, "01:05");
+  s.page.onHide();
+  assert.equal(s.timers.size, 0);
+  s.advance(5000);
+  s.page.onShow();
+  assert.equal(s.page.data.elapsed_text, "01:10");
+  s.page.tapOption({ currentTarget: { dataset: { number: 3 } } });
+  s.page.submitAnswer();
+  assert.equal(s.timers.size, 0);
+  s.advance(60000);
+  s.posts[0].resolve(answer(1));
+  await flush();
+  assert.equal(s.page.data.score, 1000);
+  assert.equal(s.page.data.elapsed_text, "01:10");
+  s.page.onShow();
+  assert.equal(s.timers.size, 0);
+});
+
+test("invalid submits keep timing and uncertain retries preserve the first submission time", async () => {
+  const s = single();
+  s.load();
+  await flush();
+  s.advance(2000);
+  s.page.submitAnswer();
+  s.advance(3000);
+  assert.equal(s.page.data.elapsed_text, "00:05");
+  s.page.tapOption({ currentTarget: { dataset: { number: 3 } } });
+  s.page.submitAnswer();
+  s.posts[0].reject(Error("network"));
+  await flush();
+  s.advance(20000);
+  s.page.submitAnswer();
+  assert.equal(s.page.data.elapsed_text, "00:05");
+  s.posts[1].resolve(answer(1));
+  await flush();
+  assert.equal(s.page.data.phase, "completed");
+  assert.equal(s.page.data.elapsed_text, "00:05");
+});
+
+test("a new account gets a fresh clock and leaving the page disposes its timer", async () => {
+  const s = single();
+  s.load();
+  await flush();
+  s.advance(9000);
+  s.storage.set("uid", "u2");
+  s.storage.set("token", "t2");
+  s.page.onShow();
+  await flush();
+  assert.equal(s.page.data.elapsed_text, "00:00");
+  s.advance(1000);
+  assert.equal(s.page.data.elapsed_text, "00:01");
+  s.page.onUnload();
+  assert.equal(s.timers.size, 0);
+  s.advance(60000);
+  assert.equal(s.page.data.elapsed_text, "00:01");
+});
+
+test("legacy accepted correct score is displayed as frozen rather than retried or repriced", async () => {
+  const s = single();
+  s.load();
+  await flush();
+  s.page.tapOption({ currentTarget: { dataset: { number: 3 } } });
+  s.page.submitAnswer();
+  const old = answer(1);
+  old.data.data.score = 100;
+  s.posts[0].resolve(old);
+  await flush();
+  assert.equal(s.page.data.phase, "completed");
+  assert.equal(s.page.data.score, 100);
 });
