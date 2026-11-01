@@ -10,39 +10,6 @@
   margin-bottom: 16px;
   padding: 20px;
 }
-.favorite-card-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.favorite-question-label {
-  color: #8793a6;
-  font-size: 12px;
-}
-.favorite-remove-star {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  margin: -13px -12px -13px 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.favorite-remove-star::after {
-  border: 0;
-}
-.favorite-remove-star[disabled] {
-  background: transparent;
-  opacity: 0.5;
-}
-.favorite-card-heading image {
-  width: 18px;
-  height: 18px;
-}
 .favorite-question-content {
   color: #202b40;
   font-size: 16px;
@@ -61,38 +28,75 @@
 .favorite-card-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-top: 16px;
-  margin-top: 18px;
+  gap: 4px;
+  padding-top: 12px;
+  margin-top: 16px;
   border-top: 1px solid #edf1f6;
-}
-.favorite-card-footer button {
-  width: auto;
-  min-height: 40px;
-  margin: 0;
-  font-size: 14px;
-  line-height: 24px;
-}
-.favorite-card-footer button::after,
-.favorites-retry-more::after {
-  border: 0;
 }
 .favorite-created-at {
   flex: 1;
-  min-width: 0;
-  color: #8793a6;
+  min-width: 70px;
+  color: #68758a;
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 18px;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
 }
-.favorite-card-footer .favorite-start {
+.favorite-footer-actions {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
-  margin-left: 12px;
-  padding: 8px 20px;
-  border-radius: 10px;
+  gap: 4px;
+}
+.favorite-footer-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.favorite-footer-actions button::after,
+.favorites-retry-more::after {
+  border: 0;
+}
+.favorite-footer-actions .favorite-remove-star {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  background: transparent;
+}
+.favorite-remove-star image,
+.favorite-share image {
+  width: 16px;
+  height: 16px;
+}
+.favorite-footer-actions .favorite-share {
+  width: 52px;
+  height: 44px;
+  background: transparent;
+  color: #48618d;
+}
+.favorite-share image {
+  margin-right: 4px;
+}
+.favorite-footer-actions .favorite-start {
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 8px;
   background: #edf3ff;
   color: #2056ce;
+  font-size: 13px;
+  line-height: 20px;
 }
-.favorite-card-footer button[disabled] {
+.favorite-footer-actions button[disabled] {
   opacity: 0.5;
 }
 .favorites-pagination {

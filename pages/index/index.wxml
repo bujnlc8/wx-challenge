@@ -27,7 +27,7 @@
     <text wx:if="{{ranking_loaded && ranking_error}}" class="ranking-refresh ranking-retry" bindtap="retryRanking" aria-label="榜单更新失败，点击重试">重试</text>
     <text wx:elif="{{ranking_loaded && ranking_loading}}" class="ranking-refresh">更新中…</text>
   </view>
-  <view class="ranking-labels"><text class="label-player">排名 / 挑战者</text><text class="label-score">积分</text><text class="label-count">答题</text></view>
+  <view class="ranking-labels"><text class="label-rank">排名</text><text class="label-player">挑战者</text><text class="label-score">积分</text><text class="label-count">答题</text></view>
   <scroll-view class="ranking-list" scroll-y="true" enhanced="true" show-scrollbar="false">
     <block wx:if="{{!ranking_loaded && ranking_loading}}">
       <view class="ranking-item ranking-skeleton" wx:for="{{skeleton_rows}}" wx:key="*this" aria-label="榜单加载中">
@@ -58,6 +58,7 @@
   <view class="home-bottom">
     <view class="ranking-item my-ranking" bindtap="onMyRankingTap">
       <text wx:if="{{my_rank_state == 'ranked'}}" class="index-class {{my_rank == 1 ? 'first-place': my_rank==2 ? 'second-place':my_rank==3 ? 'third-place': 'other-place'}}">{{my_rank_label}}</text>
+      <text wx:else="" class="index-class" aria-hidden="true"></text>
       <view class="avatar-wrap">
         <image class="avatar_class" src="{{mine.avatar_url || '/images/default_avatar.png'}}" />
         <image src="/images/ui-grade-{{mine.grade > 0 ? mine.grade : 0}}.png" class="grade-icon" />

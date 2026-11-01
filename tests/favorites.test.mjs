@@ -606,3 +606,158 @@ test("favorite cards show the recorded local timestamp without a clock or timezo
     ["2026-11-01 08:09:10", "2026-10-31 23:45:00", "—", "—"],
   );
 });
+test("favorite sharing opens the actual question poster with ordered empty option slots and no answer write", async () => {
+  const s = runtime(),
+    p = await loadedFavorites(s, [
+      {
+        question_id: 27,
+        content: "题干###https://example.com/photo.png",
+        options: "第二||第一|",
+      },
+    ]);
+  const opened = [],
+    poster = {
+      data: { visible: false },
+      open(value) {
+        opened.push(value);
+        this.data.visible = true;
+      },
+    };
+  p.selectComponent = (selector) =>
+    selector === "#favorites-poster" ? poster : null;
+  assert.equal(typeof p.openFavoriteQuestionPoster, "function");
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 27 } } });
+  assert.equal(opened[0].id, 27);
+  assert.equal(opened[0].content, "题干");
+  assert.equal(opened[0].question_image, "https://example.com/photo.png");
+  assert.deepEqual(Array.from(opened[0].options), ["第二", "", "第一", ""]);
+  assert.equal(opened[0].option_type, 0);
+  assert.equal(s.calls.length, 1);
+  assert.equal(s.navigation.length, 0);
+  assert.equal(s.sounds.length, 1);
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 27 } } });
+  assert.equal(opened.length, 1);
+  assert.equal(s.sounds.length, 1);
+});
+test("favorite sharing preserves array order and recognizes image options after an empty slot", async () => {
+  const s = runtime(),
+    p = await loadedFavorites(s, [
+      {
+        question_id: 3,
+        content: "图片题",
+        options: [
+          "",
+          "https://example.com/b.png",
+          "https://example.com/a.png",
+          "",
+        ],
+      },
+    ]);
+  let opened;
+  p.selectComponent = (selector) =>
+    selector === "#favorites-poster"
+      ? {
+          data: { visible: false },
+          open(value) {
+            opened = value;
+          },
+        }
+      : null;
+  assert.equal(typeof p.openFavoriteQuestionPoster, "function");
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 3 } } });
+  assert.deepEqual(Array.from(opened.options), [
+    "",
+    "https://example.com/b.png",
+    "https://example.com/a.png",
+    "",
+  ]);
+  assert.equal(opened.option_type, 1);
+});
+test("share and answer actions cannot pass through an open removal confirmation or use stale items", async () => {
+  const s = runtime(),
+    p = await loadedFavorites(s),
+    popup = removalPopup(s, p),
+    opened = [];
+  p.selectComponent = (selector) =>
+    selector === "#favorites-poster"
+      ? {
+          data: { visible: false },
+          open(value) {
+            opened.push(value);
+          },
+        }
+      : popup;
+  assert.equal(typeof p.openFavoriteQuestionPoster, "function");
+  p.requestRemoveFavorite({ currentTarget: { dataset: { id: 1 } } });
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 1 } } });
+  p.openQuestion({ currentTarget: { dataset: { id: 1 } } });
+  assert.equal(opened.length, 0);
+  assert.equal(s.navigation.length, 0);
+  popup.popupCancel();
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 99 } } });
+  assert.equal(opened.length, 0);
+  s.setOwner("account-b");
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 1 } } });
+  assert.equal(opened.length, 0);
+});
+test("favorite card markup puts plain recorded time and all three actions in one footer", () => {
+  const source = fs.readFileSync(
+    new URL("../pages/favorites/favorites.wxml", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(source, /favorite-card-heading|>收藏题目<|收藏于/);
+  const footer = source.slice(
+    source.indexOf('class="favorite-card-footer"'),
+    source.indexOf('class="favorites-pagination"'),
+  );
+  assert.match(
+    footer,
+    /class="favorite-created-at">\{\{item\.created_at_text\}\}<\/text>/,
+  );
+  for (const action of [
+    "requestRemoveFavorite",
+    "openFavoriteQuestionPoster",
+    "openQuestion",
+  ])
+    assert.ok(
+      footer.includes('bindtap="' + action + '"'),
+      action + " belongs in the footer",
+    );
+  assert.match(source, /<question-poster\s+id="favorites-poster"/);
+});
+test("refreshing a favorite list closes its old poster and stale hidden rows cannot reopen it", async () => {
+  const s = runtime(),
+    p = await loadedFavorites(s),
+    opened = [],
+    closed = [];
+  const poster = {
+    data: { visible: false },
+    open(value) {
+      this.data.visible = true;
+      opened.push(value);
+    },
+    close(reason) {
+      this.data.visible = false;
+      closed.push(reason);
+    },
+  };
+  p.selectComponent = (selector) =>
+    selector === "#favorites-poster" ? poster : null;
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 1 } } });
+  p.refreshFavorites();
+  assert.equal(closed.length, 1);
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 1 } } });
+  assert.equal(opened.length, 1);
+  s.calls[1].resolve(
+    ok({
+      items: [{ question_id: 2, content: "新题", options: "甲|乙" }],
+      total: 1,
+      page: 1,
+      size: 12,
+    }),
+  );
+  await flush();
+  p.onHide();
+  p.openFavoriteQuestionPoster({ currentTarget: { dataset: { id: 2 } } });
+  assert.equal(opened.length, 1);
+});

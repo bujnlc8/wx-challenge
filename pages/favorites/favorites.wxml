@@ -4,11 +4,17 @@
   <view wx:if="{{view_state === 'ready'}}">
     <view class="favorites-summary">共 {{total}} 道收藏题目</view>
     <view wx:for="{{question_list}}" wx:key="question_id" class="favorite-card surface">
-      <view class="favorite-card-heading"><text class="favorite-question-label">收藏题目</text><button class="favorite-remove-star" bindtap="requestRemoveFavorite" data-id="{{item.question_id}}" disabled="{{removing_id > 0 || loading_more}}" aria-label="取消收藏" hover-class="button-pressed"><image src="/images/ui-favorite-active.png" mode="aspectFit" aria-hidden="true" /></button></view>
       <view class="favorite-question-content"><rich-text wx:if="{{tools.isRichQuestion(item.content)}}" nodes="{{tools.questionHtml(item.content)}}" space="true" /><text wx:else>{{item.content}}</text></view>
       <image wx:if="{{item.question_image && !item.is_video}}" class="favorite-question-image" src="{{item.question_image}}" mode="aspectFit" />
       <video wx:if="{{item.question_image && item.is_video}}" class="favorite-question-video" src="{{item.question_image}}" object-fit="contain" />
-      <view class="favorite-card-footer"><text class="favorite-created-at">收藏于 {{item.created_at_text}}</text><button class="favorite-start" bindtap="openQuestion" data-id="{{item.question_id}}" disabled="{{removing_id > 0}}" hover-class="button-pressed">去答题</button></view>
+      <view class="favorite-card-footer">
+        <text class="favorite-created-at">{{item.created_at_text}}</text>
+        <view class="favorite-footer-actions">
+          <button class="favorite-remove-star" bindtap="requestRemoveFavorite" data-id="{{item.question_id}}" disabled="{{removing_id > 0 || loading_more}}" aria-label="取消收藏" hover-class="button-pressed"><image src="/images/ui-favorite-active.png" mode="aspectFit" aria-hidden="true" /></button>
+          <button class="favorite-share" bindtap="openFavoriteQuestionPoster" data-id="{{item.question_id}}" disabled="{{removing_id > 0}}" hover-class="button-pressed"><image src="/images/ui-share.png" mode="aspectFit" aria-hidden="true" /><text>分享</text></button>
+          <button class="favorite-start" bindtap="openQuestion" data-id="{{item.question_id}}" disabled="{{removing_id > 0}}" hover-class="button-pressed">去答题</button>
+        </view>
+      </view>
     </view>
     <view class="favorites-pagination"><text wx:if="{{loading_more}}">加载中…</text><button wx:elif="{{more_error}}" class="favorites-retry-more" bindtap="retryMore">加载失败，点击重试</button><text wx:elif="{{no_more_data}}">已显示全部收藏</text><text wx:else>上拉加载更多</text></view>
   </view>
@@ -22,4 +28,5 @@
   </view>
 </view>
 <popup id="favorite-remove-popup" title="取消收藏" content="要将这道题移出收藏夹吗？" btn_no="保留收藏" btn_ok="取消收藏" show_modal="{{true}}" bind:error="cancelRemoveFavorite" bind:success="confirmRemoveFavorite" />
+<question-poster id="favorites-poster" />
 <ui-feedback state="{{ui_feedback}}" />

@@ -51,15 +51,22 @@ function favoriteQuestion(item) {
   const id = Number(item.question_id);
   if (!Number.isSafeInteger(id) || id <= 0) throw Error("收藏题目异常，请重试");
   const [content, media = ""] = String(item.content || "").split("###");
+  const options = Array.isArray(item.options)
+    ? item.options.map((option) => (option == null ? "" : String(option)))
+    : String(item.options || "").split("|");
+  const first = options.find((option) => option.trim() !== "") || "";
   return {
     question_id: id,
     created_at_text: favoriteCreatedAt(item.created_at),
     content: content.replace(/\n\n/g, "\n"),
     question_image: media,
     is_video: /\.(mp4|mov|m4v)(?:[?#]|$)/i.test(media),
-    option_count: Array.isArray(item.options)
-      ? item.options.length
-      : String(item.options || "").split("|").length,
+    options,
+    option_type:
+      first.startsWith("https://bucket-1256650966") ||
+      /^https?:\/\/.*\.(png|jpe?g|gif|webp|mp4)(?:[?#]|$)/i.test(first)
+        ? 1
+        : 0,
   };
 }
 Page({
@@ -89,6 +96,7 @@ Page({
   },
   onHide() {
     this.clearRemoveFavoriteIntent();
+    this.closeFavoriteQuestionPoster();
     this._visible = false;
     this._generation++;
     this._listFlight = null;
@@ -107,6 +115,7 @@ Page({
   },
   refreshFavorites() {
     this.clearRemoveFavoriteIntent();
+    this.closeFavoriteQuestionPoster();
     this._generation++;
     this._listFlight = null;
     this._owner = getSessionIdentity();
@@ -223,14 +232,65 @@ Page({
     if (
       !Number.isSafeInteger(id) ||
       id <= 0 ||
-      !this._visible ||
-      this._owner !== getSessionIdentity()
+      !this.isFavoritePageCurrent(this._owner, this._generation) ||
+      this._removeFavoriteIntent ||
+      this.data.modal_locked ||
+      this.data.removing_id ||
+      this.data.view_state !== "ready" ||
+      !this.data.question_list.some((item) => item.question_id === id)
     )
       return;
     app.clickSound();
     wx.navigateTo({
       url: "/pages/single/single?question_id=" + id + "&from=favorite",
     });
+  },
+  openFavoriteQuestionPoster(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (
+      !this.isFavoritePageCurrent(this._owner, this._generation) ||
+      this.data.view_state !== "ready" ||
+      this._removeFavoriteIntent ||
+      this.data.modal_locked ||
+      this.data.removing_id
+    )
+      return;
+    const question = this.data.question_list.find(
+      (item) => item.question_id === id,
+    );
+    if (
+      !question ||
+      !Number.isSafeInteger(id) ||
+      id <= 0 ||
+      !this.selectComponent
+    )
+      return;
+    const poster = this.selectComponent("#favorites-poster");
+    if (
+      !poster ||
+      typeof poster.open !== "function" ||
+      (poster.data && poster.data.visible)
+    )
+      return;
+    this._favoriteQuestionPoster = poster;
+    app.clickSound();
+    return poster.open({
+      id,
+      content: question.content,
+      options: question.options.slice(),
+      question_image: question.question_image,
+      option_type: question.option_type,
+    });
+  },
+  closeFavoriteQuestionPoster() {
+    const poster = this._favoriteQuestionPoster;
+    if (
+      poster &&
+      poster.data &&
+      poster.data.visible &&
+      typeof poster.close === "function"
+    )
+      poster.close("favorites-change");
   },
   getRemoveFavoritePopup() {
     if (!this._removeFavoritePopup && this.selectComponent)
@@ -248,6 +308,7 @@ Page({
     const id = Number(event.currentTarget.dataset.id);
     if (
       this._removeFavoriteIntent ||
+      this.data.modal_locked ||
       this.data.removing_id ||
       this._listFlight ||
       !this.isFavoritePageCurrent(this._owner, this._generation) ||

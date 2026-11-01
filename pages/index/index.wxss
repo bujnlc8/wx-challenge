@@ -116,6 +116,7 @@
   align-items: center;
   height: 18px;
   margin: 8px 0;
+  padding: 0 12px;
   flex-shrink: 0;
 }
 .reset-note {
@@ -133,9 +134,18 @@
   padding: 0 12px 6px;
   flex-shrink: 0;
 }
+.label-rank {
+  display: block;
+  width: 32px;
+  margin-right: 8px;
+  text-align: center;
+  flex-shrink: 0;
+}
 .label-player {
+  display: block;
   flex: 1;
-  padding-left: 32px;
+  min-width: 0;
+  padding-left: 40px;
 }
 .label-score,
 .player-score {
@@ -169,7 +179,7 @@
 }
 .index-class {
   display: block;
-  width: 24px;
+  width: 32px;
   flex-shrink: 0;
   text-align: center;
   margin-right: 8px;
@@ -319,7 +329,7 @@
   border-radius: 6px;
 }
 .skeleton-rank {
-  width: 24px;
+  width: 32px;
   height: 18px;
   margin-right: 8px;
   flex-shrink: 0;
@@ -356,7 +366,8 @@
     padding-left: 10px;
     padding-right: 10px;
   }
-  .ranking-labels {
+  .ranking-labels,
+  .ranking-info {
     padding-left: 10px;
     padding-right: 10px;
   }
@@ -412,8 +423,6 @@
 }
 
 .my-ranking .other-place {
-  width: auto;
-  min-width: 24px;
   font-size: 11px;
 }
 @media (max-height: 480px) {
