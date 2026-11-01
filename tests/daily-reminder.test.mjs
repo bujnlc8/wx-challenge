@@ -1,3 +1,4 @@
+import { runWithAuth, installAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -45,6 +46,7 @@ function fixture() {
     },
   };
   const scope = vm.createContext({ Promise, Date, Math, Error });
+  installAuth(scope);
   vm.runInContext(
     sources() +
       "\nthis.api={createDailyReminder,createDailySubscription,beijingDay};",
@@ -204,7 +206,7 @@ function answeringPage(mode = "answer") {
   const app = new Proxy({}, { get: () => () => {} });
   const strip = (text) =>
     text.replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
-  vm.runInNewContext(
+  runWithAuth(
     sources() +
       "\n" +
       fs

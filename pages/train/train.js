@@ -1,5 +1,4 @@
 const app = getApp();
-import { shareGetCoin } from "../../utils/util";
 
 Page({
   /**
@@ -32,7 +31,11 @@ Page({
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow() {},
+  onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
+  },
 
   /**
    * 生命周期函数--监听页面隐藏
@@ -54,24 +57,6 @@ Page({
    */
   onReachBottom() {},
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-    shareGetCoin();
-    return {
-      title: "知识练了才会熟！",
-      path: "pages/train/train",
-      imageUrl: "../../images/share.png",
-    };
-  },
-  onShareTimeline() {
-    shareGetCoin();
-    return {
-      title: "有知识真的能为所欲为！和我一起变强大吧:)",
-      imageUrl: "../../images/share.png",
-    };
-  },
   onTabItemTap: function () {
     app.clickSound();
   },

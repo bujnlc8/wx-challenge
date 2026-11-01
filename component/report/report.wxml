@@ -1,6 +1,6 @@
 <view class="board" wx:if="{{show_feedback}}" catchtap="catchtouchmove" catchtouchmove="catchtouchmove"></view>
-<view wx:if="{{show_feedback}}" class="feedback" catchtap="catchtouchmove" aria-role="dialog" aria-label="问题反馈">
-  <view class="feedback-header"><view class="feedback-title">问题反馈</view><view class="feedback-caption">一起让每一道题更准确</view><button class="feedback-close" bindtap="closeFeedback" aria-label="关闭问题反馈" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button></view>
+<view wx:if="{{show_feedback}}" class="feedback" catchtap="catchtouchmove" aria-role="dialog" aria-label="题目纠错">
+  <view class="feedback-header"><view class="feedback-title">题目纠错</view><view class="feedback-caption">一起让每一道题更准确</view><button class="feedback-close" bindtap="closeFeedback" aria-label="关闭题目纠错" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="close-mark"></view></button></view>
   <view class="feedback-body">
     <view class="feedback-label-title">遇到了什么问题？</view>
     <checkbox-group bindchange="feedbackChecked">
@@ -9,5 +9,5 @@
     <textarea placeholder="请描述具体问题，帮助我们修正题目…" class="remark" value="{{feedback_remark}}" placeholder-style="font-size:14px;color:#8b97aa;" bindinput="feedbackRemarkInput" maxlength="500" adjust-position="true"></textarea>
     <view class="captcha-row"><input type="number" class="captcha-input" maxlength="6" placeholder="6位数字验证码" bindinput="captchaInput" value="{{captcha_data}}" /><image bindtap="getCaptcha" src="data:image/png;base64,{{captcha_image}}" class="captcha-image" aria-label="点击刷新验证码"></image></view>
   </view>
-  <view class="feedback-footer"><button class="feedback-submit" disabled="{{submit_pending}}" bindtap="feedbackSubmit">{{submit_pending ? '正在提交…' : '提交反馈'}}</button></view>
+  <view class="feedback-footer"><button class="feedback-submit" disabled="{{submit_pending}}" bindtap="feedbackSubmit">{{submit_pending ? '正在提交…' : '提交纠错'}}</button></view>
 </view>

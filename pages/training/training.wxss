@@ -53,3 +53,39 @@
 .next-question {
   margin-left: 12px;
 }
+
+.quiz-practice-line {
+  gap: 8px;
+}
+.quiz-practice-stats {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 5px;
+  color: #52617a;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.quiz-stat-separator {
+  color: #8a96a8;
+}
+.quiz-practice-line .quiz-position,
+.quiz-practice-line .quiz-clock {
+  font-size: 12px;
+}
+@media (max-width: 360px) {
+  .quiz-practice-line {
+    gap: 6px;
+  }
+  .quiz-practice-line .quiz-mode {
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 12px;
+  }
+  .quiz-practice-line .quiz-clock {
+    gap: 4px;
+  }
+  .quiz-practice-line .quiz-clock__icon {
+    display: none;
+  }
+}

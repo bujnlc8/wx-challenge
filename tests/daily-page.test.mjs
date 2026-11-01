@@ -1,3 +1,4 @@
+import { installAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -9,7 +10,7 @@ function harness(overrides = {}) {
     .readFileSync(new URL("../pages/daily/daily.js", import.meta.url), "utf8")
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
   const context = vm.createContext({
-    getApp: () => ({}),
+    getApp: () => ({ clickSound() {} }),
     Page: (d) => (definition = d),
     wx: { getStorageSync: (key) => (key === "uid" ? uid : "token") },
     Promise,
@@ -19,6 +20,7 @@ function harness(overrides = {}) {
     showToast: () => {},
     ...overrides,
   });
+  installAuth(context);
   vm.runInContext(source, context);
   const page = {
     ...definition,
@@ -28,7 +30,7 @@ function harness(overrides = {}) {
       Object.assign(this.data, v);
     },
   };
-  return { page, setUid: (u) => (uid = u) };
+  return { page, owner: () => context.getSessionIdentity(), setUid: (u) => (uid = u) };
 }
 test("returning after an account switch clears the previous pending state and preferences", () => {
   const s = harness();
@@ -53,7 +55,7 @@ test("leaving the page invalidates callbacks and returning releases stale view p
   s.page.onShow();
   s.page._operation = 5;
   s.page.data.pending = true;
-  const owner = "old-user:token";
+  const owner = s.owner();
   assert.equal(s.page.isCurrent(5, owner), true);
   s.page.onHide();
   assert.equal(s.page.isCurrent(5, owner), false);

@@ -131,58 +131,99 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 function layoutPoster(ctx, question, images) {
-  let y = 258;
-  function layoutBlocks(blocks, x, width) {
-    return blocks.map((block) => {
+  function layoutBlocks(blocks, x, width, top, fixedImageHeight) {
+    let y = top;
+    const items = blocks.map((block) => {
       const item = { ...block, x, y, width };
       if (block.type === "image") {
         const image = images[block.src];
         if (!image || !(image.width > 0 && image.height > 0))
           throw Error("题目图片未完整加载，请重试");
-        const scale = Math.min(width / image.width, 2);
+        const scale = fixedImageHeight
+          ? Math.min(width / image.width, fixedImageHeight / image.height, 2)
+          : Math.min(width / image.width, 2);
         item.width = image.width * scale;
         item.height = image.height * scale;
         item.x = x + (width - item.width) / 2;
+        if (fixedImageHeight) {
+          item.frame = { x, y, width, height: fixedImageHeight };
+          item.y = y + (fixedImageHeight - item.height) / 2;
+        }
       } else {
-        ctx.font =
-          block.type === "video" ? "28px sans-serif" : "32px sans-serif";
+        const isVideo = block.type === "video";
+        item.fontSize = isVideo ? 30 : 32;
+        item.lineHeight = isVideo ? 44 : 46;
+        ctx.font = item.fontSize + "px sans-serif";
         item.lines = wrapText(
           ctx,
-          block.type === "video"
-            ? "本题含视频，扫码后查看完整视频"
-            : block.text,
-          width,
+          isVideo ? "本题含视频，扫码后查看完整视频" : block.text,
+          isVideo ? width - 90 : width,
         );
-        item.fontSize = block.type === "video" ? 28 : 32;
-        item.lineHeight = block.type === "video" ? 43 : 50;
         item.height = item.lines.length * item.lineHeight;
+        if (isVideo) item.height = Math.max(100, item.height + 32);
       }
-      y += item.height + 20;
+      y += (item.frame ? item.frame.height : item.height) + 12;
       return item;
     });
+    return { items, bottom: items.length ? y - 12 : top };
   }
-  const blocks = layoutBlocks(question.blocks, 72, 756);
-  y += 12;
-  const options = question.options.map((option) => {
-    const top = y;
-    y += 22;
-    const blocks = layoutBlocks(option.blocks, 138, 658);
-    y = Math.max(y, top + 70) + 2;
-    const height = y - top;
-    y += 16;
-    return { label: option.label, y: top, height, blocks };
-  });
-  const contentBottom = y + 20;
-  const height = Math.max(1200, contentBottom + 436);
+  const main = layoutBlocks(question.blocks, 72, 756, 210, 360);
+  let y = main.bottom + 20;
+  const optionGap = 16;
+  const columnWidth = (784 - optionGap) / 2;
+  ctx.font = "32px sans-serif";
+  // Only concise text options share a row. Media and long text retain full width.
+  const twoColumns =
+    question.options.length >= 2 &&
+    question.options.length <= 4 &&
+    question.options.every(
+      (option) =>
+        option.blocks.length === 1 &&
+        option.blocks[0].type === "text" &&
+        wrapText(ctx, option.blocks[0].text, columnWidth - 104).length <= 2,
+    );
+  const options = [];
+  const columns = twoColumns ? 2 : 1;
+  for (let index = 0; index < question.options.length; index += columns) {
+    let rowHeight = 0;
+    for (
+      let column = 0;
+      column < columns && index + column < question.options.length;
+      column++
+    ) {
+      const option = question.options[index + column];
+      const width = twoColumns ? columnWidth : 784;
+      const x = 58 + column * (width + optionGap);
+      const body = layoutBlocks(
+        option.blocks,
+        x + 80,
+        twoColumns ? width - 104 : 658,
+        y + 14,
+      );
+      const height = Math.max(74, body.bottom - y + 14);
+      options.push({
+        label: option.label,
+        x,
+        y,
+        width,
+        height,
+        blocks: body.items,
+      });
+      rowHeight = Math.max(rowHeight, height);
+    }
+    y += rowHeight + 12;
+  }
+  const contentBottom = (options.length ? y - 12 : main.bottom) + 16;
+  const height = Math.max(1200, contentBottom + 376);
   if (height > MAX_POSTER_HEIGHT)
     throw Error("题目内容过长，暂时无法生成完整海报，请选择其他题目");
   return {
     width: POSTER_WIDTH,
     height,
-    blocks,
+    blocks: main.items,
     options,
     contentBottom,
-    footerY: height - 400,
+    footerY: height - 360,
   };
 }
 function roundedRect(ctx, x, y, width, height, radius, color) {
@@ -214,17 +255,29 @@ function drawPoster(ctx, layout, question, images, code, logo, env) {
   ctx.textBaseline = "top";
   ctx.fillStyle = "#edf3ff";
   ctx.fillRect(0, 0, layout.width, layout.height);
-  if (logo) drawRoundedLogo(ctx, logo, 52, 40, 76, 18);
+  if (logo) drawRoundedLogo(ctx, logo, 52, 30, 64, 16);
   ctx.fillStyle = "#2864eb";
   ctx.font = "600 39px sans-serif";
-  ctx.fillText("百科知识挑战", logo ? 148 : 52, 54);
+  ctx.fillText("百科知识挑战", logo ? 136 : 52, 42);
   ctx.fillStyle = "#202b40";
-  ctx.font = "600 52px sans-serif";
-  ctx.fillText("这道题，你会吗？", 52, 152);
-  roundedRect(ctx, 36, 236, 828, layout.contentBottom - 236, 24, "#ffffff");
+  ctx.font = "600 48px sans-serif";
+  ctx.fillText("这道题，你会吗？", 52, 120);
+  roundedRect(ctx, 36, 190, 828, layout.contentBottom - 190, 24, "#ffffff");
   function drawBlocks(blocks) {
     for (const block of blocks) {
       if (block.type === "image") {
+        if (block.frame) {
+          const frame = block.frame;
+          roundedRect(
+            ctx,
+            frame.x,
+            frame.y,
+            frame.width,
+            frame.height,
+            12,
+            "#f5f8ff",
+          );
+        }
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(
           images[block.src],
@@ -234,88 +287,144 @@ function drawPoster(ctx, layout, question, images, code, logo, env) {
           block.height,
         );
       } else {
-        ctx.fillStyle = block.type === "video" ? "#2864eb" : "#202b40";
+        const isVideo = block.type === "video";
+        if (isVideo) {
+          roundedRect(
+            ctx,
+            block.x,
+            block.y,
+            block.width,
+            block.height,
+            12,
+            "#f5f8ff",
+          );
+          roundedRect(ctx, block.x + 16, block.y + 22, 52, 52, 14, "#e2ebff");
+          ctx.fillStyle = "#2864eb";
+          ctx.font = "30px sans-serif";
+          ctx.fillText("▶", block.x + 31, block.y + 32);
+        }
+        ctx.fillStyle = isVideo ? "#2864eb" : "#202b40";
         ctx.font = block.fontSize + "px sans-serif";
         block.lines.forEach((line, index) =>
-          ctx.fillText(line, block.x, block.y + index * block.lineHeight),
+          ctx.fillText(
+            line,
+            block.x + (isVideo ? 82 : 0),
+            block.y + (isVideo ? 22 : 0) + index * block.lineHeight,
+          ),
         );
       }
     }
   }
   drawBlocks(layout.blocks);
   for (const option of layout.options) {
-    roundedRect(ctx, 58, option.y, 784, option.height, 16, "#f5f7fb");
+    roundedRect(
+      ctx,
+      option.x,
+      option.y,
+      option.width,
+      option.height,
+      16,
+      "#f5f7fb",
+    );
     ctx.fillStyle = "#2864eb";
     ctx.font = "600 30px sans-serif";
-    ctx.fillText(option.label + ".", 82, option.y + 24);
+    ctx.fillText(option.label + ".", option.x + 20, option.y + 18);
     drawBlocks(option.blocks);
   }
   const footer = layout.footerY;
-  roundedRect(ctx, 36, footer, 828, 364, 24, "#ffffff");
+  roundedRect(ctx, 36, footer, 828, 336, 24, "#ffffff");
   ctx.fillStyle = "#202b40";
   ctx.font = "600 35px sans-serif";
-  ctx.fillText("扫码直接作答", 72, footer + 92);
+  ctx.fillText("扫码直接作答", 72, footer + 66);
   ctx.fillStyle = "#68758a";
-  ctx.font = "25px sans-serif";
-  ctx.fillText("长按识别小程序码", 72, footer + 156);
-  ctx.fillText("看看你能选对吗", 72, footer + 197);
+  ctx.font = "30px sans-serif";
+  ctx.fillText("长按识别小程序码", 72, footer + 126);
+  ctx.fillText("看看你能选对吗", 72, footer + 172);
   // Use the server's actual code pixels, in a dedicated white region.
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(code, 534, footer + 28, 300, 300);
+  ctx.drawImage(code, 534, footer + 18, 300, 300);
   if (env !== "release") {
     ctx.fillStyle = "#916539";
-    ctx.font = "21px sans-serif";
+    ctx.font = "26px sans-serif";
     ctx.fillText(
       env === "trial"
         ? "体验版 · 仅体验成员可识别"
         : "开发版 · 仅开发成员可识别",
       72,
-      footer + 312,
+      footer + 278,
     );
   }
   return layout;
 }
 function drawAppPoster(ctx, layout, code, logo, env) {
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillStyle = "#edf3ff";
+  ctx.fillStyle = "#edf2fa";
   ctx.fillRect(0, 0, layout.width, layout.height);
-  roundedRect(ctx, 36, 36, 828, 1128, 32, "#ffffff");
-  roundedRect(ctx, 308, 114, 284, 284, 60, "#edf3ff");
+  roundedRect(ctx, 24, 24, 852, 1152, 40, "#ffffff");
+
+  // The brand and its message form one field; the code has its own white area.
+  ctx.save();
+  roundedRect(ctx, 40, 40, 820, 690, 30, "#2864eb");
+  ctx.clip();
+  roundedRect(ctx, 602, 254, 460, 460, 230, "#3972ed");
+  roundedRect(ctx, 630, 282, 404, 404, 202, "#2864eb");
+  roundedRect(ctx, 672, 324, 320, 320, 160, "#3972ed");
+  roundedRect(ctx, 700, 352, 264, 264, 132, "#2864eb");
+  ctx.restore();
+
   ctx.imageSmoothingEnabled = true;
-  drawRoundedLogo(ctx, logo, 332, 138, 236, 52);
-  ctx.fillStyle = "#202b40";
-  ctx.font = "600 64px sans-serif";
-  ctx.fillText("百科知识挑战", 450, 448);
-  ctx.fillStyle = "#68758a";
-  ctx.font = "30px sans-serif";
-  ctx.fillText("在挑战中探索，在练习中积累", 450, 548);
+  drawRoundedLogo(ctx, logo, 680, 92, 116, 28);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "600 40px sans-serif";
+  ctx.fillText("百科知识挑战", 92, 104);
+  roundedRect(ctx, 92, 188, 62, 6, 3, "#ffda63");
+
+  const slogan = "知识无界，挑战不停";
+  const sloganLines = slogan.split("，");
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "600 84px sans-serif";
+  ctx.fillText(sloganLines[0] + "，", 92, 278);
+  ctx.fillText(sloganLines[1], 92, 390);
+
+  ctx.fillStyle = "#739bf3";
+  ctx.fillRect(92, 566, 704, 1);
+  ctx.textAlign = "center";
   for (const [index, title] of ["挑战", "练习", "错题"].entries()) {
-    const x = 124 + index * 238;
-    roundedRect(ctx, x, 632, 176, 64, 20, "#edf3ff");
-    ctx.fillStyle = "#2864eb";
-    ctx.font = "500 29px sans-serif";
-    ctx.fillText(title, x + 88, 648);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "500 30px sans-serif";
+    ctx.fillText(title, 208 + index * 242, 615);
+    if (index < 2) {
+      ctx.fillStyle = "#739bf3";
+      ctx.fillRect(328 + index * 242, 619, 1, 28);
+    }
   }
-  ctx.fillStyle = "#2864eb";
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#202b40";
   ctx.font = "600 34px sans-serif";
-  ctx.fillText("扫码开启知识挑战", 450, 752);
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(code, 320, 810, 260, 260);
+  ctx.fillText("扫码开启知识挑战", 92, 842);
   ctx.fillStyle = "#68758a";
-  ctx.font = "25px sans-serif";
-  ctx.fillText("长按识别小程序码，与朋友一起挑战", 450, 1092);
-  if (env !== "release") {
-    ctx.fillStyle = "#916539";
-    ctx.font = "20px sans-serif";
-    ctx.fillText(
-      env === "trial"
+  ctx.font = "26px sans-serif";
+  ctx.fillText("长按识别小程序码", 92, 916);
+  ctx.fillText("与朋友一起挑战", 92, 960);
+  // Draw every server-code pixel without cropping or adding decoration over it.
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(code, 514, 790, 300, 300);
+  ctx.fillStyle = "#e8edf5";
+  ctx.fillRect(92, 1118, 704, 1);
+  ctx.textAlign = "center";
+  ctx.fillStyle = env === "release" ? "#68758a" : "#916539";
+  ctx.font = "22px sans-serif";
+  ctx.fillText(
+    env === "release"
+      ? "微信小程序"
+      : env === "trial"
         ? "体验版 · 仅体验成员可识别"
         : "开发版 · 仅开发成员可识别",
-      450,
-      1134,
-    );
-  }
+    450,
+    1135,
+  );
   return layout;
 }
 function runtimeEnvironment(platform) {

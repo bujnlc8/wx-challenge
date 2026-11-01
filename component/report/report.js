@@ -1,12 +1,10 @@
+import { getSessionIdentity } from "../../utils/auth-session";
 import { createModalLock } from "../../utils/modal-lock";
 import { httpPOST, httpGET, showToast } from "../../utils/util";
 
 const app = getApp();
 function feedbackAccount() {
-  return JSON.stringify([
-    wx.getStorageSync("uid") || "",
-    wx.getStorageSync("token") || "",
-  ]);
+  return getSessionIdentity();
 }
 Component({
   properties: {
@@ -129,7 +127,7 @@ Component({
         session.questionId === Number(this.data.question_id)
       );
     },
-    getCaptcha() {
+    getCaptcha(event) {
       if (this._reportDisposed || this._reportHidden) return;
       this.syncFeedbackSession();
       if (!this.data.show_feedback) {
@@ -137,6 +135,7 @@ Component({
         return;
       }
       if (this.data.submit_pending) return;
+      if (event && event.type === "tap") app.clickSound();
       const session = this.feedbackSession();
       const sequence = ++this._captchaSequence;
       const current = () =>
@@ -167,6 +166,7 @@ Component({
     },
     feedbackChecked: function (e) {
       if (this.data.submit_pending) return;
+      app.clickSound();
       this.setData({
         feedback_checked_value: e.detail.value,
       });
@@ -191,7 +191,7 @@ Component({
         this.data.feedback_remark.replaceAll(/\s/g, "").length == 0
       ) {
         app.playSound("warn");
-        showToast("反馈内容为空");
+        showToast("请填写纠错内容");
         return;
       }
       if (this.data.captcha_data.length != 6) {
@@ -224,7 +224,7 @@ Component({
             showToast(res.data.message);
             return;
           }
-          showToast("感谢你的反馈❤️");
+          showToast("纠错已提交，感谢你的帮助");
           this.closeFeedback();
         })
         .catch(() => {
@@ -237,9 +237,9 @@ Component({
           }
         });
     },
-    closeFeedback: function () {
+    closeFeedback: function (event) {
       if (!this.data.show_feedback || this._reportDisposed) return;
-      app.clickSound();
+      if (event && event.type === "tap") app.clickSound();
       this.setData({
         show_feedback: false,
         feedback_remark: "",

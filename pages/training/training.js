@@ -1,3 +1,4 @@
+import { getSessionIdentity, clearAuthSession } from "../../utils/auth-session";
 import {
   createDailyReminder,
   reminderSettings,
@@ -7,7 +8,6 @@ const app = getApp();
 import {
   httpPOST,
   httpGET,
-  shareGetCoin,
   showToast,
   showLoading,
   hideLoading,
@@ -84,7 +84,7 @@ Page({
   onLoad() {
     this.initializeDailyReminder();
     wx.setNavigationBarTitle({
-      title: "练习模式",
+      title: "练习答题",
     });
     this.getTrainingQuestions();
     this.setData({
@@ -93,6 +93,7 @@ Page({
     });
   },
   getTrainingQuestions() {
+    const owner = getSessionIdentity();
     if (!wx.getStorageSync("uid")) {
       this.setData({
         logined: 0,
@@ -107,12 +108,11 @@ Page({
       category: app.category,
     })
       .then((res) => {
+        if (owner !== getSessionIdentity()) return;
         if (res.data.code != 10000) {
           showToast(res.data.message);
           if (res.data.code == 11111) {
-            wx.removeStorageSync("uid");
-            wx.removeStorageSync("token");
-            wx.removeStorageSync("mine_cache");
+            clearAuthSession();
             this.setData({
               logined: 0,
             });
@@ -126,7 +126,7 @@ Page({
         }
       })
       .catch(() => {
-        showToast("网络异常");
+        if (owner === getSessionIdentity()) showToast("网络异常");
       })
       .finally(() => hideLoading(loading));
   },
@@ -205,9 +205,17 @@ Page({
       app.playSound("warn");
       return;
     }
+    const option = Number((e.currentTarget || e.target).dataset.i);
+    if (
+      !Number.isInteger(option) ||
+      option < 1 ||
+      option > 4 ||
+      !this.data[["option_a", "option_b", "option_c", "option_d"][option - 1]]
+    )
+      return;
     app.playSound("select");
     this.setData({
-      selected_option: e.target.dataset.i,
+      selected_option: option,
       sub_button_active: "",
     });
     if (this.data.answer_result == 0) {
@@ -229,6 +237,7 @@ Page({
       app.playSound("warn");
       return;
     }
+    app.clickSound();
     this.stopCountDown();
     this.setData({
       answer_result: -1,
@@ -291,6 +300,7 @@ Page({
       });
   },
   hideQuestion: function () {
+    app.clickSound();
     var body = "以后不再答此题?";
     this.stopCountDown();
     this.popup.setData({
@@ -308,7 +318,7 @@ Page({
       showToast("请答完本题");
       return;
     }
-    app.clickSound();
+    if (check && check.type === "tap") app.clickSound();
     this.stopCountDown();
     this.setData({
       current_index: this.data.current_index + 1,
@@ -329,16 +339,15 @@ Page({
     this.startAnswer(-1);
   },
   doFeedback: function () {
-    if (this.data.answer_result == -1 || this.data.answer_result == -2) {
-      app.playSound("warn");
-      showToast("作答之后才能反馈哦~");
-      return;
-    }
+    if (this._unloaded || !(Number(this.data.current_question_id) > 0)) return;
     app.clickSound();
     this.setData({
       show_feedback: true,
     });
     this.report.getCaptcha();
+  },
+  onFeedbackClosed() {
+    if (!this._unloaded) this.setData({ show_feedback: false });
   },
   /**
    * 生命周期函数--监听页面初次渲染完成
@@ -352,9 +361,12 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
     this._pageVisible = true;
     if (this._dailyReminder) this._dailyReminder.refresh();
-    app.playBgSound();
+
   },
 
   /**
@@ -362,7 +374,7 @@ Page({
    */
   onHide() {
     this._pageVisible = false;
-    app.stopPlayBgSound();
+
   },
 
   /**
@@ -372,7 +384,7 @@ Page({
     this._unloaded = true;
     if (this._dailyReminder) this._dailyReminder.dispose();
     this.stopCountDown();
-    app.stopPlayBgSound();
+
   },
 
   /**
@@ -385,7 +397,8 @@ Page({
    */
   onReachBottom() {},
   openQuestionPoster() {
-    if (!this.data.current_question_id) return;
+    if (this._unloaded || !(Number(this.data.current_question_id) > 0)) return;
+    app.clickSound();
     this.selectComponent("#question-poster").open({
       id: Number(this.data.current_question_id),
       content: this.data.current_question,
@@ -398,21 +411,6 @@ Page({
       question_image: this.data.question_image,
       option_type: this.data.option_type,
     });
-  },
-  onShareAppMessage() {
-    shareGetCoin();
-    return {
-      title: "和我一起变强大吧！",
-      path: "pages/training/training",
-      imageUrl: "../../images/share.png",
-    };
-  },
-  onShareTimeline() {
-    shareGetCoin();
-    return {
-      title: "不止金钱能让你变强大，知识也能！",
-      imageUrl: "../../images/share.png",
-    };
   },
   popupCancel: function () {
     this.popup.hidePopup();
@@ -447,6 +445,7 @@ Page({
       });
   },
   previewImg: function (e) {
+    app.clickSound();
     var src = e.currentTarget.dataset.image_src;
     wx.previewImage({
       current: src,

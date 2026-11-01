@@ -1,3 +1,5 @@
+const app = getApp();
+import { getSessionIdentity } from "../../utils/auth-session";
 import { createModalLock } from "../../utils/modal-lock";
 import { httpPOST } from "../../utils/util";
 import { showToast } from "../../utils/feedback";
@@ -20,8 +22,7 @@ function identity() {
     /* Runtime is validated before requesting a code. */
   }
   return JSON.stringify([
-    wx.getStorageSync("uid"),
-    wx.getStorageSync("token"),
+    getSessionIdentity(),
     env,
   ]);
 }
@@ -286,6 +287,8 @@ Component({
     close(reason) {
       if (this._modalLock) this._modalLock.set(false);
       const wasVisible = this.data.visible;
+      if (wasVisible && !this._disposed && reason && reason.type === "tap")
+        app.clickSound();
       if (this._session) this._session.cancel();
       this._current = null;
       this._question = null;
@@ -305,12 +308,19 @@ Component({
         });
     },
     retry() {
+      if (
+        this._disposed ||
+        !this.data.visible ||
+        (!this.data.appMode && !this._question)
+      ) return;
+      app.clickSound();
       if (this.data.appMode) return this.openApp();
       if (this._question) return this.open(this._question);
     },
     preview() {
       const current = this._current;
       if (!current || !current() || !this.data.imagepath) return;
+      app.clickSound();
       const path = this.data.imagepath;
       wx.previewImage({
         current: path,
@@ -325,6 +335,7 @@ Component({
       const current = this._current;
       if (!current || !current() || !this.data.imagepath || this.data.saving)
         return;
+      app.clickSound();
       this.setData({ saving: true, saveMessage: "", albumDenied: false });
       wx.saveImageToPhotosAlbum({
         filePath: this.data.imagepath,
@@ -354,6 +365,7 @@ Component({
     openAlbumSettings() {
       const current = this._current;
       if (!current || !current()) return;
+      app.clickSound();
       wx.openSetting({
         success: (result) => {
           if (!current()) return;

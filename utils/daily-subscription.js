@@ -1,3 +1,4 @@
+import { getSessionIdentity } from "./auth-session";
 const DAILY_TEMPLATE_ID = "faTHcOm8TebcnbsK92I5DyJ-bJxo7XQfR5wiwJdh24A";
 
 function subscriptionRequestId() {
@@ -62,10 +63,7 @@ function createDailySubscription({
   onNativeSettled = () => {},
 }) {
   let pending = false;
-  const owner = () =>
-    String(platform.getStorageSync("uid") || "") +
-    ":" +
-    String(platform.getStorageSync("token") || "");
+  const owner = () => getSessionIdentity(platform);
   return {
     request(templateId = DAILY_TEMPLATE_ID) {
       if (pending) return Promise.reject(new Error("订阅正在处理，请稍候"));

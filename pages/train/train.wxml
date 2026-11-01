@@ -11,9 +11,9 @@
         <view class="practice-guide-title">练习规则</view>
         <view class="practice-rule"><text class="practice-rule-index">1</text><view class="practice-rule-text">每题不限时，计时但不计分。</view></view>
         <view class="practice-rule"><text class="practice-rule-index">2</text><view class="practice-rule-text">答错的题将计入错题集，但不计入“我的”页面“错题数”等数据。</view></view>
-        <view class="practice-rule"><text class="practice-rule-index">3</text><view class="practice-rule-text">每日练习达<text class="hi-num">300</text>题，送<text class="hi-num">10000</text>百科币。</view></view>
+        <view class="practice-rule"><text class="practice-rule-index">3</text><view class="practice-rule-text">每日练习达<text class="hi-num">100</text>道不同题目，送<text class="hi-num">10000</text>百科币，每天限领一次。</view></view>
         <view class="practice-rule"><text class="practice-rule-index">4</text><view class="practice-rule-text">长按题目可永久跳过，每日限<text class="hi-num">5</text>次机会。</view></view>
-        <view class="practice-rule"><text class="practice-rule-index">5</text><view class="practice-rule-text">对题目有任何疑问，欢迎点击左上角按钮进行反馈<text class="common-gray">（作答之后反馈）</text>。</view></view>
+        <view class="practice-rule"><text class="practice-rule-index">5</text><view class="practice-rule-text">对题目有任何疑问，随时点击答题页底部“纠错”提交。</view></view>
       </view>
     </view>
   </scroll-view>

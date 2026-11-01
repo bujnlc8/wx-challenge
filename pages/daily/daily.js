@@ -1,3 +1,4 @@
+import { getSessionIdentity, clearAuthSession } from "../../utils/auth-session";
 import { buildActivityCalendar } from "../../utils/activity-calendar";
 import {
   httpGET,
@@ -29,11 +30,7 @@ function payload(response) {
   return response.data.data;
 }
 function account() {
-  return (
-    String(wx.getStorageSync("uid") || "") +
-    ":" +
-    String(wx.getStorageSync("token") || "")
-  );
+  return getSessionIdentity();
 }
 Page({
   data: {
@@ -62,7 +59,7 @@ Page({
   expireDailySession(owner) {
     if (this._disposed || this._visible === false || owner !== account())
       return;
-    ["uid", "token", "mine_cache"].forEach((key) => wx.removeStorageSync(key));
+    clearAuthSession();
     this._operation = (this._operation || 0) + 1;
     this._activityOperation = (this._activityOperation || 0) + 1;
     this._loginOperation = (this._loginOperation || 0) + 1;
@@ -83,6 +80,9 @@ Page({
     });
   },
   onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
     const owner = account();
     this._disposed = false;
     this._visible = true;
@@ -124,8 +124,9 @@ Page({
       owner === account()
     );
   },
-  async loadDaily() {
+  async loadDaily(event) {
     if (this.data.pending) return;
+    if (event && event.type === "tap") app.clickSound();
     if (!wx.getStorageSync("uid")) {
       this.setData({ view_state: "logged-out", today: null });
       return;
@@ -168,7 +169,8 @@ Page({
       hideLoading(loading);
     }
   },
-  async loadActivity() {
+  async loadActivity(event) {
+    if (event && event.type === "tap") app.clickSound();
     const owner = account();
     const operation = (this._activityOperation =
       (this._activityOperation || 0) + 1);
@@ -222,12 +224,14 @@ Page({
     for (const week of this.data.activity.weeks) {
       const day = week.days.find((item) => item.date === date && item.in_range);
       if (day) {
+        app.clickSound();
         this.setData({ activity_selected: day });
         return;
       }
     }
   },
   loginAndLoad() {
+    app.clickSound();
     const login = (this._loginOperation = (this._loginOperation || 0) + 1);
     app.checkLogin(() => {
       if (
@@ -247,6 +251,7 @@ Page({
   },
   startDaily() {
     if (this.data.view_state !== "ready" || !this.data.today) return;
+    app.clickSound();
     wx.navigateTo({
       url:
         "/pages/single/single?question_id=" +
@@ -256,6 +261,7 @@ Page({
   },
   async toggleReminder(event) {
     if (this.data.view_state !== "ready" || this.data.pending) return;
+    app.clickSound();
     const enabled = event.detail.value === true;
     const previous = this.data.enabled;
     const owner = account();
@@ -310,6 +316,7 @@ Page({
 
   async subscribeReminder() {
     if (this.data.view_state !== "ready" || this.data.pending) return;
+    app.clickSound();
     const owner = account();
     const operation = (this._operation = (this._operation || 0) + 1);
     const request = this._subscriptions.request(this._templateId);

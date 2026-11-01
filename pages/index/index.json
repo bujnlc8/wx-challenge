@@ -1,5 +1,6 @@
 {
-	"enablePullDownRefresh": true,
-	"backgroundTextStyle": "dark",
-	"backgroundColor": "#f5f7fb"
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "backgroundColor": "#f5f7fb",
+  "navigationBarTitleText": "挑战"
 }

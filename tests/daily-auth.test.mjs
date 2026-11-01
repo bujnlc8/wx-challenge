@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -18,11 +19,12 @@ function setup() {
   const source = fs
     .readFileSync(new URL("../pages/daily/daily.js", import.meta.url), "utf8")
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
-  vm.runInNewContext(source, {
+  runWithAuth(source, {
     Page(value) {
       definition = value;
     },
     getApp: () => ({
+      clickSound() {},
       checkLogin(callback) {
         logins++;
         storage.set("uid", "u1");

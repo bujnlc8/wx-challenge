@@ -1,7 +1,6 @@
 const app = getApp();
 import {
   httpGET,
-  shareGetCoin,
   showToast,
   showLoading,
   hideLoading,
@@ -167,20 +166,6 @@ Page({
       show_tip: 1,
     });
   },
-  onShareAppMessage() {
-    shareGetCoin();
-    return {
-      title: "百科知识挑战，挑战你的百科知识！",
-      imageUrl: "../../images/share.png",
-    };
-  },
-  onShareTimeline() {
-    shareGetCoin();
-    return {
-      title: "看看谁才是答题界最靓的仔...",
-      imageUrl: "../../images/share.png",
-    };
-  },
   onReady: function () {},
   onTabItemTap: function () {
     app.clickSound();
@@ -189,6 +174,9 @@ Page({
     this.updateData(this.data.t);
   },
   onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
     var t = this.data.logined;
     if (!wx.getStorageSync("uid")) {
       this.setData({

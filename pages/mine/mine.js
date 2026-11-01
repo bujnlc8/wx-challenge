@@ -1,10 +1,10 @@
+import { getSessionIdentity, clearAuthSession } from "../../utils/auth-session";
 // pages/mine/mine.js
 const app = getApp();
 import {
   httpPOST,
   httpGET,
   uploadImage,
-  shareGetCoin,
   showToast,
 } from "../../utils/util";
 Page({
@@ -35,8 +35,10 @@ Page({
     this.setUserInfoFromCache();
   },
   getUserMine: function () {
+    const owner = getSessionIdentity();
     httpGET("api/user/mine")
       .then((res) => {
+        if (owner !== getSessionIdentity()) return;
         if (res.data.code == 10000) {
           var correct_rate = 100;
           if (res.data.data.total_question > 0) {
@@ -54,9 +56,7 @@ Page({
           wx.setStorageSync("mine_cache", res.data.data);
         } else {
           if (res.data.code == 11111) {
-            wx.removeStorageSync("uid");
-            wx.removeStorageSync("token");
-            wx.removeStorageSync("mine_cache");
+            clearAuthSession();
             this.setData({
               logined: 0,
             });
@@ -66,7 +66,7 @@ Page({
         }
       })
       .catch(() => {
-        showToast("网络异常");
+        if (owner === getSessionIdentity()) showToast("网络异常");
       });
   },
   login: function () {
@@ -202,6 +202,7 @@ Page({
     ) {
       return;
     }
+    app.clickSound();
     this.setData({ category_draft: category });
   },
   cancelCategorySheet: function () {
@@ -239,6 +240,9 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
     if (wx.getStorageSync("uid")) {
       this.setUserInfoFromCache();
       this.getUserMine();
@@ -248,7 +252,6 @@ Page({
         user_info: {},
         category_sheet_visible: false,
       });
-      showToast("请点击头像登录");
     }
     this.setData({
       category: app.category,
@@ -276,17 +279,6 @@ Page({
    */
   onReachBottom() {},
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-    shareGetCoin();
-    return {
-      title: "快来给你的知识探探底吧～",
-      path: "pages/index/index",
-      imageUrl: "../../images/share.png",
-    };
-  },
   onTabItemTap: function () {
     app.clickSound();
   },

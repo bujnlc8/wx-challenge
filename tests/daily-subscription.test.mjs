@@ -1,3 +1,4 @@
+import { installAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -6,8 +7,10 @@ const sourcePath = new URL("../utils/daily-subscription.js", import.meta.url);
 function setup() {
   const source = fs
     .readFileSync(sourcePath, "utf8")
+    .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "")
     .replace(/export\s*\{[\s\S]*?\};?/g, "");
   const context = vm.createContext({ Promise, Date, Math, Error });
+  installAuth(context);
   vm.runInContext(source + "\nthis.create=createDailySubscription;", context);
   let dialog,
     uid = "u1",
@@ -85,8 +88,10 @@ test("duplicate taps share one pending native request; next invocation has a new
 test("server recording failure does not claim subscription is ready", async () => {
   const source = fs
     .readFileSync(sourcePath, "utf8")
+    .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "")
     .replace(/export\s*\{[\s\S]*?\};?/g, "");
   const c = vm.createContext({ Promise, Date, Math, Error });
+  installAuth(c);
   vm.runInContext(source + "\nthis.create=createDailySubscription;", c);
   const client = c.create({
     platform: {

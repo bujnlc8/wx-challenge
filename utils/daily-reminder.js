@@ -1,3 +1,4 @@
+import { getSessionIdentity } from "./auth-session";
 import {
   DAILY_TEMPLATE_ID,
   createDailySubscription,
@@ -22,11 +23,7 @@ function createDailyReminder({
   let requesting = false;
   let nativeOwner = "";
   let nativeOpen = false;
-  const owner = () =>
-    JSON.stringify([
-      platform.getStorageSync("uid") || "",
-      platform.getStorageSync("token") || "",
-    ]);
+  const owner = () => getSessionIdentity(platform);
   const client = createDailySubscription({
     platform,
     recordAcceptance,

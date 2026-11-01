@@ -1,63 +1,36 @@
-<page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
-<!--pages/answer/answer.wxml-->
+<page-meta page-style="{{modal_locked ? 'overflow: hidden;' : ''}}" />
 <wxs src="../../utils/util.wxs" module="tools" />
-<view wx:if="{{logined}}" class="question-container">
-	<view class="question-toolbar">
-		<text class="skip top-text feedback-action" bindtap="doFeedback" wx:if="{{answer_result != -1 && answer_result != -2}}">反馈</text>
-		<text class="skip top-text toolbar-placeholder" style="border: none;" wx:else=""></text>
-		<text class="skip top-text" style="margin-left: auto;">{{question_corrent_num}} | {{continue_correct_num}}</text>
-	</view>
-	<view class="question-common" bindlongpress="hideQuestion">
-    <view class="question-eyebrow">练习模式</view>
-		<view class="question_body" wx:if="{{ tools.indexOf(current_question, '/>') || tools.indexOf(current_question, '</')}}">第{{total_index}}题：<rich-text space="true" nodes="{{current_question}}"></rich-text>
-		</view>
-		<view class="question_body" wx:if="{{ !(tools.indexOf(current_question, '/>') || tools.indexOf(current_question, '</'))}}">第{{total_index}}题：<text>{{current_question}}</text>
-		</view>
-		<image wx:if="{{question_image && !is_video}}" src="{{question_image}}" class="image-question" mode="widthFix" bindtap="previewImg" data-image_src="{{question_image}}" style="cursor: pointer;" />
-		<video wx:if="{{question_image && is_video }}" src="{{question_image}}" class="video-option" autoplay="true" enable-play-gesture="true" picture-in-picture-show-progress="true" loop="true"></video>
-		<view wx:if="{{option_type == 0}}">
-			<view wx:if="{{option_a}}" data-i="1" class="option-common {{selected_option == 1?'option_selected': ''}} {{ selected_option == 1 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 1 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">A：{{option_a}}</view>
-			<view wx:if="{{option_b}}" data-i="2" class="option-common {{selected_option == 2?'option_selected': ''}} {{ selected_option == 2 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 2 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">B：{{option_b}}</view>
-			<view wx:if="{{option_c}}" data-i="3" class="option-common {{selected_option == 3?'option_selected': ''}} {{ selected_option == 3 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 3 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">C：{{option_c}}</view>
-			<view wx:if="{{option_d}}" data-i="4" class="option-common {{selected_option == 4?'option_selected': ''}} {{ selected_option == 4 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 4 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" bindtap="tapOption" style="cursor: pointer;" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">D：{{option_d}}</view>
-		</view>
-		<view wx:if="{{option_type == 1}}">
-			<view wx:if="{{option_a}}" data-i="1" class="option-common {{selected_option == 1?'option_selected': ''}} {{ selected_option == 1 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 1 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;cursor: pointer;" bindtap="tapOption" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">
-				<text style="display: flex;align-items: center;" data-i="1">A：</text>
-				<image src="{{option_a}}" class="image-option" data-i="1" mode="widthFix" />
-			</view>
-			<view wx:if="{{option_b}}" data-i="2" class="option-common {{selected_option == 2?'option_selected': ''}} {{ selected_option == 2 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 2 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;cursor: pointer;" bindtap="tapOption" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">
-				<text style="display: flex;align-items: center;" data-i="2">B：</text>
-				<image src="{{option_b}}" class="image-option" data-i="2" mode="widthFix" />
-			</view>
-			<view wx:if="{{option_c}}" data-i="3" class="option-common {{selected_option == 3?'option_selected': ''}} {{ selected_option == 3 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 3 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;cursor: pointer;" bindtap="tapOption" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">
-				<text style="display: flex;align-items: center;" data-i="3">C：</text>
-				<image src="{{option_c}}" class="image-option" data-i="3" mode="widthFix" />
-			</view>
-			<view wx:if="{{option_d}}" data-i="4" class="option-common {{selected_option == 4?'option_selected': ''}} {{ selected_option == 4 && answer_result != -1 && answer_result != -2 ? 'answer_result': ''}}{{answer_result}} {{right_answer == 4 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1': ''}}" style="display: flex;cursor: pointer;" bindtap="tapOption" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">
-				<text style="display: flex;align-items: center;" data-i="4">D：</text>
-				<image src="{{option_d}}" class="image-option" data-i="4" mode="widthFix" />
-			</view>
-		</view>
-		<view class="answer-actions">
-			<view class="count_down_class">计时：<text class="{{count_down_stop ? 'count-down-stop' : 'count-down'}}">{{count_down}}</text></view>
-			<view bindtap="submitAnswer" class="sub_button {{sub_button_active}}" style="cursor: pointer;">确认</view>
-		</view>
-		<view class="question-pagination">
-			<view class="up-question" bindtap="upQuestion" style="cursor: pointer;">上一道</view>
-			<view bindtap="nextQuestion" class="next-question" style="cursor: pointer;">下一道</view>
-		</view>
-		<view wx:if="{{answer_result != -1 && answer_result != -2  && analysis && show_analysis}}" class="answer-analysis">
-			<text class="analysis-label">解析：</text>
-			<rich-text space="true" nodes="{{analysis}}" wx:if="{{ tools.indexOf(analysis, '/>') || tools.indexOf(analysis, '</')}}"></rich-text>
-			<text wx:else="">{{analysis}}</text>
-		</view>
-	</view>
-  <view class="question-share-row"><button class="question-share-button" bindtap="openQuestionPoster" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><image src="/images/ui-share.png" class="question-share-icon" />生成分享海报</button></view>
+<view wx:if="{{logined}}" class="question-container quiz-page">
+  <view class="quiz-header quiz-header--practice">
+    <view class="quiz-header__top quiz-practice-line"><text class="quiz-mode">练习模式</text><view class="quiz-practice-stats"><text>第{{total_index}}题</text><text class="quiz-stat-separator">/</text><text>答对{{question_corrent_num}}</text><text class="quiz-stat-separator">/</text><text>连对{{continue_correct_num}}</text></view><view class="quiz-clock"><view class="quiz-clock__icon"></view><text>{{count_down}}s</text></view></view>
+  </view>
+  <view class="question-common quiz-card" bindlongpress="hideQuestion">
+    <view class="question_body"><rich-text wx:if="{{tools.isRichQuestion(current_question)}}" space="true" nodes="{{tools.questionHtml(current_question)}}" /><text wx:else>{{current_question}}</text></view>
+    <image wx:if="{{question_image && !is_video}}" src="{{question_image}}" class="image-question" mode="aspectFit" bindtap="previewImg" data-image_src="{{question_image}}" />
+    <video wx:if="{{question_image && is_video}}" src="{{question_image}}" class="video-option" object-fit="contain" autoplay="true" enable-play-gesture="true" picture-in-picture-show-progress="true" loop="true" />
+  </view>
+  <view class="quiz-section-heading"><text>选择答案</text><text class="quiz-section-hint">单选</text></view>
+  <view class="quiz-options">
+    <block wx:for="{{[{number: 1, content: option_a}, {number: 2, content: option_b}, {number: 3, content: option_c}, {number: 4, content: option_d}]}}" wx:for-item="option" wx:key="number">
+      <view wx:if="{{option.content}}" data-i="{{index + 1}}" class="option-common quiz-option {{selected_option == index + 1 ? 'option_selected' : ''}} {{selected_option == index + 1 && answer_result >= 0 ? (answer_result == 1 ? 'answer_result1' : 'answer_result0') : ''}} {{right_answer == index + 1 && answer_result == 0 && show_correct_answer == 1 ? 'answer_result1' : ''}}" bindtap="tapOption" aria-role="radio" aria-checked="{{selected_option == index + 1}}" hover-class="quiz-option-pressed">
+        <text class="quiz-option__letter">{{tools.optionLabel(index)}}</text>
+        <view class="quiz-option__content"><image wx:if="{{option_type == 1}}" src="{{option.content}}" class="image-option" mode="widthFix" /><text wx:else>{{option.content}}</text></view>
+        <view class="quiz-option__indicator {{selected_option == index + 1 ? 'quiz-option__indicator-selected' : ''}}"></view>
+      </view>
+    </block>
+  </view>
+  <view wx:if="{{answer_result >= 0 && analysis && show_analysis}}" class="answer-analysis quiz-analysis">
+    <text class="analysis-label">答案解析</text><rich-text wx:if="{{tools.indexOf(analysis, '/>') || tools.indexOf(analysis, '</')}}" space="true" nodes="{{analysis}}" /><text wx:else>{{analysis}}</text>
+  </view>
+  <view class="quiz-footer"><view class="quiz-footer__inner">
+    <view class="quiz-footer__primary-row"><button class="quiz-nav-button" bindtap="upQuestion" hover-class="button-pressed" disabled="{{current_index == 0}}">上一题</button><button class="quiz-submit" bindtap="submitAnswer" disabled="{{!selected_option || answer_result != -2}}"><view wx:if="{{answer_result == -1}}" class="quiz-button-spinner"></view>{{answer_result == -1 ? '正在提交' : (answer_result >= 0 ? '已作答' : '确认答案')}}</button><button class="quiz-nav-button" bindtap="nextQuestion" hover-class="button-pressed">下一题</button></view>
+      <view class="question-footer-actions">
+        <button class="question-feedback-button" bindtap="doFeedback" hover-class="button-pressed"><image src="/images/report_error.png" class="question-footer-icon" />纠错</button>
+        <button class="question-share-button" bindtap="openQuestionPoster" hover-class="button-pressed"><image src="/images/ui-share.png" class="question-share-icon" />分享</button>
+      </view>
+  </view></view>
 </view>
-<popup class="popup_compon" bind:error="popupCancel" bind:success="popupConfirm"></popup>
-<report class="report" show_feedback="{{show_feedback}}" question_id="{{current_question_id}}" />
-
+<popup class="popup_compon" bind:error="popupCancel" bind:success="popupConfirm" />
+<report class="report" show_feedback="{{show_feedback}}" question_id="{{current_question_id}}" bind:nextQuestion="onFeedbackClosed" />
 <ui-feedback state="{{ui_feedback}}" />
-
 <question-poster id="question-poster" />

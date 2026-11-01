@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -45,7 +46,7 @@ function challenge(count = 10) {
         "utf8",
       ),
     );
-  vm.runInNewContext(source, {
+  runWithAuth(source, {
     Page: (value) => (definition = value),
     getApp: () =>
       new Proxy(
@@ -295,3 +296,23 @@ test("overlapping advances share one batch request and do not finish before the 
   assert.equal(s.page.data.challenge_finished, false);
   assert.equal(s.page.data.answer_result, -2);
 });
+
+for (const utility of ["report", "poster"]) {
+  test(`a correct response waits for its ${utility} to close before continuing`, async () => {
+    const s = challenge(2);
+    await s.start();
+    s.page.report = { getCaptcha() {} };
+    s.page.selectComponent = () => ({ close() {}, open() {} });
+    if (utility === "report") s.page.doFeedback();
+    else s.page.openQuestionPoster();
+    await s.answer();
+    s.runTimers();
+    assert.equal(s.page.data.total_index, 1);
+    assert.equal(s.page.data.answer_result, 1);
+    if (utility === "report") s.page.nextQuestionAfterCloseFeedback();
+    else s.page.onQuestionPosterClose({ detail: { reason: "user" } });
+    s.runTimers();
+    assert.equal(s.page.data.total_index, 2);
+    assert.equal(s.page.data.answer_result, -2);
+  });
+}

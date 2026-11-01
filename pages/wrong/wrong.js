@@ -1,6 +1,6 @@
 // pages/wrong/wrong.js
 const app = getApp();
-import { httpDELETE, httpGET, shareGetCoin, showToast } from "../../utils/util";
+import { httpDELETE, httpGET, showToast } from "../../utils/util";
 Page({
   data: {
     question_list: [],
@@ -85,6 +85,7 @@ Page({
       });
   },
   longpressQuestion: function (e) {
+    app.clickSound();
     var id = e.mark.i;
     var i = e.mark.ii;
     this.setData({
@@ -140,6 +141,7 @@ Page({
     });
   },
   closeAnalysis: function () {
+    app.clickSound();
     this.setData({
       show_analysis: false,
       analysis: "",
@@ -156,7 +158,11 @@ Page({
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow() {},
+  onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
+  },
 
   /**
    * 生命周期函数--监听页面隐藏
@@ -200,12 +206,6 @@ Page({
     }
   },
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-    shareGetCoin();
-  },
   popupConfirm: function () {
     this.popup.hidePopup();
     var id = this.data.delete_id;
@@ -242,6 +242,7 @@ Page({
       showToast("题目信息暂不可用");
       return;
     }
+    app.clickSound();
     this.selectComponent("#question-poster").open({
       id: Number(question.question_id),
       content: question.content,
@@ -251,6 +252,7 @@ Page({
     });
   },
   previewImg: function (e) {
+    app.clickSound();
     var src = e.currentTarget.dataset.image_src;
     wx.previewImage({
       current: src,

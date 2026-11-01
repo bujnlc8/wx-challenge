@@ -1,3 +1,4 @@
+import { getSessionIdentity, clearAuthSession } from "../../utils/auth-session";
 import { httpGET, httpPOST, showToast } from "../../utils/util";
 import { parseQuestionEntry } from "../../utils/question-entry";
 import {
@@ -8,10 +9,7 @@ import { subscriptionRequestId } from "../../utils/daily-subscription";
 const app = getApp();
 
 function account() {
-  return JSON.stringify([
-    wx.getStorageSync("uid") || "",
-    wx.getStorageSync("token") || "",
-  ]);
+  return getSessionIdentity();
 }
 function unauthorized(response) {
   return (
@@ -137,6 +135,9 @@ Page({
     this.loadQuestion();
   },
   onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
     if (this._disposed) return;
     this._visible = true;
     this.setData({
@@ -228,7 +229,7 @@ Page({
   },
   expireSession() {
     this.resetElapsedClock();
-    ["uid", "token", "mine_cache"].forEach((key) => wx.removeStorageSync(key));
+    clearAuthSession();
     this._generation++;
     this._owner = account();
     this._submission = null;
@@ -247,7 +248,7 @@ Page({
       show_feedback: false,
     });
   },
-  async loadQuestion() {
+  async loadQuestion(event) {
     if (this._disposed || !this.data.question_id) return;
     if (
       this._submission &&
@@ -255,6 +256,7 @@ Page({
       ["submitting", "uncertain"].includes(this.data.phase)
     )
       return;
+    if (event && event.type === "tap") app.clickSound();
     const generation = ++this._generation;
     const owner = account();
     this._owner = owner;
@@ -307,6 +309,7 @@ Page({
     }
   },
   loginAndLoad() {
+    app.clickSound();
     app.checkLogin(() => {
       if (this._disposed) return;
       this._owner = account();
@@ -324,6 +327,7 @@ Page({
       return;
     const number = Number(event.currentTarget.dataset.number);
     if (!this.data.options.some((option) => option.number === number)) return;
+    app.playSound("select");
     this.setData({ selected_option: number, submit_error: "" });
   },
   async submitAnswer() {
@@ -340,6 +344,7 @@ Page({
           (option) => option.number === this.data.selected_option,
         )
       ) {
+        app.playSound("submit_after_select");
         showToast("选择后再提交哦");
         return;
       }
@@ -350,6 +355,7 @@ Page({
         question_revision: this._questionRevision,
       };
     }
+    app.clickSound();
     const payload = this._submission;
     const generation = this._generation;
     const owner = this._owner;
@@ -397,7 +403,24 @@ Page({
         payload.question_id,
         this.data.options,
       );
-      this.setData({ ...result, phase: "completed", submit_error: "" });
+      this.setData({ ...result, phase: "completed", submit_error: "" }, () => {
+        if (
+          !this.isCurrent(generation, owner) ||
+          this._submission !== payload ||
+          this._visible === false ||
+          this.data.show_feedback ||
+          typeof wx.pageScrollTo !== "function"
+        )
+          return;
+        const poster = this.selectComponent("#question-poster");
+        if (!(poster && poster.data && poster.data.visible)) {
+          wx.pageScrollTo({ selector: "#single-result", duration: 0 });
+        }
+      });
+      if (this._visible !== false) {
+        if (result.result === 1) app.correctSound();
+        else app.wrongSound();
+      }
       if (result.reward_coins > 0) {
         try {
           wx.removeStorageSync("mine_cache");
@@ -415,7 +438,14 @@ Page({
     }
   },
   openQuestionPoster() {
-    if (this.data.phase !== "completed" || this._owner !== account()) return;
+    if (
+      this._disposed ||
+      this.data.view_state !== "ready" ||
+      !(Number(this.data.question_id) > 0) ||
+      this._owner !== account()
+    )
+      return;
+    app.clickSound();
     const options = Array.from(
       { length: Math.max(...this.data.options.map((option) => option.number)) },
       () => "",
@@ -432,7 +462,14 @@ Page({
     });
   },
   openFeedback() {
-    if (this.data.phase !== "completed" || this._owner !== account()) return;
+    if (
+      this._disposed ||
+      this.data.view_state !== "ready" ||
+      !(Number(this.data.question_id) > 0) ||
+      this._owner !== account()
+    )
+      return;
+    app.clickSound();
     this.setData({ show_feedback: true });
     this.selectComponent("#single-report").getCaptcha();
   },
@@ -440,6 +477,7 @@ Page({
     if (!this._disposed) this.setData({ show_feedback: false });
   },
   returnToSource() {
+    app.clickSound();
     if (this.data.source === "daily") {
       const pages = getCurrentPages();
       const previous = pages[pages.length - 2];
@@ -449,25 +487,12 @@ Page({
     } else wx.switchTab({ url: "/pages/index/index" });
   },
   previewQuestionImage() {
-    if (this.data.question_image && !this.data.is_video)
+    if (this.data.question_image && !this.data.is_video) {
+      app.clickSound();
       wx.previewImage({
         current: this.data.question_image,
         urls: [this.data.question_image],
       });
-  },
-  onShareAppMessage() {
-    return {
-      title: this.data.content || "百科知识挑战 · 一起答这道题",
-      path:
-        "/pages/single/single?question_id=" +
-        this.data.question_id +
-        "&from=share",
-    };
-  },
-  onShareTimeline() {
-    return {
-      title: this.data.content || "百科知识挑战 · 一起答这道题",
-      query: "question_id=" + this.data.question_id + "&from=share",
-    };
+    }
   },
 });

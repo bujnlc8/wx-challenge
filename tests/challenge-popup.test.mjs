@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -9,11 +10,12 @@ function setup(remaining = 3) {
   const timers = [];
   const requests = [];
   const navigations = [];
-  const app = { clickSound() {}, playSound() {}, wrongSound() {} };
+  const storage = new Map([["uid", "u1"], ["token", "t1"]]);
+  const app = new Proxy({}, { get: () => () => {} });
   const source = fs
     .readFileSync(new URL("../pages/answer/answer.js", import.meta.url), "utf8")
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
-  vm.runInNewContext(source, {
+  const readOwner = runWithAuth(source + "\nchallengeAccount;", {
     Page: (page) => {
       definition = page;
     },
@@ -22,6 +24,7 @@ function setup(remaining = 3) {
       timers.push({ run, delay });
     },
     clearInterval() {},
+    setInterval: () => 1,
     showToast() {},
     httpPOST: async (url, data) => {
       requests.push({ url, data });
@@ -42,11 +45,12 @@ function setup(remaining = 3) {
       };
     },
     wx: {
+      getStorageSync: (key) => storage.get(key),
       switchTab: ({ url }) => navigations.push({ kind: "tab", url }),
       redirectTo: ({ url }) => navigations.push({ kind: "redirect", url }),
     },
   });
-  vm.runInNewContext(
+  runWithAuth(
     fs
       .readFileSync(new URL("../utils/modal-lock.js", import.meta.url), "utf8")
       .replace(/export\s*\{[\s\S]*?\};?/g, "") +
@@ -75,6 +79,8 @@ function setup(remaining = 3) {
     setData(patch) {
       Object.assign(this.data, patch);
     },
+    selectComponent() { return { close() {}, open() {} }; },
+    report: { getCaptcha() {} },
     startAnswer() {
       this.setData({ answer_result: -2 });
     },
@@ -104,6 +110,8 @@ function setup(remaining = 3) {
     popup,
     requests,
     navigations,
+    storage,
+    owner: readOwner,
     runTimer(delay) {
       const index = timers.findIndex((timer) => timer.delay === delay);
       assert.notEqual(index, -1, `expected a ${delay}ms popup timer`);
@@ -186,3 +194,70 @@ test("successful revival keeps its debit contract and later skip dialogs reset a
     state.popup.popupCancel();
   }
 });
+
+for (const utility of ["report", "poster"]) {
+  test(`timeout revival waits for ${utility} to close and keeps its original delay`, async () => {
+    const s = setup();
+    s.page.data.answer_result = -2;
+    if (utility === "report") s.page.doFeedback();
+    else s.page.openQuestionPoster();
+    s.page._submitAnswer(1);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(s.popup.data.flag, true);
+    s.runTimer(1000);
+    assert.equal(s.popup.data.flag, true);
+    if (utility === "report") s.page.nextQuestionAfterCloseFeedback();
+    else s.page.onQuestionPosterClose({ detail: { reason: "user" } });
+    assert.equal(s.popup.data.flag, false);
+    assert.equal(s.popup.data.title, "答题超时");
+    assert.equal(s.page.data.last_relive_times, 3);
+  });
+}
+test("closing utilities before the revival delay does not show a prompt early", async () => {
+  const s = setup();
+  s.page.doFeedback();
+  s.page._submitAnswer(1);
+  await new Promise((resolve) => setImmediate(resolve));
+  s.page.nextQuestionAfterCloseFeedback();
+  assert.equal(s.popup.data.flag, true);
+  s.runTimer(1000);
+  assert.equal(s.popup.data.flag, false);
+});
+test("no-revival ending waits for its poster and original two-second delay", async () => {
+  const s = setup(0);
+  s.page.openQuestionPoster();
+  s.page._submitAnswer(1);
+  await new Promise((resolve) => setImmediate(resolve));
+  s.runTimer(2000);
+  assert.equal(s.popup.data.flag, true);
+  s.page.onQuestionPosterClose({ detail: { reason: "user" } });
+  assert.equal(s.popup.data.title, "本轮挑战结束");
+  assert.equal(s.popup.data.flag, false);
+});
+test("failure prompts wait for page visibility after native preview", async () => {
+  const s = setup();
+  s.page.openQuestionPoster();
+  s.page._submitAnswer(1);
+  await new Promise((resolve) => setImmediate(resolve));
+  s.page.onHide();
+  s.page.onQuestionPosterClose({ detail: { reason: "page-hide" } });
+  s.runTimer(1000);
+  assert.equal(s.popup.data.flag, true);
+  s.page.onShow();
+  assert.equal(s.popup.data.flag, false);
+});
+for (const change of ["question", "round", "unload", "account"]) {
+  test(`a delayed failure cannot reopen after ${change} changes`, async () => {
+    const s = setup();
+    s.page._challengeOwner = s.owner();
+    s.page._submitAnswer(1);
+    await new Promise((resolve) => setImmediate(resolve));
+    if (change === "question") s.page._startAnswer({ id: 99, content: "新题", options: "甲|乙" });
+    if (change === "round") s.page.data.round_id++;
+    if (change === "unload") s.page.onUnload();
+    if (change === "account") s.storage.set("token", "t2");
+    s.runTimer(1000);
+    s.page.onShow();
+    assert.equal(s.popup.data.flag, true);
+  });
+}

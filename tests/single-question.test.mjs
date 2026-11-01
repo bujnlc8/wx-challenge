@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -35,7 +36,7 @@ function gateway(entry) {
         "utf8",
       ),
     );
-  vm.runInNewContext(source, {
+  runWithAuth(source, {
     Page(value) {
       definition = value;
     },
@@ -112,7 +113,7 @@ function single({ authenticated = true, question, deferredGet = false } = {}) {
     correctSound() {},
     wrongSound() {},
   };
-  vm.runInNewContext(
+  runWithAuth(
     strip(
       fs.readFileSync(
         new URL("../utils/question-entry.js", import.meta.url),
@@ -249,6 +250,7 @@ test("legacy positive entries redirect before any challenge request or backgroun
   const normal = gateway({});
   await flush();
   assert.deepEqual(normal.calls, ["api/question/start-challenge"]);
+  assert.equal(normal.music(), 0);
 });
 test("standalone GET preserves target identity and original option numbers without creating a round", async () => {
   const s = single();
@@ -364,7 +366,7 @@ test("expired authentication clears only session data and login reloads the desi
 test("daily launch points directly to the independent question page", () => {
   let definition;
   const calls = [];
-  vm.runInNewContext(
+  runWithAuth(
     strip(
       fs.readFileSync(
         new URL("../pages/daily/daily.js", import.meta.url),
@@ -375,7 +377,7 @@ test("daily launch points directly to the independent question page", () => {
       Page(value) {
         definition = value;
       },
-      getApp: () => ({}),
+      getApp: () => ({ clickSound() {} }),
       wx: {
         navigateTo(o) {
           calls.push(o.url);
@@ -680,5 +682,55 @@ test("invalid wallet rewards cannot be presented as accepted single-question res
     assert.equal(s.page.data.phase, "uncertain");
     assert.equal(s.page.data.reward_coins, 0);
     assert.equal(s.storage.has("mine_cache"), true);
+  }
+});
+
+for (const phase of ["question", "submitting", "uncertain", "completed"]) {
+  test(`single ${phase} can correct and share without changing its answer, submission or clock`, async () => {
+    const s = single();
+    s.load();
+    await flush();
+    s.page.tapOption({ currentTarget: { dataset: { number: 3 } } });
+    if (phase !== "question") {
+      s.page.submitAnswer();
+      if (phase === "uncertain") s.posts[0].reject(Error("offline"));
+      if (phase === "completed") s.posts[0].resolve(answer(1));
+      await flush();
+    }
+    const submission = s.page._submission;
+    const timers = s.timers.size;
+    const postCount = s.posts.length;
+    s.page.openFeedback();
+    assert.equal(s.page.data.show_feedback, true);
+    s.page.onFeedbackClosed();
+    s.page.openQuestionPoster();
+    assert.equal(s.posters.length, 1);
+    assert.equal(s.posters[0].id, 42);
+    assert.equal(s.posters[0].options[1], "");
+    assert.equal(s.page.data.selected_option, 3);
+    assert.equal(s.page.data.phase, phase);
+    assert.equal(s.page._submission, submission);
+    assert.equal(s.posts.length, postCount);
+    assert.equal(s.timers.size, timers);
+    if (phase === "question") {
+      s.advance(2000);
+      assert.equal(s.page.data.elapsed_text, "00:02");
+    }
+  });
+}
+test("single utilities require a ready valid target and current live account", async () => {
+  for (const invalid of ["target", "loading", "error", "disposed", "account"]) {
+    const s = single();
+    s.load();
+    await flush();
+    s.page.data.phase = "completed";
+    if (invalid === "target") s.page.data.question_id = 0;
+    if (["loading", "error"].includes(invalid)) s.page.data.view_state = invalid;
+    if (invalid === "disposed") s.page.onUnload();
+    if (invalid === "account") s.storage.set("token", "new-account");
+    s.page.openFeedback();
+    s.page.openQuestionPoster();
+    assert.equal(s.page.data.show_feedback, false);
+    assert.equal(s.posters.length, 0);
   }
 });

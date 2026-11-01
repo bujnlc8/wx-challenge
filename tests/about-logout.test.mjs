@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -11,6 +12,7 @@ function load(name) {
     ["question_category", 2],
   ]);
   const app = {
+    clickSound() {},
     category: 2,
     show_class_tip: 0,
     category_lables: [],
@@ -30,7 +32,7 @@ function load(name) {
       "\n" +
       src;
   }
-  vm.runInNewContext(src, {
+  runWithAuth(src, {
     Page: (d) => (definition = d),
     getApp: () => app,
     showToast: () => {},

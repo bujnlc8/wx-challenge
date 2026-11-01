@@ -5,7 +5,7 @@
     <view class="menu" bindtap="openQuestionCountSheet" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">每次挑战题数</view><view class="setting-description">下一次普通挑战生效，可设置 1–100 题</view></view><text class="setting-value">{{challenge_question_count}}题</text><image src="../../images/right_arrow.png" class="setting-arrow" /></view>
     <view class="menu" bindtap="operateShowCorrectAnswer" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">显示正确答案</view><view class="setting-description">作答后查看正确选项</view></view><switch color="#2864eb" checked="{{show_correct_answer}}"></switch></view>
     <view class="menu" bindtap="operateShowAnalysis" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">显示答案解析</view><view class="setting-description">了解答案背后的知识</view></view><switch color="#2864eb" checked="{{show_analysis}}"></switch></view>
-    <view class="menu" bindtap="operateSound" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title" wx:if="{{is_ios}}">开启音效提示</view><view class="setting-title" wx:else>开启音效背景</view><view class="setting-description">按自己的喜好选择答题声音</view></view><switch color="#2864eb" checked="{{sound_close == 0}}"></switch></view>
+    <view class="menu" bindtap="operateSound" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">提示音效</view><view class="setting-description">按自己的喜好选择答题声音</view></view><switch color="#2864eb" checked="{{sound_close == 0}}"></switch></view>
   </view>
 </view>
 

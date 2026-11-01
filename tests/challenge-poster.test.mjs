@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -5,16 +6,18 @@ import vm from "node:vm";
 function page() {
   let definition,
     opens = 0;
+  const payloads = [];
+  let clears = 0;
   const notices = [];
   const app = new Proxy({}, { get: () => () => {} });
   const s = fs
     .readFileSync(new URL("../pages/answer/answer.js", import.meta.url), "utf8")
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
-  vm.runInNewContext(s, {
+  runWithAuth(s, {
     Page: (d) => (definition = d),
     getApp: () => app,
     showToast: (t) => notices.push(t),
-    clearInterval: () => {},
+    clearInterval: () => { clears++; },
     setTimeout: () => {},
     wx: {},
   });
@@ -27,26 +30,46 @@ function page() {
       },
       selectComponent() {
         return {
-          open() {
+          open(payload) {
+            payloads.push(payload);
             opens++;
           },
           close() {},
         };
       },
     },
+    payloads,
+    get clears() { return clears; },
     get opens() {
       return opens;
     },
     notices,
   };
 }
-test("active or submitting challenges cannot be obscured by a poster", () => {
+test("active and submitting challenges can share the question without stopping the timer or exposing the answer", () => {
+  for (const result of [-2, -1]) {
+    const s = page();
+    Object.assign(s.p.data, { answer_result: result, interval_handle: 9, right_answer: 3, analysis: "secret", selected_option: 1 });
+    s.p.openQuestionPoster();
+    assert.equal(s.opens, 1);
+    assert.equal(s.p._posterOpen, true);
+    assert.equal(s.payloads[0].id, 42);
+    assert.equal(Object.hasOwn(s.payloads[0], "right_answer"), false);
+    assert.equal(Object.hasOwn(s.payloads[0], "analysis"), false);
+    assert.equal(Object.hasOwn(s.payloads[0], "selected_option"), false);
+    assert.equal(s.clears, 0);
+    assert.equal(s.p.data.answer_result, result);
+  }
+});
+test("a missing or invalid current question and unloading prevent poster opening", () => {
+  for (const id of [0, -1, "bad"]) {
+    const s = page();
+    s.p.data.current_question_id = id;
+    s.p.openQuestionPoster();
+    assert.equal(s.opens, 0);
+  }
   const s = page();
-  s.p.data.answer_result = -2;
-  s.p.openQuestionPoster();
-  assert.equal(s.opens, 0);
-  assert.equal(s.notices.length, 1);
-  s.p.data.answer_result = -1;
+  s.p._unloaded = true;
   s.p.openQuestionPoster();
   assert.equal(s.opens, 0);
 });

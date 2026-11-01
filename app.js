@@ -1,5 +1,5 @@
+import { captureAuthSession, clearAuthSession, ensureAuthSession, isAuthSessionCurrent, saveAuthSession } from "./utils/auth-session";
 import {
-  background_music,
   inner_audio_context,
   showToast,
   showLoading,
@@ -47,77 +47,54 @@ App({
     8: "交通规则",
   },
   checkLogin(cb = "") {
-    if (!wx.getStorageSync("uid")) {
-      this.getUid()
-        .then((res) => {
-          if (cb) {
-            cb();
-          }
-        })
-        .catch((e) => {
-          showToast((e && (e.errMsg || e.message)) || "登录失败");
-        });
-    } else {
-      if (cb) {
-        cb();
-      }
-    }
+    const owner = captureAuthSession();
+    const existing = !!(owner.uid && owner.token);
+    const task = existing ? ensureAuthSession() : this.getUid();
+    return task.then(() => {
+      if (existing && !isAuthSessionCurrent(owner)) return;
+      if (cb) cb();
+    }).catch((error) => {
+      if (error && error.authentication) clearAuthSession(owner);
+      if (!error || !error.sessionChanged)
+        showToast((error && (error.errMsg || error.message)) || "登录失败");
+    });
   },
   getUid() {
-    const loading = showLoading({
-      title: "登录中...",
-    });
-    return new Promise((resolve, reject) => {
-      Promise.all([this.wxSilentLogin(), this.wxGetUserProfile()])
-        .then((r) => {
-          let e = {
-            detail: r[1],
-          };
-          if (e.detail.errMsg == "getUserProfile:ok") {
-            this.global_data.login_code = r[0].code;
-            this.global_data.iv = e.detail.iv;
-            this.global_data.encrypted_data = e.detail.encryptedData;
-            httpJsonPOST("api/user/login-by-weixin", {
-              code: this.global_data.login_code,
-              iv: this.global_data.iv,
-              encrypted_data: this.global_data.encrypted_data,
-            })
-              .then((res) => {
-                hideLoading(loading);
-                if (res.data.code == 10000) {
-                  try {
-                    wx.setStorageSync("uid", res.data.data.uid);
-                    wx.setStorageSync("token", res.data.data.token);
-                  } catch (e) {
-                    console.log(e);
-                  }
-                  resolve(res);
-                } else {
-                  reject(res);
-                }
-              })
-              .catch((err) => {
-                hideLoading(loading);
-                reject(err);
-              });
-          } else {
-            hideLoading(loading);
-            reject(e.detail);
-            showToast({
-              title: "登录失败",
-              icon: "none",
-            });
-          }
-        })
-        .catch((err) => {
-          hideLoading(loading);
-          reject(err);
-          showToast({
-            title: "登录失败",
-            icon: "none",
-          });
+    if (this._loginPromise && this._loginOwner && isAuthSessionCurrent(this._loginOwner))
+      return this._loginPromise;
+    const owner = captureAuthSession();
+    this._loginOwner = owner;
+    const loading = showLoading({ title: "登录中..." });
+    const task = Promise.all([this.wxSilentLogin(), this.wxGetUserProfile()])
+      .then(([login, profile]) => {
+        if (!isAuthSessionCurrent(owner)) {
+          const error = new Error("账号已变更，请重试");
+          error.sessionChanged = true;
+          throw error;
+        }
+        if (profile.errMsg !== "getUserProfile:ok") throw profile;
+        this.global_data.login_code = login.code;
+        this.global_data.iv = profile.iv;
+        this.global_data.encrypted_data = profile.encryptedData;
+        return httpJsonPOST("api/user/login-by-weixin", {
+          code: login.code,
+          iv: profile.iv,
+          encrypted_data: profile.encryptedData,
+          authVersion: 2,
         });
-    });
+      })
+      .then((response) => {
+        if (!response.data || Number(response.data.code) !== 10000)
+          throw new Error((response.data && response.data.message) || "登录失败");
+        saveAuthSession(response.data.data, { manual: true, expected: owner });
+        return response;
+      })
+      .finally(() => {
+        hideLoading(loading);
+        if (this._loginPromise === task) this._loginPromise = null;
+      });
+    this._loginPromise = task;
+    return task;
   },
   wxSilentLogin() {
     return new Promise((resolve, reject) => {
@@ -149,9 +126,6 @@ App({
     if (category) {
       this.category = category;
     }
-    background_music.onEnded(() => {
-      this.playBgSound();
-    });
     wx.getSystemInfoAsync({
       success: (result) => {
         if (result.platform == "ios") {
@@ -179,15 +153,22 @@ App({
         console.log(e);
       });
   },
-  onShow: function onShow() {},
+  onShow: function onShow() {
+    this._soundHidden = false;
+  },
   playSound: function (src) {
-    if (this.sound_close) {
-      return;
-    }
-    inner_audio_context.stop();
+    this.stopInnerAudio();
+    if (this.sound_close || this._soundHidden) return;
+    const request = this._soundRequest;
     inner_audio_context.src = assetHost + "audios/" + src + ".m4a";
-    setTimeout(() => {
-      inner_audio_context.play();
+    this._soundTimer = setTimeout(() => {
+      this._soundTimer = null;
+      if (
+        request === this._soundRequest &&
+        !this.sound_close &&
+        !this._soundHidden
+      )
+        inner_audio_context.play();
     }, 80);
   },
   clickSound: function () {
@@ -229,29 +210,14 @@ App({
       this.playSound("king");
     }
   },
-  playBgSound: function () {
-    // ios不播放背景音乐;
-    if (this.is_ios) {
-      return;
-    }
-    if (this.sound_close) {
-      return;
-    }
-    background_music.stop();
-    background_music.src = assetHost + "audios/background.m4a";
-    background_music.coverImgUrl = assetHost + "challenge/cover.png";
-    background_music.title = "百科知识挑战";
-    setTimeout(() => {
-      background_music.play();
-    }, 80);
-  },
-  stopPlayBgSound: function () {
-    background_music.stop();
-  },
   stopInnerAudio: function () {
+    this._soundRequest = (this._soundRequest || 0) + 1;
+    if (this._soundTimer != null) clearTimeout(this._soundTimer);
+    this._soundTimer = null;
     inner_audio_context.stop();
   },
   onHide: function () {
-    background_music.stop();
+    this._soundHidden = true;
+    this.stopInnerAudio();
   },
 });

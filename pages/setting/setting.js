@@ -57,6 +57,7 @@ Page({
       event.currentTarget.dataset.count,
     );
     if (count === null) return;
+    app.clickSound();
     this.setData({
       question_count_draft: String(count),
       question_count_error: "",
@@ -73,6 +74,7 @@ Page({
     if (!this.data.question_count_sheet_visible) return;
     const step = Number(event.currentTarget.dataset.step);
     if (step !== -1 && step !== 1) return;
+    app.clickSound();
     const count = parseChallengeQuestionCount(this.data.question_count_draft);
     if (count === null) {
       this.setData({ question_count_error: "请输入 1–100 的整数" });
@@ -94,6 +96,7 @@ Page({
   },
   confirmQuestionCountSheet() {
     if (!this.data.question_count_sheet_visible) return;
+    app.clickSound();
     const count = parseChallengeQuestionCount(this.data.question_count_draft);
     if (count === null) {
       this.setData({ question_count_error: "请输入 1–100 的整数" });
@@ -103,7 +106,6 @@ Page({
       this.setData({ question_count_error: "保存失败，请重试" });
       return;
     }
-    app.clickSound();
     this.setData({
       challenge_question_count: count,
       question_count_sheet_visible: false,
@@ -114,29 +116,22 @@ Page({
   },
   catchtouchmove() {},
   operateSound: function () {
-    app.clickSound();
     if (this.data.sound_close) {
       app.sound_close = 0;
+      app.clickSound();
       wx.removeStorageSync("sound_close");
       this.setData({
         sound_close: 0,
       });
-      if (app.is_ios) {
-        showToast("将为您播放音效提示");
-      } else {
-        showToast("将为您播放背景音乐及音效");
-      }
+      showToast("将为您播放音效提示");
     } else {
       wx.setStorageSync("sound_close", 1);
       app.sound_close = 1;
+      app.stopInnerAudio();
       this.setData({
         sound_close: 1,
       });
-      if (app.is_ios) {
-        showToast("将为您关闭音效提示");
-      } else {
-        showToast("将为您关闭背景音乐及音效");
-      }
+      showToast("将为您关闭音效提示");
     }
   },
   operateShowCorrectAnswer: function () {
@@ -188,6 +183,9 @@ Page({
   },
 
   onShow() {
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
     if (this._questionCountModalLock) this._questionCountModalLock.show();
   },
 
@@ -208,10 +206,6 @@ Page({
    */
   onReachBottom() {},
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {},
   onTabItemTap: function () {
     app.clickSound();
   },

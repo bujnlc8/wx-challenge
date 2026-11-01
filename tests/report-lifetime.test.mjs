@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -34,7 +35,7 @@ function report() {
         "utf8",
       ),
     );
-  vm.runInNewContext(source, {
+  runWithAuth(source, {
     Component(value) {
       definition = value;
     },
@@ -173,7 +174,7 @@ test("hide, detach and account changes invalidate pending feedback without stale
 test("wrong-book navigation uses active records even when cumulative challenge mistakes are zero", () => {
   let definition;
   const navigation = [];
-  vm.runInNewContext(
+  runWithAuth(
     strip(
       fs.readFileSync(
         new URL("../pages/mine/mine.js", import.meta.url),

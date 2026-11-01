@@ -49,9 +49,6 @@
       }
     ]
   },
-  "requiredBackgroundModes": [
-    "audio"
-  ],
   "resizable": true,
   "usingComponents": {
     "ui-feedback": "/component/ui-feedback/ui-feedback",

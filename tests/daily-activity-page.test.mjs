@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -14,7 +15,7 @@ function setup(get) {
   const page = fs
     .readFileSync(new URL("../pages/daily/daily.js", import.meta.url), "utf8")
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
-  vm.runInNewContext(helper + "\n" + page, {
+  runWithAuth(helper + "\n" + page, {
     Page: (d) => (definition = d),
     getApp: () => ({}),
     wx: { getStorageSync: (k) => (k === "uid" ? uid : "token") },

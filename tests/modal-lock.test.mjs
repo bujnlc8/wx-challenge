@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -105,7 +106,7 @@ function component(name, initial = {}) {
     strip(fs.readFileSync(path("utils/modal-lock.js"), "utf8")) +
     "\n" +
     strip(fs.readFileSync(path(`component/${name}/${name}.js`), "utf8"));
-  vm.runInNewContext(source, {
+  runWithAuth(source, {
     getCurrentPages: () => [s.a],
     getApp: () => ({ clickSound() {} }),
     wx: { getStorageSync: (key) => (key === "uid" ? "u1" : "t1") },

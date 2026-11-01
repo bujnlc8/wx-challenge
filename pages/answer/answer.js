@@ -1,3 +1,4 @@
+import { getSessionIdentity, clearAuthSession } from "../../utils/auth-session";
 import {
   createDailyReminder,
   reminderSettings,
@@ -9,14 +10,13 @@ const app = getApp();
 import {
   httpPOST,
   httpGET,
-  shareGetCoin,
   showToast,
   showLoading,
   hideLoading,
 } from "../../utils/util";
 
 function challengeAccount() {
-  return JSON.stringify([wx.getStorageSync("uid"), wx.getStorageSync("token")]);
+  return getSessionIdentity();
 }
 
 Page({
@@ -36,6 +36,7 @@ Page({
       onNativeSettled: () => {
         this._subscriptionPanelOpen = false;
         this.resumeDailyAdvance();
+        this.resumeFailurePrompt();
       },
     });
     this._dailyReminder.refresh();
@@ -120,7 +121,7 @@ Page({
     this._questionViewSequence = 0;
     this.setData({ challenge_limit: getChallengeQuestionCount() });
     this.initializeDailyReminder();
-    wx.setNavigationBarTitle({ title: "挑战模式" });
+    wx.setNavigationBarTitle({ title: "挑战答题" });
     this.setData({
       show_correct_answer: app.show_correct_answer,
       show_analysis: app.show_analysis,
@@ -128,6 +129,7 @@ Page({
     this.getChallengeQuestions();
   },
   toLogin: function () {
+    app.clickSound();
     app.checkLogin(this.getChallengeQuestions);
   },
   getChallengeQuestions() {
@@ -141,7 +143,7 @@ Page({
       showToast("请点击登录");
       return;
     }
-    const load = { owner: this._challengeOwner };
+    const load = { owner: this._challengeOwner || challengeAccount() };
     this._questionLoad = load;
     const current = () =>
       this._questionLoad === load &&
@@ -167,9 +169,7 @@ Page({
               show_login: 0,
             });
           if (res.data.code == 11111) {
-            wx.removeStorageSync("uid");
-            wx.removeStorageSync("token");
-            wx.removeStorageSync("mine_cache");
+            clearAuthSession();
             this.setData({
               logined: 0,
               show_login: 1,
@@ -228,6 +228,7 @@ Page({
       this._advanceAfterSubscription = true;
       return;
     }
+    if (this.data.show_feedback && this.data.answer_result == 1) return;
     if (this._posterOpen && this.data.answer_result == 1) {
       this._advanceAfterPoster = true;
       return;
@@ -243,6 +244,7 @@ Page({
     }
   },
   _startAnswer: function (question) {
+    this._pendingFailurePrompt = null;
     this._questionViewSequence = (this._questionViewSequence || 0) + 1;
     this._advanceAfterSubscription = false;
     this._advanceAfterPoster = false;
@@ -320,9 +322,17 @@ Page({
       app.playSound("warn");
       return;
     }
+    const option = Number((e.currentTarget || e.target).dataset.i);
+    if (
+      !Number.isInteger(option) ||
+      option < 1 ||
+      option > 4 ||
+      !this.data[["option_a", "option_b", "option_c", "option_d"][option - 1]]
+    )
+      return;
     app.playSound("select");
     this.setData({
-      selected_option: e.target.dataset.i,
+      selected_option: option,
       sub_button_active: "",
     });
   },
@@ -339,6 +349,7 @@ Page({
       showToast("选择后再提交哦");
       return;
     }
+    app.clickSound();
     this.setData({
       answer_result: -1,
     });
@@ -425,29 +436,7 @@ Page({
               this.finishChallenge();
               return;
             }
-            if (this.data.last_relive_times > 0) {
-              setTimeout(() => {
-                this.popup.setData({
-                  title: t,
-                  content:
-                    "消耗1000百科币可复活，继续本轮挑战。\n本轮剩余" +
-                    this.data.last_relive_times +
-                    "次复活机会。",
-                  btn_no: "结束本轮",
-                  btn_ok: "复活继续",
-                  show_modal: false,
-                });
-                this.setData({
-                  pop_type: 1,
-                });
-                this.popup.showPopup();
-              }, 1000);
-            } else {
-              showToast("本轮剩余复活次数为0");
-              setTimeout(() => {
-                this.tryAgainPop();
-              }, 2000);
-            }
+            this.queueFailurePrompt(t);
           }
         } else {
           showToast(res.data.message);
@@ -460,6 +449,65 @@ Page({
         if (this._pendingAnswer === attempt) this._pendingAnswer = null;
       });
   },
+  queueFailurePrompt(title) {
+    const prompt = {
+      question: this.data.current_question_id,
+      round: this.data.round_id,
+      view: this._questionViewSequence,
+      owner: this._challengeOwner,
+      title,
+      relive: this.data.last_relive_times > 0,
+      ready: false,
+    };
+    this._pendingFailurePrompt = prompt;
+    if (!prompt.relive) showToast("本轮剩余复活次数为0");
+    setTimeout(() => {
+      if (this._pendingFailurePrompt !== prompt) return;
+      prompt.ready = true;
+      this.resumeFailurePrompt();
+    }, prompt.relive ? 1000 : 2000);
+  },
+  resumeFailurePrompt() {
+    const prompt = this._pendingFailurePrompt;
+    if (!prompt) return;
+    if (
+      this._unloaded ||
+      this.data.challenge_finished ||
+      this.data.answer_result != 0 ||
+      prompt.question !== this.data.current_question_id ||
+      prompt.round !== this.data.round_id ||
+      prompt.view !== this._questionViewSequence ||
+      (prompt.owner && prompt.owner !== challengeAccount())
+    ) {
+      this._pendingFailurePrompt = null;
+      return;
+    }
+    if (
+      !prompt.ready ||
+      this._pageVisible === false ||
+      this.data.show_feedback ||
+      this._posterOpen ||
+      this._subscriptionPanelOpen
+    )
+      return;
+    this._pendingFailurePrompt = null;
+    if (!prompt.relive) {
+      this.tryAgainPop();
+      return;
+    }
+    this.popup.setData({
+      title: prompt.title,
+      content:
+        "消耗1000百科币可复活，继续本轮挑战。\n本轮剩余" +
+        this.data.last_relive_times +
+        "次复活机会。",
+      btn_no: "结束本轮",
+      btn_ok: "复活继续",
+      show_modal: false,
+    });
+    this.setData({ pop_type: 1 });
+    this.popup.showPopup();
+  },
   queueNextQuestion(delay) {
     const view = this._questionViewSequence;
     setTimeout(() => {
@@ -471,13 +519,14 @@ Page({
         this.startAnswer();
     }, delay);
   },
-  async finishChallenge() {
+  async finishChallenge(event) {
     if (
       this._unloaded ||
       ["saving", "done"].includes(this.data.challenge_finish_state) ||
       !(this.data.round_id > 0)
     )
       return;
+    if (event && event.type === "tap") app.clickSound();
     if (this.data.interval_handle) clearInterval(this.data.interval_handle);
     this._advanceAfterSubscription = false;
     this._advanceAfterPoster = false;
@@ -485,6 +534,7 @@ Page({
       challenge_finished: true,
       challenge_finish_state: "saving",
     });
+    this._pendingFailurePrompt = null;
     const roundId = this.data.round_id;
     const owner = this._challengeOwner;
     const current = () =>
@@ -518,8 +568,10 @@ Page({
     }
   },
   restartChallenge() {
-    if (this.data.challenge_finish_state === "done")
+    if (this.data.challenge_finish_state === "done") {
+      app.clickSound();
       wx.redirectTo({ url: "/pages/answer/answer" });
+    }
   },
   hideQuestion: function (e) {
     if (this.data.challenge_finished || this._unloaded) return;
@@ -557,21 +609,17 @@ Page({
     this.popup.showPopup();
   },
   doFeedback: function () {
-    if (this.data.answer_result == -1 || this.data.answer_result == -2) {
-      app.playSound("warn");
-      showToast("作答之后才能反馈哦~");
-      return;
-    }
+    if (this._unloaded || !(Number(this.data.current_question_id) > 0)) return;
     app.clickSound();
-    if (this.data.interval_handle) {
-      clearInterval(this.data.interval_handle);
-    }
     this.setData({
       show_feedback: true,
     });
     this.report.getCaptcha();
   },
   nextQuestionAfterCloseFeedback: function () {
+    if (this._unloaded) return;
+    this.setData({ show_feedback: false });
+    this.resumeFailurePrompt();
     if (this.data.answer_result == 1) {
       this.queueNextQuestion(1000);
     }
@@ -588,7 +636,10 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    if (this._redirecting) return;
+    if (typeof wx.hideShareMenu === "function") {
+      wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
+    }
+    if (this._redirecting || this._unloaded) return;
     this._pageVisible = true;
     if (this._dailyReminder) {
       this._dailyReminder.refresh();
@@ -597,6 +648,7 @@ Page({
         this._advanceAfterSubscription = false;
     }
     this.resumeDailyAdvance();
+    this.resumeFailurePrompt();
     if (
       this._advanceAfterPoster &&
       !this._posterOpen &&
@@ -605,7 +657,7 @@ Page({
       this._advanceAfterPoster = false;
       this.startAnswer();
     }
-    app.playBgSound();
+
   },
 
   /**
@@ -613,7 +665,7 @@ Page({
    */
   onHide() {
     this._pageVisible = false;
-    app.stopPlayBgSound();
+
     app.stopInnerAudio();
   },
 
@@ -623,12 +675,13 @@ Page({
   onUnload() {
     this._pageVisible = false;
     this._unloaded = true;
+    this._pendingFailurePrompt = null;
     if (this._dailyReminder) this._dailyReminder.dispose();
     if (this.data.interval_handle) {
       clearInterval(this.data.interval_handle);
     }
     app.stopInnerAudio();
-    app.stopPlayBgSound();
+
   },
 
   /**
@@ -641,15 +694,9 @@ Page({
    */
   onReachBottom() {},
 
-  /**
-   * 用户点击右上角分享
-   */
   openQuestionPoster() {
-    if (this.data.answer_result != 0 && this.data.answer_result != 1) {
-      showToast("请先完成本题再分享");
-      return;
-    }
-    if (!this.data.current_question_id) return;
+    if (this._unloaded || !(Number(this.data.current_question_id) > 0)) return;
+    app.clickSound();
     this._posterOpen = true;
     this.selectComponent("#question-poster").open({
       id: Number(this.data.current_question_id),
@@ -667,6 +714,7 @@ Page({
   onQuestionPosterClose(event) {
     this._posterOpen = false;
     const reason = (event && event.detail && event.detail.reason) || "user";
+    if (reason === "user") this.resumeFailurePrompt();
     if (
       this._advanceAfterPoster &&
       reason === "user" &&
@@ -679,23 +727,8 @@ Page({
     }
   },
   returnToChallenge() {
+    app.clickSound();
     wx.switchTab({ url: "/pages/index/index" });
-  },
-  onShareAppMessage() {
-    shareGetCoin();
-    return {
-      title: this.data.current_question,
-      path: "pages/answer/answer?question_id=" + this.data.current_question_id,
-      imageUrl: "../../images/share.png",
-    };
-  },
-  onShareTimeline() {
-    shareGetCoin();
-    return {
-      title: "这题有点难，进来试试呗！",
-      path: "question_id=" + this.data.current_question_id,
-      imageUrl: "../../images/share.png",
-    };
   },
   tryAgainPop: function () {
     setTimeout(() => {
@@ -793,6 +826,7 @@ Page({
     }
   },
   previewImg: function (e) {
+    app.clickSound();
     var src = e.currentTarget.dataset.image_src;
     wx.previewImage({
       current: src,

@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
@@ -181,7 +182,8 @@ function componentHarness() {
       Object.assign(this.data, patch);
     },
   };
-  vm.runInNewContext(modalSource + "\n" + source, {
+  runWithAuth(modalSource + "\n" + source, {
+    getApp: () => ({ clickSound() {} }),
     getCurrentPages() {
       return [ownerPage];
     },

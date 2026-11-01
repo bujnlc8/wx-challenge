@@ -1,3 +1,4 @@
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -14,6 +15,8 @@ for (const [mode, method, endpoint] of [
       ["uid", "u1"],
       ["token", "expired-token"],
       ["mine_cache", { nickname: "旧资料" }],
+      ["auth_session", { uid: "u1", token: "expired-token", refresh_token: "refresh-secret" }],
+      ["auth_client_session_id", { uid: "u1", token: "expired-token", id: "epoch" }],
       [reminderKey, true],
       ["question_category", 3],
       ["sound_close", 1],
@@ -22,7 +25,7 @@ for (const [mode, method, endpoint] of [
     ]);
     const preserved = new Map(
       [...stored].filter(
-        ([key]) => !["uid", "token", "mine_cache"].includes(key),
+        ([key]) => !["uid", "token", "mine_cache", "auth_session", "auth_client_session_id"].includes(key),
       ),
     );
     let definition;
@@ -39,7 +42,7 @@ for (const [mode, method, endpoint] of [
         "utf8",
       )
       .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
-    vm.runInNewContext(source, {
+    runWithAuth(source, {
       Page(value) {
         definition = value;
       },
@@ -67,7 +70,7 @@ for (const [mode, method, endpoint] of [
     await new Promise((resolve) => setImmediate(resolve));
     assert.deepEqual(calls, [endpoint]);
     assert.equal(page.data.logined, 0);
-    for (const key of ["uid", "token", "mine_cache"])
+    for (const key of ["uid", "token", "mine_cache", "auth_session", "auth_client_session_id"])
       assert.equal(stored.has(key), false, `${key} must expire`);
     for (const [key, value] of preserved)
       assert.equal(stored.get(key), value, `${key} must survive expiry`);

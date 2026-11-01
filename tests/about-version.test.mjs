@@ -15,6 +15,7 @@ function load(accountInfo) {
     "about needs a packaged version fallback",
   );
   const context = vm.createContext({
+    getApp: () => ({ clickSound() {} }),
     Page(value) {
       definition = value;
     },

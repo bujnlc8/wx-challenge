@@ -169,10 +169,9 @@
 }
 .category-options-scroll {
   height: auto;
-  max-height: calc(82vh - 190px);
+  max-height: calc(85vh - 190px - env(safe-area-inset-bottom));
   min-height: 0;
   flex: 0 1 auto;
-  overflow-y: auto;
 }
 .category-options {
   display: flex;
@@ -281,4 +280,32 @@
   line-height: 22px;
   color: #68758a;
   letter-spacing: 0;
+}
+
+/* Keep the selected type readable without allowing it to squeeze the title. */
+.category-menu .menu-label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.category-menu .menu-caption {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-all;
+}
+.category-sheet .dialog-header,
+.category-actions {
+  flex-shrink: 0;
+}
+.category-option {
+  box-sizing: border-box;
+}
+.category-option-label {
+  flex: 1;
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.6;
 }

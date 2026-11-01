@@ -2,5 +2,6 @@
   "usingComponents": {
     "popup": "/component/popup/popup",
     "report": "/component/report/report"
-  }
+  },
+  "navigationBarTitleText": "挑战答题"
 }
