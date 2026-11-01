@@ -17,11 +17,14 @@
     </checkbox-group>
     <view class="feedback-field-heading feedback-field-heading--remark"><text class="feedback-label-title">补充说明</text></view>
     <view class="remark-field">
-      <textarea placeholder="例如：正确答案应为 B，解析中的年份有误" class="remark" value="{{feedback_remark}}" placeholder-style="font-size:14px;color:#94a0b3;" bindinput="feedbackRemarkInput" bindkeyboardheightchange="feedbackKeyboardChange" maxlength="500" disabled="{{submit_pending}}" adjust-position="false" cursor-spacing="16"></textarea>
+      <textarea placeholder="例如：正确答案应为 B，解析中的年份有误" class="remark" fixed="{{true}}" value="{{feedback_remark}}" placeholder-style="font-size:14px;color:#94a0b3;" bindinput="feedbackRemarkInput" bindkeyboardheightchange="feedbackKeyboardChange" maxlength="500" disabled="{{submit_pending}}" adjust-position="false" cursor-spacing="16"></textarea>
       <view class="remark-count">{{feedback_remark.length}} / 500</view>
     </view>
+
+  </view>
+  <view class="feedback-verification">
     <view class="feedback-field-heading feedback-field-heading--captcha"><text class="feedback-label-title">验证码</text><text class="feedback-field-hint">点击图片换一张</text></view>
-    <view class="captcha-row"><input type="number" class="captcha-input" maxlength="6" placeholder="输入 6 位数字" placeholder-style="color:#94a0b3;" bindinput="captchaInput" bindkeyboardheightchange="feedbackKeyboardChange" disabled="{{submit_pending}}" adjust-position="false" value="{{captcha_data}}" /><view class="captcha-image-wrap"><image bindtap="getCaptcha" src="data:image/png;base64,{{captcha_image}}" class="captcha-image" aria-label="点击刷新验证码"></image></view></view>
+    <view class="captcha-row"><input type="number" class="captcha-input" cursor-spacing="16" maxlength="6" placeholder="输入 6 位数字" placeholder-style="color:#94a0b3;" bindinput="captchaInput" bindkeyboardheightchange="feedbackKeyboardChange" disabled="{{submit_pending}}" adjust-position="false" value="{{captcha_data}}" /><view class="captcha-image-wrap"><image bindtap="getCaptcha" src="data:image/png;base64,{{captcha_image}}" class="captcha-image" aria-label="点击刷新验证码"></image></view></view>
   </view>
   <view class="feedback-footer"><button class="feedback-submit" disabled="{{submit_pending}}" bindtap="feedbackSubmit" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{submit_pending ? '正在提交…' : '提交纠错'}}</button></view>
 </view>

@@ -1,6 +1,8 @@
 import { getSessionIdentity, clearAuthSession } from "../../utils/auth-session";
 import { httpGET } from "../../utils/util";
 const app = getApp();
+const beijingDate = () =>
+  new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 function practicePayload(response) {
   if (
@@ -35,6 +37,7 @@ Page({
    * 页面的初始数据
    */
   data: {
+    practice_progress_refresh_error: false,
     practice_progress_state: "loading",
     practice_progress: null,
     practice_progress_percent: 0,
@@ -53,12 +56,24 @@ Page({
     const owner = getSessionIdentity();
     const operation = (this._progressOperation =
       (this._progressOperation || 0) + 1);
-    this.setData({
-      practice_progress_state: owner ? "loading" : "logged-out",
-      practice_progress: null,
-      practice_progress_percent: 0,
-      practice_reward_text: "",
-    });
+    const keepProgress =
+      !!owner &&
+      owner === this._progressOwner &&
+      this.data.practice_progress_state === "ready" &&
+      this.data.practice_progress &&
+      this.data.practice_progress.date === beijingDate();
+    this._progressOwner = owner;
+    if (keepProgress) {
+      this.setData({ practice_progress_refresh_error: false });
+    } else {
+      this.setData({
+        practice_progress_state: owner ? "loading" : "logged-out",
+        practice_progress: null,
+        practice_progress_percent: 0,
+        practice_reward_text: "",
+        practice_progress_refresh_error: false,
+      });
+    }
     if (!owner) return;
     try {
       const progress = practicePayload(
@@ -85,9 +100,23 @@ Page({
     } catch (error) {
       if (!this.isProgressCurrent(operation, owner)) return;
       if (error.authentication) clearAuthSession();
-      this.setData({
-        practice_progress_state: error.authentication ? "logged-out" : "error",
-      });
+      const retainProgress =
+        keepProgress &&
+        !error.authentication &&
+        this.data.practice_progress.date === beijingDate();
+      if (retainProgress) {
+        this.setData({ practice_progress_refresh_error: true });
+      } else {
+        this.setData({
+          practice_progress_state: error.authentication
+            ? "logged-out"
+            : "error",
+          practice_progress: null,
+          practice_progress_percent: 0,
+          practice_reward_text: "",
+          practice_progress_refresh_error: false,
+        });
+      }
     }
   },
   goToTrain: function () {

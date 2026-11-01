@@ -211,8 +211,13 @@
   line-height: 1.5;
   text-align: right;
 }
+.feedback-verification {
+  flex-shrink: 0;
+  padding: 0 22px 16px;
+  background: #fff;
+}
 .feedback-field-heading--captcha {
-  margin-top: 16px;
+  margin-top: 0;
   margin-bottom: 10px;
 }
 .captcha-row {
@@ -292,7 +297,8 @@
     padding-right: 9px;
     padding-left: 9px;
   }
-  .feedback-footer {
+  .feedback-footer,
+  .feedback-verification {
     padding-right: 18px;
     padding-left: 18px;
   }
@@ -308,4 +314,8 @@
 .feedback--keyboard .feedback-footer {
   padding-top: 10px;
   padding-bottom: 12px;
+}
+
+.feedback--keyboard .feedback-verification {
+  padding-bottom: 10px;
 }

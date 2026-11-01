@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { runWithAuth } from "./helpers/auth-loader.mjs";
 
 function setup() {
+  let now = Date.parse("2026-11-01T04:00:00Z");
   let definition;
   const requests = [];
   const storage = new Map([
@@ -14,6 +15,14 @@ function setup() {
     .readFileSync(new URL("../pages/train/train.js", import.meta.url), "utf8")
     .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "");
   runWithAuth(source, {
+    Date: class extends Date {
+      constructor(...args) {
+        super(...(args.length ? args : [now]));
+      }
+      static now() {
+        return now;
+      }
+    },
     Page: (value) => {
       definition = value;
     },
@@ -36,7 +45,14 @@ function setup() {
       Object.assign(this.data, patch);
     },
   };
-  return { page, requests, storage };
+  return {
+    page,
+    requests,
+    storage,
+    setNow(value) {
+      now = Date.parse(value);
+    },
+  };
 }
 const progress = (overrides = {}) => ({
   data: {
@@ -102,6 +118,7 @@ test("returning from practice reloads canonical counts and clears yesterday's di
   s.requests[0].resolve(progress());
   await flush();
   s.page.onHide();
+  s.setNow("2026-11-01T16:00:01Z");
   s.page.onShow();
   assert.equal(s.page.data.practice_progress, null);
   assert.equal(s.page.data.practice_progress_state, "loading");
@@ -159,3 +176,55 @@ for (const invalid of [
     assert.equal(s.page.data.practice_progress_state, "error");
     assert.equal(s.page.data.practice_progress, null);
   });
+
+test("same-day tab return retains progress while refreshing and replaces it in place", async () => {
+  const s = setup();
+  s.page.onShow();
+  s.requests[0].resolve(progress());
+  await flush();
+  s.page.onHide();
+  s.page.onShow();
+  assert.equal(s.page.data.practice_progress_state, "ready");
+  assert.equal(s.page.data.practice_progress.answered_count, 32);
+  assert.equal(s.page.data.practice_progress_percent, 32);
+  s.requests[1].resolve(progress({ answered_count: 33 }));
+  await flush();
+  assert.equal(s.page.data.practice_progress.answered_count, 33);
+});
+
+test("failed background refresh retains real same-day counts with a retry indication", async () => {
+  const s = setup();
+  s.page.onShow();
+  s.requests[0].resolve(progress());
+  await flush();
+  s.page.onHide();
+  s.page.onShow();
+  s.requests[1].reject(Error("offline"));
+  await flush();
+  assert.equal(s.page.data.practice_progress_state, "ready");
+  assert.equal(s.page.data.practice_progress.answered_count, 32);
+  assert.equal(s.page.data.practice_progress_refresh_error, true);
+  const retry = s.page.loadPracticeProgress();
+  s.requests[2].resolve(progress({ answered_count: 34 }));
+  await retry;
+  assert.equal(s.page.data.practice_progress_refresh_error, false);
+  assert.equal(s.page.data.practice_progress.answered_count, 34);
+});
+
+test("account switch and expired authentication immediately discard the displayed snapshot", async () => {
+  const s = setup();
+  s.page.onShow();
+  s.requests[0].resolve(progress());
+  await flush();
+  s.storage.set("uid", "u2");
+  s.storage.set("token", "t2");
+  s.page.onShow();
+  assert.equal(s.page.data.practice_progress, null);
+  s.requests[1].resolve(progress({ answered_count: 7 }));
+  await flush();
+  s.page.onShow();
+  s.requests[2].resolve({ statusCode: 401 });
+  await flush();
+  assert.equal(s.page.data.practice_progress, null);
+  assert.equal(s.page.data.practice_progress_state, "logged-out");
+});

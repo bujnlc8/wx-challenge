@@ -162,3 +162,15 @@ test("confirmation callbacks keep one click sound and programmatic hiding stays 
   assert.deepEqual(s.events, ["success", "error"]);
   assert.equal(s.clicks(), 2);
 });
+
+test("captcha editing survives remark keyboard changes and remains bound to the same feedback", () => {
+  const { instance: r } = component("report", { question_id: 16 });
+  r.setData({ captcha_token: "valid-token", feedback_remark: "题干有误" });
+  r.feedbackKeyboardChange({ detail: { height: 300 } });
+  r.captchaInput({ detail: { value: "123" } });
+  r.feedbackKeyboardChange({ detail: { height: 260 } });
+  r.captchaInput({ detail: { value: "123456" } });
+  assert.equal(r.data.captcha_data, "123456");
+  assert.equal(r.data.captcha_token, "valid-token");
+  assert.equal(r.data.feedback_remark, "题干有误");
+});

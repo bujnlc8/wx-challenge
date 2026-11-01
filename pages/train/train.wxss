@@ -116,6 +116,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 30px;
   color: #48618d;
   font-size: 13px;
 }
@@ -146,8 +147,13 @@
   font-size: 12px;
   line-height: 1.7;
 }
-.practice-progress-track + .practice-progress-caption {
+.practice-progress-status {
   margin-top: 8px;
+  min-height: 41px;
+}
+.practice-progress-placeholder {
+  color: #687c9e;
+  font-size: 20px;
 }
 .practice-reward-received {
   color: #19764d;
