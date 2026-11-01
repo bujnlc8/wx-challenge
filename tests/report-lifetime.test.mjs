@@ -31,7 +31,10 @@ function report() {
     "\n" +
     strip(
       fs.readFileSync(
-        new URL("../component/report/report.js", import.meta.url),
+        new URL(
+          "../component/correction-form/correction-form.js",
+          import.meta.url,
+        ),
         "utf8",
       ),
     );
@@ -245,5 +248,5 @@ test("returning to an open feedback dialog refreshes its invalidated captcha onc
   await flush();
   assert.equal(s.c.data.captcha_token, "fresh-token");
   assert.equal(s.c.data.show_feedback, true);
-  assert.equal(s.ownerPage.data.modal_locked, true);
+  assert.notEqual(s.ownerPage.data.modal_locked, true);
 });

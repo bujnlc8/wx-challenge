@@ -1,0 +1,10 @@
+.correction-page {
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+}
+.correction-invalid {
+  padding: 28px 20px;
+  border-radius: 20px;
+  background: #fff;
+  color: #68758a;
+  font-size: 14px;
+}

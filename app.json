@@ -11,7 +11,8 @@
     "pages/help/help",
     "pages/about/about",
     "pages/daily/daily",
-    "pages/single/single"
+    "pages/single/single",
+    "pages/correction/correction"
   ],
   "window": {
     "backgroundTextStyle": "light",

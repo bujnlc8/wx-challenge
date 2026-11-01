@@ -73,7 +73,7 @@
   <view class="dialog-footer"><view class="iknow" bindtap="closeAnalysis" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">知道了</view></view>
 </view>
 <popup class="popup_compon" bind:error="popupCancel" bind:success="popupConfirm"></popup>
-<report show_feedback="{{show_feedback}}" question_id="{{current_question_id}}" class="report" />
+<report bind:nextQuestion="onFeedbackClosed" show_feedback="{{show_feedback}}" question_id="{{current_question_id}}" class="report" />
 
 <ui-feedback state="{{ui_feedback}}" />
 

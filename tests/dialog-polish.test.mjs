@@ -95,9 +95,9 @@ test("confirmation renders its normalized message and a visible default title", 
 });
 
 test("custom correction choices retain native checkbox state and the complete backend bitmask", () => {
-  const s = component("report", { question_id: 16 });
+  const s = component("correction-form", { question_id: 16 });
   const r = s.instance;
-  const template = source("component/report/report.wxml");
+  const template = source("component/correction-form/correction-form.wxml");
   assert.match(template, /checkbox-group\s+bindchange="feedbackChecked"/);
   assert.match(template, /<checkbox[^>]+checked="\{\{item.checked\}\}"/);
   r.feedbackChecked({ detail: { value: ["1", "4", "8", "16"] } });
@@ -140,17 +140,6 @@ test("custom correction choices retain native checkbox state and the complete ba
   assert.ok(r.data.feedback_options.every((item) => !item.checked));
 });
 
-test("correction keyboard sizing resets when its question session changes", () => {
-  const s = component("report", { question_id: 16 });
-  const r = s.instance;
-  r.feedbackKeyboardChange({ detail: { height: 280 } });
-  assert.equal(r.data.keyboard_height, 280);
-  r.setData({ question_id: 17 });
-  assert.equal(r.data.keyboard_height, 0);
-  r.feedbackKeyboardChange({ detail: { height: 0 } });
-  assert.equal(r.data.keyboard_height, 0);
-});
-
 test("confirmation callbacks keep one click sound and programmatic hiding stays silent", () => {
   const s = component("popup");
   s.instance.showPopup();
@@ -162,65 +151,4 @@ test("confirmation callbacks keep one click sound and programmatic hiding stays 
   s.instance.popupCancel();
   assert.deepEqual(s.events, ["success", "error"]);
   assert.equal(s.clicks(), 2);
-});
-
-test("captcha editing survives remark keyboard changes and remains bound to the same feedback", () => {
-  const { instance: r } = component("report", { question_id: 16 });
-  r.setData({ captcha_token: "valid-token", feedback_remark: "题干有误" });
-  r.feedbackKeyboardChange({ detail: { height: 300 } });
-  r.captchaInput({ detail: { value: "123" } });
-  r.feedbackKeyboardChange({ detail: { height: 260 } });
-  r.captchaInput({ detail: { value: "123456" } });
-  assert.equal(r.data.captcha_data, "123456");
-  assert.equal(r.data.captcha_token, "valid-token");
-  assert.equal(r.data.feedback_remark, "题干有误");
-});
-
-test("repeated keyboard height does not reflow an active native input", () => {
-  const { instance: r } = component("report", { question_id: 16 });
-  r.feedbackKeyboardChange({ detail: { height: 300 } });
-  const setData = r.setData.bind(r);
-  let updates = 0;
-  r.setData = (patch, callback) => {
-    updates++;
-    setData(patch);
-    if (callback) callback();
-  };
-  r.feedbackKeyboardChange({ detail: { height: 300 } });
-  assert.equal(updates, 0);
-});
-
-test("remark remains a scroll target while switching between numeric and text keyboards", () => {
-  const { instance: r } = component("report", { question_id: 16 });
-  r.feedbackFocus({ currentTarget: { dataset: { field: "remark" } } });
-  r.feedbackKeyboardChange({ detail: { height: 300 } });
-  assert.equal(r.data.feedback_scroll_target, "feedback-remark");
-  r.feedbackFocus({ currentTarget: { dataset: { field: "captcha" } } });
-  r.feedbackKeyboardChange({ detail: { height: 260 } });
-  assert.equal(r.data.captcha_data, "");
-  r.feedbackFocus({ currentTarget: { dataset: { field: "remark" } } });
-  assert.equal(r.data.feedback_scroll_target, "feedback-remark");
-});
-
-test("natural body measurement ignores a result from a closed feedback session", () => {
-  const { instance: r } = component("report", { question_id: 16 });
-  let measured;
-  r.createSelectorQuery = () => ({
-    select() {
-      return this;
-    },
-    boundingClientRect(callback) {
-      measured = callback;
-      return this;
-    },
-    exec() {},
-  });
-  r.measureFeedbackBody();
-  measured({ height: 322.2 });
-  assert.equal(r.data.feedback_body_height, 323);
-  r.measureFeedbackBody();
-  const stale = measured;
-  r.closeFeedback();
-  stale({ height: 800 });
-  assert.equal(r.data.feedback_body_height, 323);
 });

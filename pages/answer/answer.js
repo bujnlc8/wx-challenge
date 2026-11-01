@@ -461,11 +461,14 @@ Page({
     };
     this._pendingFailurePrompt = prompt;
     if (!prompt.relive) showToast("本轮剩余复活次数为0");
-    setTimeout(() => {
-      if (this._pendingFailurePrompt !== prompt) return;
-      prompt.ready = true;
-      this.resumeFailurePrompt();
-    }, prompt.relive ? 1000 : 2000);
+    setTimeout(
+      () => {
+        if (this._pendingFailurePrompt !== prompt) return;
+        prompt.ready = true;
+        this.resumeFailurePrompt();
+      },
+      prompt.relive ? 1000 : 2000,
+    );
   },
   resumeFailurePrompt() {
     const prompt = this._pendingFailurePrompt;
@@ -616,9 +619,15 @@ Page({
     });
     this.report.getCaptcha();
   },
-  nextQuestionAfterCloseFeedback: function () {
+  nextQuestionAfterCloseFeedback: function (event) {
     if (this._unloaded) return;
     this.setData({ show_feedback: false });
+    if (
+      event &&
+      event.detail &&
+      ["account-change", "question-change"].includes(event.detail.reason)
+    )
+      return;
     this.resumeFailurePrompt();
     if (this.data.answer_result == 1) {
       this.queueNextQuestion(1000);
@@ -657,7 +666,6 @@ Page({
       this._advanceAfterPoster = false;
       this.startAnswer();
     }
-
   },
 
   /**
@@ -681,7 +689,6 @@ Page({
       clearInterval(this.data.interval_handle);
     }
     app.stopInnerAudio();
-
   },
 
   /**

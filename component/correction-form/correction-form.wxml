@@ -1,0 +1,18 @@
+<view class="correction-form" wx:if="{{show_feedback}}">
+  <view class="form-card">
+    <view class="field-heading"><text class="field-title">问题类型</text><text class="field-hint">可多选</text></view>
+    <checkbox-group bindchange="feedbackChecked">
+      <view class="feedback-types">
+        <label wx:for="{{feedback_options}}" wx:key="value" class="feedback-type {{item.checked ? 'feedback-type--checked' : ''}} {{submit_pending ? 'feedback-type--disabled' : ''}}">
+          <checkbox class="feedback-native-checkbox" value="{{item.value}}" checked="{{item.checked}}" disabled="{{submit_pending}}" />
+          <text class="feedback-type-label">{{item.label}}</text><view class="feedback-type-check {{item.checked ? 'feedback-type-check--checked' : ''}}"><view wx:if="{{item.checked}}" class="feedback-check-mark"></view></view>
+        </label>
+      </view>
+    </checkbox-group>
+    <view class="field-heading remark-heading"><text class="field-title">补充说明</text><text class="field-hint">{{feedback_remark.length}} / 500</text></view>
+    <textarea class="remark" value="{{feedback_remark}}" placeholder="请描述题目中的问题，或补充正确答案与依据" placeholder-style="font-size:14px;color:#94a0b3;" bindinput="feedbackRemarkInput" maxlength="500" disabled="{{submit_pending}}" adjust-position="{{true}}" cursor-spacing="24" fixed="{{false}}" />
+    <view class="field-heading captcha-heading"><text class="field-title">验证码</text><text class="field-hint">点击图片换一张</text></view>
+    <view class="captcha-row"><input type="number" class="captcha-input" maxlength="6" placeholder="输入 6 位数字" placeholder-style="color:#94a0b3;" bindinput="captchaInput" disabled="{{submit_pending}}" adjust-position="{{true}}" cursor-spacing="24" always-embed="{{true}}" value="{{captcha_data}}" /><image bindtap="getCaptcha" src="data:image/png;base64,{{captcha_image}}" class="captcha-image" mode="aspectFit" aria-label="点击刷新验证码" /></view>
+  </view>
+  <button class="correction-submit" disabled="{{submit_pending}}" bindtap="feedbackSubmit" hover-class="button-pressed">{{submit_pending ? '正在提交…' : '提交纠错'}}</button>
+</view>

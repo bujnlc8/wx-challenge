@@ -1,0 +1,6 @@
+<page-meta page-style="{{modal_locked ? 'overflow: hidden;' : ''}}" />
+<view class="correction-page">
+  <view wx:if="{{invalid}}" class="correction-invalid">题目信息无效，请返回后重试</view>
+  <correction-form wx:else id="correction-form" question_id="{{question_id}}" bind:nextQuestion="onFormClosed" />
+</view>
+<ui-feedback state="{{ui_feedback}}" />

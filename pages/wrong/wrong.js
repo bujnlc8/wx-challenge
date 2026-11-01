@@ -131,6 +131,9 @@ Page({
     });
     this.report.getCaptcha();
   },
+  onFeedbackClosed() {
+    this.setData({ show_feedback: false });
+  },
   showAnalysis: function (e) {
     app.clickSound();
     var i = e.mark.ii;

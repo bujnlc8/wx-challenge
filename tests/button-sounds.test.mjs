@@ -156,7 +156,7 @@ test('challenge submit, finish retry, restart, return and share keep one feedbac
   assert.equal(f.requests.at(-1).path, 'api/question/finish-challenge');
 });
 test('report refresh and checkbox gestures sound once, automatic captcha and success close stay silent', async () => {
-  const f = fixture(); const { page } = f.load('component/report/report.js', true);
+  const f = fixture(); const { page } = f.load('component/correction-form/correction-form.js', true);
   Object.assign(page.data, { show_feedback: true, question_id: 42 }); page.syncFeedbackSession();
   f.click(() => page.getCaptcha(tapEvent({}))); assert.equal(f.requests.length, 1);
   const count = f.played.length; page.getCaptcha(); f.advance(1000); assert.equal(f.played.length, count);
