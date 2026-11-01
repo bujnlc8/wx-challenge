@@ -159,14 +159,14 @@ test("category confirmation persists first, then updates the active filter and h
   assert.equal(s.page.data.challenge_category, "全部题型");
 });
 
-test("custom input saves 37 and both 1/100 bounds for the next ordinary challenge", () => {
+test("custom input saves 37 and both 1/500 bounds for the next ordinary challenge", () => {
   const s = setup();
-  for (const value of [1, 100, 37]) {
+  for (const value of [1, 500, 37]) {
     s.page.openChallengeCount();
     s.instance.inputCount({ detail: { value: String(value) } });
     assert.equal(
       s.storage.get("challenge_question_count"),
-      value === 1 ? 37 : value === 100 ? 1 : 100,
+      value === 1 ? 37 : value === 500 ? 1 : 500,
     );
     s.instance.confirm();
     assert.equal(s.storage.get("challenge_question_count"), value);
@@ -174,17 +174,17 @@ test("custom input saves 37 and both 1/100 bounds for the next ordinary challeng
   }
 });
 
-test("step controls respect 1/100 bounds and reject invalid input without saving", () => {
+test("step controls respect 1/500 bounds and reject invalid input without saving", () => {
   const s = setup({ count: 1 });
   s.page.openChallengeCount();
   s.instance.stepCount(tap("step", -1));
   assert.equal(Number(s.instance.data.count_draft), 1);
   s.instance.stepCount(tap("step", 1));
   assert.equal(Number(s.instance.data.count_draft), 2);
-  s.instance.inputCount({ detail: { value: "100" } });
+  s.instance.inputCount({ detail: { value: "500" } });
   s.instance.stepCount(tap("step", 1));
-  assert.equal(Number(s.instance.data.count_draft), 100);
-  for (const value of ["", " ", "0", "101", "1.5", "1e1", "no"]) {
+  assert.equal(Number(s.instance.data.count_draft), 500);
+  for (const value of ["", " ", "0", "1.5", "1e1", "no"]) {
     s.instance.inputCount({ detail: { value } });
     s.instance.confirm();
     assert.equal(s.storage.get("challenge_question_count"), 1);
@@ -207,7 +207,7 @@ test("illegal and stale datasets cannot change either draft or persist settings"
   assert.equal(s.instance.data.category_draft, 1);
   s.instance.chooseCount(tap("count", 100));
   s.page.openChallengeCount();
-  for (const value of [0, 101, 1.5, "", null, true, {}, "no"])
+  for (const value of [0, 501, 1.5, "", null, true, {}, "no"])
     s.instance.chooseCount(tap("count", value));
   assert.equal(s.instance.data.count_draft, 37);
   s.instance.cancel();
@@ -267,4 +267,18 @@ test("hide and detach silently discard drafts and release only the captured home
   s.instance.chooseCount(tap("count", 1));
   s.instance.confirm();
   assert.equal(s.storage.get("challenge_question_count"), 37);
+});
+
+test("home count sheet offers all quick counts and rewrites overflow without saving until confirmed", () => {
+  const s = setup();
+  s.page.openChallengeCount();
+  assert.deepEqual(
+    Array.from(s.instance.data.count_presets),
+    [10, 20, 50, 100, 150, 200, 300, 500],
+  );
+  assert.equal(s.instance.inputCount({ detail: { value: "501" } }), "500");
+  assert.equal(s.instance.data.count_draft, "500");
+  assert.equal(s.storage.get("challenge_question_count"), 37);
+  s.instance.confirm();
+  assert.equal(s.storage.get("challenge_question_count"), 500);
 });

@@ -2,6 +2,8 @@ const app = getApp();
 import { showToast } from "../../utils/util";
 import {
   DEFAULT_CHALLENGE_QUESTION_COUNT,
+  MAX_CHALLENGE_QUESTION_COUNT,
+  clampChallengeQuestionCountInput,
   getChallengeQuestionCount,
   parseChallengeQuestionCount,
   setChallengeQuestionCount,
@@ -18,7 +20,7 @@ Page({
     question_count_sheet_visible: false,
     question_count_draft: "",
     question_count_error: "",
-    question_count_options: [10, 20, 50, 100],
+    question_count_options: [10, 20, 50, 100, 150, 200, 300, 500],
     modal_locked: false,
   },
 
@@ -65,10 +67,12 @@ Page({
   },
   inputQuestionCount(event) {
     if (!this.data.question_count_sheet_visible) return;
+    const value = clampChallengeQuestionCountInput(event.detail.value);
     this.setData({
-      question_count_draft: event.detail.value,
+      question_count_draft: value,
       question_count_error: "",
     });
+    return value;
   },
   stepQuestionCount(event) {
     if (!this.data.question_count_sheet_visible) return;
@@ -77,11 +81,13 @@ Page({
     app.clickSound();
     const count = parseChallengeQuestionCount(this.data.question_count_draft);
     if (count === null) {
-      this.setData({ question_count_error: "请输入 1–100 的整数" });
+      this.setData({ question_count_error: "请输入 1–500 的整数" });
       return;
     }
     this.setData({
-      question_count_draft: String(Math.max(1, Math.min(100, count + step))),
+      question_count_draft: String(
+        Math.max(1, Math.min(MAX_CHALLENGE_QUESTION_COUNT, count + step)),
+      ),
       question_count_error: "",
     });
   },
@@ -99,7 +105,7 @@ Page({
     app.clickSound();
     const count = parseChallengeQuestionCount(this.data.question_count_draft);
     if (count === null) {
-      this.setData({ question_count_error: "请输入 1–100 的整数" });
+      this.setData({ question_count_error: "请输入 1–500 的整数" });
       return;
     }
     if (!setChallengeQuestionCount(count)) {

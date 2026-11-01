@@ -75,12 +75,13 @@
 }
 .count-presets {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 22px;
 }
 .count-presets .count-preset {
-  flex: 1 1 0;
-  width: 0;
+  flex: 0 0 calc(25% - 6px);
+  width: calc(25% - 6px);
   min-width: 0;
   min-height: 44px;
   padding: 0 4px;
@@ -175,4 +176,40 @@
 }
 .settings-page .settings-group {
   margin-top: 0;
+}
+
+@media (max-height: 560px) {
+  .question-count-sheet {
+    max-height: calc(100vh - 12px);
+    overflow: visible;
+  }
+  .question-count-sheet .dialog-header {
+    padding-top: 18px;
+    padding-bottom: 12px;
+    border-radius: 26px 26px 0 0;
+  }
+  .question-count-scroll {
+    max-height: none;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+  .question-count-body {
+    padding-bottom: 10px;
+  }
+  .count-presets {
+    margin-bottom: 12px;
+  }
+  .count-custom-label {
+    margin-bottom: 8px;
+    line-height: 20px;
+  }
+  .count-hint,
+  .count-error {
+    margin-top: 6px;
+    line-height: 20px;
+  }
+  .question-count-actions {
+    padding-top: 12px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
 }

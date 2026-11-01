@@ -1,6 +1,8 @@
 import { createModalLock } from "../../utils/modal-lock";
 import {
   getChallengeQuestionCount,
+  MAX_CHALLENGE_QUESTION_COUNT,
+  clampChallengeQuestionCountInput,
   parseChallengeQuestionCount,
   setChallengeQuestionCount,
 } from "../../utils/challenge-settings";
@@ -19,8 +21,8 @@ Component({
     mode: "",
     categories: [],
     category_draft: 0,
-    count_draft: 10,
-    count_presets: [10, 20, 50, 100],
+    count_draft: 50,
+    count_presets: [10, 20, 50, 100, 150, 200, 300, 500],
     scroll_height: 160,
     error: "",
   },
@@ -120,7 +122,9 @@ Component({
     },
     inputCount(event) {
       if (!this._attached || this._hidden || this.data.mode !== "count") return;
-      this.setData({ count_draft: event.detail.value, error: "" });
+      const value = clampChallengeQuestionCountInput(event.detail.value);
+      this.setData({ count_draft: value, error: "" });
+      return value;
     },
     stepCount(event) {
       if (!this._attached || this._hidden || this.data.mode !== "count") return;
@@ -129,11 +133,16 @@ Component({
       app.clickSound();
       const count = parseChallengeQuestionCount(this.data.count_draft);
       if (count === null) {
-        this.setData({ error: "请输入 1–100 的整数" });
+        this.setData({ error: "请输入 1–500 的整数" });
         return;
       }
       this.setData({
-        count_draft: String(Math.max(1, Math.min(100, count + Number(raw)))),
+        count_draft: String(
+          Math.max(
+            1,
+            Math.min(MAX_CHALLENGE_QUESTION_COUNT, count + Number(raw)),
+          ),
+        ),
         error: "",
       });
     },
@@ -158,7 +167,7 @@ Component({
       } else {
         const count = parseChallengeQuestionCount(this.data.count_draft);
         if (count === null) {
-          this.setData({ error: "请输入 1–100 的整数" });
+          this.setData({ error: "请输入 1–500 的整数" });
           return;
         }
         if (!setChallengeQuestionCount(count)) {
@@ -176,7 +185,7 @@ Component({
     },
     close() {
       if (this._modalLock) this._modalLock.set(false);
-      this.setData({ mode: "", category_draft: 0, count_draft: 10, error: "" });
+      this.setData({ mode: "", category_draft: 0, count_draft: 50, error: "" });
     },
     preventTouch() {},
   },

@@ -221,12 +221,13 @@ button::after {
 }
 .count-presets {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 22px;
 }
 .count-presets .count-preset {
-  flex: 1 1 0;
-  width: 0;
+  flex: 0 0 calc(25% - 6px);
+  width: calc(25% - 6px);
   min-width: 0;
   min-height: 44px;
   padding: 0 4px;

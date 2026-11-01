@@ -37,7 +37,7 @@ Page({
     ranking_error: "",
     skeleton_rows: [0, 1, 2, 3, 4],
     challenge_category: "全部题型",
-    challenge_question_count: 10,
+    challenge_question_count: 50,
     logined: 0,
     mine: null,
     is_show_help_tip: 0,

@@ -1,7 +1,7 @@
 <page-meta page-style="{{(modal_locked) ? 'overflow: hidden;' : ''}}" />
 <view class="page-shell settings-page">
   <view class="settings-group surface">
-    <view class="menu" bindtap="openQuestionCountSheet" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">每次挑战题数</view><view class="setting-description">下一次普通挑战生效，可设置 1–100 题</view></view><text class="setting-value">{{challenge_question_count}}题</text><image src="../../images/right_arrow.png" class="setting-arrow" /></view>
+    <view class="menu" bindtap="openQuestionCountSheet" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">每次挑战题数</view><view class="setting-description">下一次普通挑战生效，可设置 1–500 题</view></view><text class="setting-value">{{challenge_question_count}}题</text><image src="../../images/right_arrow.png" class="setting-arrow" /></view>
     <view class="menu" bindtap="operateShowCorrectAnswer" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">显示正确答案</view><view class="setting-description">作答后查看正确选项</view></view><switch color="#2864eb" checked="{{show_correct_answer}}"></switch></view>
     <view class="menu" bindtap="operateShowAnalysis" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">显示答案解析</view><view class="setting-description">了解答案背后的知识</view></view><switch color="#2864eb" checked="{{show_analysis}}"></switch></view>
     <view class="menu" bindtap="operateSound" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80"><view class="setting-info"><view class="setting-title">提示音效</view><view class="setting-description">按自己的喜好选择答题声音</view></view><switch color="#2864eb" checked="{{sound_close == 0}}"></switch></view>
@@ -23,11 +23,11 @@
       <view class="count-custom-label">自定义题数</view>
       <view class="count-stepper">
         <button class="count-step" data-step="-1" bindtap="stepQuestionCount" disabled="{{question_count_draft == 1}}" aria-label="减少一题" hover-class="button-pressed">−</button>
-        <input class="count-input" type="number" maxlength="4" value="{{question_count_draft}}" bindinput="inputQuestionCount" confirm-type="done" bindconfirm="confirmQuestionCountSheet" aria-label="题数，1至100的整数" />
+        <input class="count-input" type="number" maxlength="4" value="{{question_count_draft}}" bindinput="inputQuestionCount" confirm-type="done" bindconfirm="confirmQuestionCountSheet" aria-label="题数，1至500的整数" />
         <text class="count-unit">题</text>
-        <button class="count-step" data-step="1" bindtap="stepQuestionCount" disabled="{{question_count_draft == 100}}" aria-label="增加一题" hover-class="button-pressed">＋</button>
+        <button class="count-step" data-step="1" bindtap="stepQuestionCount" disabled="{{question_count_draft == 500}}" aria-label="增加一题" hover-class="button-pressed">＋</button>
       </view>
-      <view class="count-hint">可输入 1–100 的任意整数</view>
+      <view class="count-hint">可输入 1–500 的任意整数</view>
       <view wx:if="{{question_count_error}}" class="count-error">{{question_count_error}}</view>
     </view>
   </view>

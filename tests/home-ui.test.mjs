@@ -119,9 +119,12 @@ test("homepage shows current category and validates challenge count again on eve
   s.page.onShow();
   assert.equal(s.page.data.challenge_category, "全部题型");
   assert.equal(s.page.data.challenge_question_count, 100);
-  s.storage.set("challenge_question_count", 101);
+  s.storage.set("challenge_question_count", 500);
   s.page.onShow();
-  assert.equal(s.page.data.challenge_question_count, 10);
+  assert.equal(s.page.data.challenge_question_count, 500);
+  s.storage.set("challenge_question_count", 501);
+  s.page.onShow();
+  assert.equal(s.page.data.challenge_question_count, 50);
   assert.deepEqual(s.navigations, ["/pages/help/help"]);
 });
 

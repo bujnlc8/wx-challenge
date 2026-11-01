@@ -1,4 +1,5 @@
-const DEFAULT_CHALLENGE_QUESTION_COUNT = 10;
+const DEFAULT_CHALLENGE_QUESTION_COUNT = 50;
+const MAX_CHALLENGE_QUESTION_COUNT = 500;
 const CHALLENGE_QUESTION_COUNT_KEY = "challenge_question_count";
 
 function parseChallengeQuestionCount(value) {
@@ -10,9 +11,17 @@ function parseChallengeQuestionCount(value) {
   return typeof value === "number" &&
     Number.isInteger(value) &&
     value >= 1 &&
-    value <= 100
+    value <= MAX_CHALLENGE_QUESTION_COUNT
     ? value
     : null;
+}
+
+function clampChallengeQuestionCountInput(value) {
+  const text = value == null ? "" : String(value);
+  return /^\d+(?:\.\d*)?$/.test(text.trim()) &&
+    Number(text) > MAX_CHALLENGE_QUESTION_COUNT
+    ? String(MAX_CHALLENGE_QUESTION_COUNT)
+    : text;
 }
 
 function getChallengeQuestionCount(platform = wx) {
@@ -40,6 +49,8 @@ function setChallengeQuestionCount(value, platform = wx) {
 
 export {
   DEFAULT_CHALLENGE_QUESTION_COUNT,
+  MAX_CHALLENGE_QUESTION_COUNT,
+  clampChallengeQuestionCountInput,
   getChallengeQuestionCount,
   parseChallengeQuestionCount,
   setChallengeQuestionCount,

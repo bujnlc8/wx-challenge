@@ -148,6 +148,9 @@ Page({
     }
   },
   _startAnswer: function (question, t) {
+    this._questionViewSequence = (this._questionViewSequence || 0) + 1;
+    const view = this._questionViewSequence;
+    const questionId = question.id;
     var options = question.options.split("|");
     var option_a = "";
     var option_b = "";
@@ -185,6 +188,28 @@ Page({
           ? true
           : false,
       analysis: "",
+    }, () => {
+      if (
+        typeof wx === "undefined" ||
+        typeof wx.pageScrollTo !== "function" ||
+        this._unloaded ||
+        this._pageVisible === false ||
+        questionId !== this.data.current_question_id ||
+        view !== this._questionViewSequence ||
+        this.data.answer_result !== -2 ||
+        this.data.show_feedback ||
+        this.data.modal_locked ||
+        this._posterOpen ||
+        this._subscriptionPanelOpen
+      ) return;
+      if (typeof getCurrentPages === "function") {
+        const pages = getCurrentPages();
+        if (pages[pages.length - 1] !== this) return;
+      }
+      const poster = typeof this.selectComponent === "function"
+        ? this.selectComponent("#question-poster") : null;
+      if (poster && poster.data && poster.data.visible) return;
+      wx.pageScrollTo({ scrollTop: 0, duration: 0 });
     });
     this.startCountDown();
   },

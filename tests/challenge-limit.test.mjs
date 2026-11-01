@@ -215,6 +215,8 @@ test("unknown finish result can be retried without answering or loading more que
 for (const [count, batches] of [
   [7, 2],
   [100, 17],
+  [50, 9],
+  [500, 84],
 ]) {
   test(`${count}-question challenge crosses batches and stops at its exact selected limit`, async () => {
     const s = challenge(count);
@@ -316,3 +318,10 @@ for (const utility of ["report", "poster"]) {
     assert.equal(s.page.data.answer_result, -2);
   });
 }
+
+test("an unset preference starts a fifty-question round", async () => {
+  const s = challenge();
+  s.storage.delete("challenge_question_count");
+  await s.start();
+  assert.equal(s.page.data.challenge_limit, 50);
+});

@@ -31,7 +31,7 @@ function fixture() {
   });
   vm.runInContext(strip(read('app.js')), scope);
   for (const [path, names] of [
-    ['utils/modal-lock.js', 'createModalLock'], ['utils/challenge-settings.js', 'DEFAULT_CHALLENGE_QUESTION_COUNT,getChallengeQuestionCount,parseChallengeQuestionCount,setChallengeQuestionCount'],
+    ['utils/modal-lock.js', 'createModalLock'], ['utils/challenge-settings.js', 'DEFAULT_CHALLENGE_QUESTION_COUNT,MAX_CHALLENGE_QUESTION_COUNT,clampChallengeQuestionCountInput,getChallengeQuestionCount,parseChallengeQuestionCount,setChallengeQuestionCount'],
     ['utils/question-entry.js', 'parseQuestionEntry'], ['utils/version.js', 'APP_VERSION,getAppVersion'],
     ['utils/question-poster-render.js', 'normalizeQuestion,layoutPoster,drawPoster,drawAppPoster,runtimeEnvironment,validateShareCode,validateAppShareCode,createPosterSession'],
   ]) Object.assign(scope, vm.runInContext('(function(){' + strip(read(path)) + '\nreturn {' + names + '};})()', scope));

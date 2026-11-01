@@ -63,23 +63,26 @@ function load(stored, options = {}) {
   };
 }
 
-test("new challenges read a legal whole-number preference or default to ten", () => {
+test("new challenges read a legal whole-number preference or default to fifty", () => {
   for (const [stored, expected] of [
-    [undefined, 10],
+    [undefined, 50],
     [1, 1],
+    [10, 10],
     [100, 100],
+    [101, 101],
+    [500, 500],
     [37, 37],
     ["23", 23],
-    [0, 10],
-    [101, 10],
-    [1.5, 10],
-    ["1.5", 10],
-    ["", 10],
-    [" ", 10],
-    [null, 10],
-    [true, 10],
-    [{}, 10],
-    [NaN, 10],
+    [0, 50],
+    [501, 50],
+    [1.5, 50],
+    ["1.5", 50],
+    ["", 50],
+    [" ", 50],
+    [null, 50],
+    [true, 50],
+    [{}, 50],
+    [NaN, 50],
   ]) {
     assert.equal(
       load(stored).readCount(),
@@ -87,7 +90,7 @@ test("new challenges read a legal whole-number preference or default to ten", ()
       `stored ${String(stored)}`,
     );
   }
-  assert.equal(load(37, { readError: true }).readCount(), 10);
+  assert.equal(load(37, { readError: true }).readCount(), 50);
 });
 
 test("cancel discards the draft and confirmation persists a custom count", () => {
@@ -114,7 +117,7 @@ test("empty, fractional and out-of-range drafts cannot overwrite saved settings"
   const s = load(20);
   s.page.onLoad();
   s.page.openQuestionCountSheet();
-  for (const value of ["", " ", "0", "101", "1.5", "1e1", "0x10", "no", "-1"]) {
+  for (const value of ["", " ", "0", "1.5", "1e1", "0x10", "no", "-1"]) {
     s.page.inputQuestionCount({ detail: { value } });
     s.page.confirmQuestionCountSheet();
     assert.equal(s.storage.get("challenge_question_count"), 20, value);
@@ -134,9 +137,9 @@ test("step controls stop at the count bounds and do not save a draft", () => {
   assert.equal(s.page.data.question_count_draft, "1");
   s.page.stepQuestionCount({ currentTarget: { dataset: { step: 1 } } });
   assert.equal(s.page.data.question_count_draft, "2");
-  s.page.inputQuestionCount({ detail: { value: "100" } });
+  s.page.inputQuestionCount({ detail: { value: "500" } });
   s.page.stepQuestionCount({ currentTarget: { dataset: { step: 1 } } });
-  assert.equal(s.page.data.question_count_draft, "100");
+  assert.equal(s.page.data.question_count_draft, "500");
   assert.equal(s.storage.get("challenge_question_count"), 1);
 });
 
@@ -174,4 +177,35 @@ test("the custom sheet releases its page lock when hidden, restores on return an
   assert.equal(s.page.data.modal_locked, false);
   s.page.onShow();
   assert.equal(s.page.data.modal_locked, false);
+});
+
+test("settings exposes the requested eight quick counts and caps typed overflow before confirmation", () => {
+  const s = load(20);
+  s.page.onLoad();
+  s.page.openQuestionCountSheet();
+  assert.deepEqual(
+    Array.from(s.page.data.question_count_options),
+    [10, 20, 50, 100, 150, 200, 300, 500],
+  );
+  for (const value of ["501", "1000", "9999", "500.5"]) {
+    assert.equal(s.page.inputQuestionCount({ detail: { value } }), "500");
+    assert.equal(s.page.data.question_count_draft, "500");
+    assert.equal(s.storage.get("challenge_question_count"), 20);
+  }
+  s.page.confirmQuestionCountSheet();
+  assert.equal(s.storage.get("challenge_question_count"), 500);
+});
+
+
+test("both count controls keep plus enabled at 100 and disable it at 500", () => {
+  for (const [path, field] of [
+    ["pages/setting/setting.wxml", "question_count_draft"],
+    ["component/home-question-settings/home-question-settings.wxml", "count_draft"],
+  ]) {
+    const button = read(path).match(/<button[^>]*data-step="1"[^>]*>/)[0];
+    const expression = button.match(/disabled="\{\{([^}]+)\}\}"/)[1];
+    const disabled = new Function(field, "return (" + expression + ")");
+    assert.equal(disabled(100), false, path);
+    assert.equal(disabled(500), true, path);
+  }
 });

@@ -94,7 +94,7 @@ Page({
     is_video: false,
     analysis: "",
     show_analysis: app.show_analysis,
-    challenge_limit: 10,
+    challenge_limit: 50,
     challenge_finished: false,
     challenge_finish_state: "",
   },
@@ -247,6 +247,8 @@ Page({
   _startAnswer: function (question) {
     this._pendingFailurePrompt = null;
     this._questionViewSequence = (this._questionViewSequence || 0) + 1;
+    const view = this._questionViewSequence;
+    const questionId = question.id;
     this._advanceAfterSubscription = false;
     this._advanceAfterPoster = false;
     this._posterOpen = false;
@@ -293,6 +295,28 @@ Page({
           ? true
           : false,
       analysis: "",
+    }, () => {
+      if (
+        typeof wx === "undefined" ||
+        typeof wx.pageScrollTo !== "function" ||
+        this._unloaded ||
+        this._pageVisible === false ||
+        questionId !== this.data.current_question_id ||
+        view !== this._questionViewSequence ||
+        this.data.answer_result !== -2 ||
+        this.data.show_feedback ||
+        this.data.modal_locked ||
+        this._posterOpen ||
+        this._subscriptionPanelOpen
+      ) return;
+      if (typeof getCurrentPages === "function") {
+        const pages = getCurrentPages();
+        if (pages[pages.length - 1] !== this) return;
+      }
+      const poster = typeof this.selectComponent === "function"
+        ? this.selectComponent("#question-poster") : null;
+      if (poster && poster.data && poster.data.visible) return;
+      wx.pageScrollTo({ scrollTop: 0, duration: 0 });
     });
     this.startCountDown();
   },
