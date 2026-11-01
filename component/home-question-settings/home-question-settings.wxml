@@ -1,0 +1,33 @@
+<block wx:if="{{mode}}">
+  <view class="settings-mask" catchtap="cancel" catchtouchmove="preventTouch"></view>
+  <view class="settings-sheet {{mode == 'category' ? 'category-sheet' : 'question-count-sheet'}}" catchtap="preventTouch" role="dialog" aria-label="{{mode == 'category' ? '题目类型' : '每次挑战题数'}}">
+    <view class="dialog-header">
+      <view class="pop-tip-title">{{mode == 'category' ? '题目类型' : '每次挑战题数'}}</view>
+      <button class="dialog-close" bindtap="cancel" aria-label="{{mode == 'category' ? '取消选择' : '关闭题数设置'}}" hover-class="button-pressed" hover-start-time="0" hover-stay-time="80"><view class="close-mark"></view></button>
+      <view class="dialog-intro">{{mode == 'category' ? '选择感兴趣的类型，确认后生效' : '选择适合自己的节奏，下一次普通挑战生效'}}</view>
+    </view>
+    <block wx:if="{{mode == 'category'}}">
+      <scroll-view class="category-options-scroll" scroll-y="true" enhanced="true" style="height: {{scroll_height}}px;" show-scrollbar="false">
+        <view class="category-options">
+          <view wx:for="{{categories}}" wx:key="value" class="category-option {{category_draft == item.value ? 'category-option-selected' : ''}}" data-index="{{item.value}}" bindtap="chooseCategory" aria-role="radio" aria-checked="{{category_draft == item.value}}" hover-class="button-pressed" hover-start-time="0" hover-stay-time="80"><text class="category-option-label">{{item.label}}</text><view class="category-radio"></view></view>
+        </view>
+      </scroll-view>
+      <view wx:if="{{error}}" class="category-error">{{error}}</view>
+    </block>
+    <view wx:else="" class="question-count-body">
+      <view class="count-presets">
+        <button wx:for="{{count_presets}}" wx:key="*this" class="count-preset {{count_draft == item ? 'count-preset-selected' : ''}}" data-count="{{item}}" bindtap="chooseCount" aria-role="radio" aria-checked="{{count_draft == item}}" hover-class="button-pressed">{{item}}题</button>
+      </view>
+      <view class="count-custom-label">自定义题数</view>
+      <view class="count-stepper">
+        <button class="count-step" data-step="-1" bindtap="stepCount" disabled="{{count_draft == 1}}" aria-label="减少一题" hover-class="button-pressed">−</button>
+        <input class="count-input" type="number" maxlength="4" value="{{count_draft}}" bindinput="inputCount" confirm-type="done" bindconfirm="confirm" always-embed="true" adjust-position="true" aria-label="题数，1至100的整数" />
+        <text class="count-unit">题</text>
+        <button class="count-step" data-step="1" bindtap="stepCount" disabled="{{count_draft == 100}}" aria-label="增加一题" hover-class="button-pressed">＋</button>
+      </view>
+      <view class="count-hint">可输入 1–100 的任意整数</view>
+      <view wx:if="{{error}}" class="count-error">{{error}}</view>
+    </view>
+    <view class="dialog-footer dialog-actions settings-actions"><button class="dialog-action dialog-action-secondary" bindtap="cancel" hover-class="button-pressed" hover-start-time="0" hover-stay-time="80">取消</button><button class="dialog-action" bindtap="confirm" hover-class="button-pressed" hover-start-time="0" hover-stay-time="80">确认</button></view>
+  </view>
+</block>

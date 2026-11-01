@@ -58,3 +58,24 @@
 三个视口排名槽实测均为 32px；昵称可用宽度分别为 88px、131px、186px；榜单高度和按钮底边与上表相同，无横向溢出。320 × 480 的未登录/无记录状态个人头像仍为 64px、昵称为 104px；历史说明与更新中/重试同在时也无文字溢出。未恢复单独“排行榜”标题。
 
 最终网格截图：`/private/tmp/challenge-home-grid-320x440.png`、`/private/tmp/challenge-home-grid-375x640.png`、`/private/tmp/challenge-home-grid-430x736.png`，已查看 375px 截图。本次仅局部编译/几何验证，未重复全套测试，未 stage/commit。
+
+## 首页直接选择题型与题数
+
+用户追加要求：首页点击题型/每轮题数可以选择，并明确“和我的页面一样的切换”。最终采用既有界面：题型面板与“我的 → 题目类型”一致，题数面板与“答题设置 → 每次挑战题数”一致；没有采用另一套数字网格设计。
+
+新增页面局部注册的 `component/home-question-settings` 四文件及 `tests/home-question-settings.test.mjs`，仅增加首页 JS/JSON/WXML/WXSS 接入和本记录，不修改全局注册、我的页、原设置页。首页两行增加下箭头和点击态，点击在当前首页打开互斥自定义底部面板，不导航、不使用系统 picker。
+
+- 题型复用 Mine 的精确标题“题目类型”、说明“选择感兴趣的类型，确认后生效”、两列单选卡、单选圆点、取消/确认/X。当前列表直接读取 `app.category_lables`/`categories`，包括原始“不设置”选项，长名称自然换行；首页 0 值摘要继续显示“全部题型”。确认先成功写 `question_category`，再更新 `app.category`、触发 change 并同步首页。取消、X、点击遮罩不保存。
+- 题数复用 Setting 的标题“每次挑战题数”、说明“选择适合自己的节奏，下一次普通挑战生效”、10/20/50/100 快捷项、“自定义题数”、± 控件、数字 input、“可输入 1–100 的任意整数”、取消/确认/X。复用 `utils/challenge-settings` 验证和存储，1/100 边界停止；非法输入保留草稿并显示“请输入 1–100 的整数”。确认后下一轮普通挑战读取同一存储值。
+- 共用原有渐变标题区、蓝竖线、字号、圆角、单选状态、按钮和安全区域样式。原生类别 scroll-view 负责内部滚动；题数主体使用自然高度，不放在裁切滚动容器中，input 配置 `always-embed="true"`、`adjust-position="true"`，没有自定义键盘高度处理，输入祖先没有 transform 或 overflow hidden。短屏仅压缩既有间距，并为原有安全区域 padding 保留整体高度余量。
+- 存储失败保留面板与草稿，原位显示“保存失败，请重试”，支持再次确认。不额外 Toast。有效用户点击一次声音；程序同步、输入事件和 hide/detached 自动取消无声。组件 attached 通过 `createModalLock` 捕获首页 owner；遮罩拦截背景点击/移动；hide/detached 取消草稿、释放所属锁，不影响导航后的其他页面。
+
+新增 7 项行为测试，先验证缺失功能失败再实现通过，覆盖首页入口/打开同步、切换与取消、确认保存及回显、0 题型、自定义 37 与 1/100 边界、±/非法输入、非法或过时 dataset、两类写失败重试、点击音单次及程序同步无声、hide/detached 草稿取消和页面锁隔离。
+
+`node --test tests/home-question-settings.test.mjs tests/home-ui.test.mjs tests/challenge-settings.test.mjs tests/category-selection.test.mjs tests/modal-lock.test.mjs`：32/32 通过。官方 WCC/WCSC 包含首页、新组件、ui-feedback、全局/motion 样式依赖编译通过；未重复全套。
+
+临时 Chrome 投影 `/private/tmp/challenge-home-settings-preview.html` 使用官方生成模板与真实样式验证面板边界。题数面板正常高度：320 × 440 为 342.4px、375 × 640 为 393px；320 × 440 写失败显示错误时 368.4px，面板底边 440px、确认按钮底边 424px。375 × 640 题型面板高度 527.4px，类别原生滚动区域 342px、确认按钮底边 616px。430px 宽亦无横向溢出；数字输入高 44px、关闭按钮 44px、确认按钮 48px，输入各级祖先的 transform 均为 none、overflow 均为 visible。
+
+320 × 440 首页长题型场景关闭面板时榜单仍为 66px、开始按钮底边 432px，既有行列对齐保持。最终已查看截图：`/private/tmp/challenge-home-matched-count-375x640.png`、`/private/tmp/challenge-home-matched-category-375x640.png`、`/private/tmp/challenge-home-matched-count-error-320x440.png`。
+
+以上为源码行为和浏览器投影验证，原生键盘输入/抬升、背景不穿透、类别滚动和 iPhone 安全区域仍需开发者工具/真机验收。本次未 stage、commit 或上传。

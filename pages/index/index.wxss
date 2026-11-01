@@ -441,3 +441,21 @@
     padding-bottom: 8px;
   }
 }
+
+.intro-select-row {
+  border-radius: 5px;
+}
+.intro-select-pressed {
+  background: rgba(40, 100, 235, 0.08);
+}
+.setting-chevron {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 7px;
+  margin-bottom: 2px;
+  border-right: 1px solid #627da8;
+  border-bottom: 1px solid #627da8;
+  transform: rotate(45deg);
+  vertical-align: middle;
+}

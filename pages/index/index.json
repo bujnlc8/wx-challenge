@@ -2,5 +2,8 @@
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
   "backgroundColor": "#f5f7fb",
-  "navigationBarTitleText": "挑战"
+  "navigationBarTitleText": "挑战",
+  "usingComponents": {
+    "home-question-settings": "/component/home-question-settings/home-question-settings"
+  }
 }

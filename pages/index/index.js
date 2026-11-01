@@ -88,6 +88,12 @@ Page({
       challenge_question_count: getChallengeQuestionCount(),
     });
   },
+  openChallengeCategory() {
+    this.selectComponent("#home-settings").open("category");
+  },
+  openChallengeCount() {
+    this.selectComponent("#home-settings").open("count");
+  },
   syncRankingSession() {
     const owner = captureAuthSession();
     if (!this._rankOwner || !isAuthSessionCurrent(this._rankOwner)) {

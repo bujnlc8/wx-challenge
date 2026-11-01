@@ -9,8 +9,8 @@
     <view class="intro-copy">用你的知识储备，刷新自己的纪录</view>
     <view class="intro-meta">
       <view class="intro-settings">
-        <view class="intro-category"><text class="intro-label">题型</text><text>{{challenge_category}}</text></view>
-        <view class="intro-count"><text class="intro-label">每轮</text><text>{{challenge_question_count}} 题</text></view>
+        <view class="intro-category intro-select-row" bindtap="openChallengeCategory" hover-class="intro-select-pressed" aria-role="button" aria-label="选择题型，当前{{challenge_category}}"><text class="intro-label">题型</text><text>{{challenge_category}}</text><view class="setting-chevron"></view></view>
+        <view class="intro-count intro-select-row" bindtap="openChallengeCount" hover-class="intro-select-pressed" aria-role="button" aria-label="选择每轮题数，当前{{challenge_question_count}}题"><text class="intro-label">每轮</text><text>{{challenge_question_count}} 题</text><view class="setting-chevron"></view></view>
       </view>
       <text class="rules-link" bindtap="openTip">挑战规则</text>
     </view>
@@ -100,4 +100,5 @@
   </view>
 </view>
 
+<home-question-settings id="home-settings" bind:change="syncChallengeSettings" />
 <ui-feedback state="{{ui_feedback}}" />
