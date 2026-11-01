@@ -34,4 +34,4 @@
 <popup class="popup_compon" bind:error="popupCancel" bind:success="popupConfirm" />
 <report class="report" show_feedback="{{show_feedback}}" question_id="{{current_question_id}}" bind:nextQuestion="onFeedbackClosed" />
 <ui-feedback state="{{ui_feedback}}" />
-<question-poster id="question-poster" />
+<question-poster id="question-poster" bind:close="onQuestionPosterClose" />

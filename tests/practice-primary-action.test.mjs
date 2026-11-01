@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import vm from "node:vm";
+import { runWithAuth } from "./helpers/auth-loader.mjs";
 function practice(result) {
   let definition;
   const requests = [];
   let clicks = 0;
-  vm.runInNewContext(
+  runWithAuth(
     fs
       .readFileSync(
         new URL("../pages/training/training.js", import.meta.url),
@@ -14,6 +14,7 @@ function practice(result) {
       )
       .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, ""),
     {
+      wx: { getStorageSync() {} },
       Page: (value) => (definition = value),
       getApp: () => ({
         clickSound() {

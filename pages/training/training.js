@@ -28,6 +28,7 @@ Page({
       },
       onNativeSettled: () => {
         this._subscriptionPanelOpen = false;
+        this.flushPracticeMilestone();
       },
     });
     this._dailyReminder.refresh();
@@ -169,48 +170,54 @@ Page({
       option_d = options[3];
     }
     var split_question = question.content.split("###");
-    this.setData({
-      count_down: 0,
-      total_index: this.data.total_index + t,
-      current_question: split_question[0].replaceAll("\n\n", "\n"),
-      option_a: option_a,
-      option_b: option_b,
-      option_c: option_c,
-      option_d: option_d,
-      current_question_id: question.id,
-      answer_result: -2,
-      selected_option: 0,
-      right_answer: 0,
-      option_type: option_a.startsWith("https://bucket-1256650966") ? 1 : 0,
-      question_image: split_question.length > 1 ? split_question[1] : "",
-      is_video:
-        split_question.length > 1 && split_question[1].indexOf(".mp4") != -1
-          ? true
-          : false,
-      analysis: "",
-    }, () => {
-      if (
-        typeof wx === "undefined" ||
-        typeof wx.pageScrollTo !== "function" ||
-        this._unloaded ||
-        this._pageVisible === false ||
-        questionId !== this.data.current_question_id ||
-        view !== this._questionViewSequence ||
-        this.data.answer_result !== -2 ||
-        this.data.show_feedback ||
-        this.data.modal_locked ||
-        this._posterOpen ||
-        this._subscriptionPanelOpen
-      ) return;
-      if (typeof getCurrentPages === "function") {
-        const pages = getCurrentPages();
-        if (pages[pages.length - 1] !== this) return;
-      }
-      const poster = typeof this.selectComponent === "function"
-        ? this.selectComponent("#question-poster") : null;
-      if (poster && poster.data && poster.data.visible) return;
-      wx.pageScrollTo({ scrollTop: 0, duration: 0 });
-    });
+    this.setData(
+      {
+        count_down: 0,
+        total_index: this.data.total_index + t,
+        current_question: split_question[0].replaceAll("\n\n", "\n"),
+        option_a: option_a,
+        option_b: option_b,
+        option_c: option_c,
+        option_d: option_d,
+        current_question_id: question.id,
+        answer_result: -2,
+        selected_option: 0,
+        right_answer: 0,
+        option_type: option_a.startsWith("https://bucket-1256650966") ? 1 : 0,
+        question_image: split_question.length > 1 ? split_question[1] : "",
+        is_video:
+          split_question.length > 1 && split_question[1].indexOf(".mp4") != -1
+            ? true
+            : false,
+        analysis: "",
+      },
+      () => {
+        if (
+          typeof wx === "undefined" ||
+          typeof wx.pageScrollTo !== "function" ||
+          this._unloaded ||
+          this._pageVisible === false ||
+          questionId !== this.data.current_question_id ||
+          view !== this._questionViewSequence ||
+          this.data.answer_result !== -2 ||
+          this.data.show_feedback ||
+          this.data.modal_locked ||
+          this._posterOpen ||
+          this._subscriptionPanelOpen
+        )
+          return;
+        if (typeof getCurrentPages === "function") {
+          const pages = getCurrentPages();
+          if (pages[pages.length - 1] !== this) return;
+        }
+        const poster =
+          typeof this.selectComponent === "function"
+            ? this.selectComponent("#question-poster")
+            : null;
+        if (poster && poster.data && poster.data.visible) return;
+        wx.pageScrollTo({ scrollTop: 0, duration: 0 });
+      },
+    );
     this.startCountDown();
   },
   startCountDown: function () {
@@ -277,11 +284,15 @@ Page({
     this._submitAnswer();
   },
   _submitAnswer() {
+    if (this._unloaded) return;
+    const owner = getSessionIdentity();
+    const current = () => !this._unloaded && owner === getSessionIdentity();
     httpPOST("api/question/check-training-question", {
       question_id: this.data.current_question_id,
       answer: this.data.selected_option,
     })
       .then((res) => {
+        if (!current()) return;
         if (res.data.code == 10000) {
           var data = this.data.answered_ids;
           if (data.indexOf(this.data.current_question_id) == -1) {
@@ -321,14 +332,60 @@ Page({
             });
             app.wrongSound();
           }
+          this.queuePracticeMilestone(res.data.data.toast, owner);
         } else {
           app.playSound("warn");
           showToast(res.data.message);
         }
       })
       .catch(() => {
-        showToast("网络异常");
+        if (current()) showToast("网络异常");
       });
+  },
+  queuePracticeMilestone(message, owner) {
+    if (
+      typeof message !== "string" ||
+      !message.trim() ||
+      this._unloaded ||
+      owner !== getSessionIdentity()
+    )
+      return;
+    this._pendingPracticeMilestone = {
+      message: message.trim(),
+      owner,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    };
+    this.flushPracticeMilestone();
+  },
+  flushPracticeMilestone() {
+    const notice = this._pendingPracticeMilestone;
+    if (!notice) return;
+    if (
+      this._unloaded ||
+      notice.owner !== getSessionIdentity() ||
+      notice.expiresAt <= Date.now()
+    ) {
+      this._pendingPracticeMilestone = null;
+      return;
+    }
+    if (
+      this._pageVisible === false ||
+      this.data.show_feedback ||
+      this.data.modal_locked ||
+      this._subscriptionPanelOpen
+    )
+      return;
+    if (typeof getCurrentPages === "function") {
+      const pages = getCurrentPages();
+      if (pages[pages.length - 1] !== this) return;
+    }
+    const poster =
+      typeof this.selectComponent === "function"
+        ? this.selectComponent("#question-poster")
+        : null;
+    if (poster && poster.data && poster.data.visible) return;
+    this._pendingPracticeMilestone = null;
+    showToast({ title: notice.message, duration: 4000, mask: false });
   },
   hideQuestion: function () {
     app.clickSound();
@@ -378,7 +435,10 @@ Page({
     this.report.getCaptcha();
   },
   onFeedbackClosed() {
-    if (!this._unloaded) this.setData({ show_feedback: false });
+    if (!this._unloaded)
+      this.setData({ show_feedback: false }, () => {
+        this.flushPracticeMilestone();
+      });
   },
   /**
    * 生命周期函数--监听页面初次渲染完成
@@ -397,6 +457,7 @@ Page({
     }
     this._pageVisible = true;
     if (this._dailyReminder) this._dailyReminder.refresh();
+    this.flushPracticeMilestone();
   },
 
   /**
@@ -411,6 +472,7 @@ Page({
    */
   onUnload() {
     this._unloaded = true;
+    this._pendingPracticeMilestone = null;
     if (this._dailyReminder) this._dailyReminder.dispose();
     this.stopCountDown();
   },
@@ -440,12 +502,17 @@ Page({
       option_type: this.data.option_type,
     });
   },
+  onQuestionPosterClose() {
+    this.flushPracticeMilestone();
+  },
   popupCancel: function () {
     this.popup.hidePopup();
     this.startCountDown();
+    this.flushPracticeMilestone();
   },
   popupConfirm: function () {
     this.popup.hidePopup();
+    this.flushPracticeMilestone();
     httpPOST("api/question/hide", {
       id: this.data.current_question_id,
       t: 0,
