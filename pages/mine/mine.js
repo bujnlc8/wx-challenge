@@ -1,17 +1,14 @@
 import { getSessionIdentity, clearAuthSession } from "../../utils/auth-session";
+import { waitForFavoriteWrites } from "../../utils/favorites";
 // pages/mine/mine.js
 const app = getApp();
-import {
-  httpPOST,
-  httpGET,
-  uploadImage,
-  showToast,
-} from "../../utils/util";
+import { httpPOST, httpGET, uploadImage, showToast } from "../../utils/util";
 Page({
   data: {
     user_info: {},
     logined: 0,
     correct_rate: 100,
+    favorite_count: null,
     show_tip: 0,
     category: 0,
     category_lables: app.category_lables,
@@ -36,6 +33,7 @@ Page({
   },
   getUserMine: function () {
     const owner = getSessionIdentity();
+    const countGeneration = this._favoriteCountGeneration;
     httpGET("api/user/mine")
       .then((res) => {
         if (owner !== getSessionIdentity()) return;
@@ -54,11 +52,14 @@ Page({
             correct_rate: correct_rate,
           });
           wx.setStorageSync("mine_cache", res.data.data);
+          if (countGeneration === this._favoriteCountGeneration)
+            this.loadFavoriteCount();
         } else {
           if (res.data.code == 11111) {
             clearAuthSession();
             this.setData({
               logined: 0,
+              favorite_count: null,
             });
           } else {
             showToast(res.data.message);
@@ -68,6 +69,46 @@ Page({
       .catch(() => {
         if (owner === getSessionIdentity()) showToast("网络异常");
       });
+  },
+  loadFavoriteCount: async function () {
+    if (!this._favoriteCountVisible || this._favoriteCountDisposed) return;
+    const owner = getSessionIdentity();
+    if (this._favoriteCountOwner !== owner) {
+      this._favoriteCountOwner = owner;
+      this.setData({ favorite_count: null });
+    }
+    if (!owner) return;
+    const generation = this._favoriteCountGeneration;
+    const request = (this._favoriteCountRequest || 0) + 1;
+    this._favoriteCountRequest = request;
+    const current = () =>
+      this._favoriteCountVisible &&
+      !this._favoriteCountDisposed &&
+      owner === getSessionIdentity() &&
+      generation === this._favoriteCountGeneration &&
+      request === this._favoriteCountRequest;
+    try {
+      const writes = waitForFavoriteWrites();
+      if (writes) await writes;
+      if (!current()) return;
+      const response = await httpGET("api/question/favorites", {
+        page: 1,
+        size: 1,
+      });
+      if (!current()) return;
+      const result = response && response.data;
+      const total =
+        result &&
+        Number(result.code) === 10000 &&
+        result.data &&
+        result.data.total;
+      this.setData({
+        favorite_count:
+          Number.isSafeInteger(total) && total >= 0 ? total : null,
+      });
+    } catch (error) {
+      if (current()) this.setData({ favorite_count: null });
+    }
   },
   login: function () {
     app.clickSound();
@@ -244,6 +285,13 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    this._favoriteCountVisible = true;
+    this._favoriteCountGeneration = (this._favoriteCountGeneration || 0) + 1;
+    const countOwner = getSessionIdentity();
+    if (countOwner !== this._favoriteCountOwner) {
+      this._favoriteCountOwner = countOwner;
+      this.setData({ favorite_count: null });
+    }
     if (typeof wx.hideShareMenu === "function") {
       wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
     }
@@ -266,12 +314,18 @@ Page({
   /**
    * 生命周期函数--监听页面隐藏
    */
-  onHide() {},
+  onHide() {
+    this._favoriteCountVisible = false;
+    this._favoriteCountGeneration = (this._favoriteCountGeneration || 0) + 1;
+  },
 
   /**
    * 生命周期函数--监听页面卸载
    */
-  onUnload() {},
+  onUnload() {
+    this._favoriteCountDisposed = true;
+    this.onHide();
+  },
 
   /**
    * 页面相关事件处理函数--监听用户下拉动作

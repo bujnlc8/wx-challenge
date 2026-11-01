@@ -82,3 +82,12 @@
   flex-shrink: 0;
   margin-left: 8px;
 }
+
+.wrong-question-heading {
+  display: flex;
+  align-items: flex-start;
+}
+.wrong-question-heading .question_body {
+  flex: 1;
+  min-width: 0;
+}
