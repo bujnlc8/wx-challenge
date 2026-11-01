@@ -77,13 +77,6 @@
   height: 42px;
   flex-shrink: 0;
 }
-.ranking-heading .section-title {
-  width: 48px;
-  margin-right: 10px;
-  font-size: 16px;
-  line-height: 24px;
-  flex-shrink: 0;
-}
 .ranking-refresh {
   color: #8390a4;
   font-size: 11px;

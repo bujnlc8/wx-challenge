@@ -16,7 +16,6 @@
     </view>
   </view>
   <view class="ranking-heading">
-    <text class="section-title">排行榜</text>
     <view class="ranking-tabs">
       <view class="tab {{t == 0 ? 'tab-active': '' }}" data-t="0" bindtap="changeTab">本周排行榜</view>
       <view class="tab {{t == 1 ? 'tab-active': '' }}" data-t="1" bindtap="changeTab">历史高分榜</view>
