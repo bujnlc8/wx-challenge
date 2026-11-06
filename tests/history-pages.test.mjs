@@ -74,6 +74,87 @@ test("folding an earlier wrong answer keeps other expanded answers open", () => 
   assert.deepEqual(Array.from(p.data.show_answer_ids), [102]);
 });
 
+test("a successful wrong-record deletion and refresh cannot reopen the real confirmation popup", async () => {
+  const s = setup("wrong");
+  s.requests[0].resolve(s.ok([s.item(1)]));
+  await flush();
+  let definition;
+  const strip = (source) =>
+    source
+      .replace(/import[\s\S]*?from\s+["'][^"']+["'];?/g, "")
+      .replace(/export\s*\{[\s\S]*?\};?/g, "");
+  runWithAuth(
+    strip(
+      readFileSync(new URL("../utils/modal-lock.js", import.meta.url), "utf8"),
+    ) +
+      "\n" +
+      strip(
+        readFileSync(
+          new URL("../component/popup/popup.js", import.meta.url),
+          "utf8",
+        ),
+      ),
+    {
+      getCurrentPages: () => [s.p],
+      getApp: () => ({ clickSound() {} }),
+      wx: { getStorageSync: () => "" },
+      Component: (value) => {
+        definition = value;
+      },
+    },
+  );
+  const popup = {
+    ...definition.methods,
+    data: {
+      ...Object.fromEntries(
+        Object.entries(definition.properties).map(([key, prop]) => [
+          key,
+          prop.value,
+        ]),
+      ),
+      ...definition.data,
+    },
+    setData(patch) {
+      Object.assign(this.data, patch);
+      if ("flag" in patch || "content" in patch)
+        definition.observers["flag, content"].call(
+          this,
+          this.data.flag,
+          this.data.content,
+        );
+    },
+    triggerEvent(name) {
+      if (name === "success") s.p.popupConfirm();
+    },
+  };
+  definition.lifetimes.attached.call(popup);
+  s.p.popup = popup;
+  s.p.longpressQuestion({ mark: { i: 1, ii: 0 } });
+  assert.equal(popup.data.flag, false);
+  assert.equal(s.p.data.modal_locked, true);
+  popup.popupConfirm();
+  assert.equal(popup.data.flag, true);
+  s.requests[1].resolve({ data: { code: 10000, data: { result: true } } });
+  await flush();
+  assert.equal(
+    popup.data.flag,
+    true,
+    "refresh must keep the confirmed dialog closed",
+  );
+  assert.equal(s.p.data.modal_locked, false);
+  assert.equal(
+    s.requests.filter((r) => r.path === "api/question/delete-wrong-question")
+      .length,
+    1,
+  );
+  s.requests[2].resolve(s.ok([]));
+  await flush();
+  s.p.onHide();
+  s.p.onShow();
+  assert.equal(popup.data.flag, true);
+  assert.equal(s.p.data.modal_locked, false);
+});
+
 test("deleting a wrong record refreshes shifted pages and can reach the empty state", async () => {
   const s = setup("wrong");
   s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };

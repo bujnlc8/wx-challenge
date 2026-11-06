@@ -185,6 +185,32 @@ test("popup visibility and page lifecycle release and restore its scroll lock", 
   s.definition.lifetimes.detached.call(s.instance);
   assert.equal(s.a.data.modal_locked, false);
 });
+
+test("closing an already closed popup stays closed and never acquires a scroll lock", () => {
+  const s = component("popup");
+  s.instance.hidePopup();
+  s.instance.hidePopup();
+  assert.equal(s.instance.data.flag, true);
+  assert.notEqual(s.a.data.modal_locked, true);
+  s.instance.showPopup();
+  s.instance.hidePopup();
+  s.instance.hidePopup();
+  assert.equal(s.instance.data.flag, true);
+  assert.equal(s.a.data.modal_locked, false);
+});
+
+test("showing an already open popup preserves its visible confirmation and lock", () => {
+  const s = component("popup");
+  s.instance.showPopup();
+  s.instance.showPopup();
+  assert.equal(s.instance.data.flag, false);
+  assert.equal(s.a.data.modal_locked, true);
+  s.instance.hidePopup();
+  s.definition.pageLifetimes.hide.call(s.instance);
+  s.definition.pageLifetimes.show.call(s.instance);
+  assert.equal(s.instance.data.flag, true);
+  assert.equal(s.a.data.modal_locked, false);
+});
 test("page-meta binds real modal conditions and never mistakes answer preferences for a modal", () => {
   const config = JSON.parse(fs.readFileSync(path("app.json"), "utf8"));
   for (const page of config.pages) {

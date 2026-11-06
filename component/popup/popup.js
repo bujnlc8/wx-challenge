@@ -66,12 +66,12 @@ Component({
   methods: {
     hidePopup: function () {
       this.setData({
-        flag: !this.data.flag,
+        flag: true,
       });
     },
     showPopup() {
       this.setData({
-        flag: !this.data.flag,
+        flag: false,
       });
     },
     popupCancel() {
