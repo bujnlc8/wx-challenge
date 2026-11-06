@@ -143,6 +143,18 @@ button.poster-close {
   display: block;
   width: 100%;
 }
+/* The bundled 900×1200 poster reserves its height before image decoding. */
+.poster-image-frame--app {
+  position: relative;
+  height: 0;
+  padding-top: 133.333333%;
+}
+.poster-image--app {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+}
 .poster-hint {
   display: block;
   margin-top: 18rpx;

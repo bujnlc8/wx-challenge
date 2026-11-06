@@ -180,23 +180,17 @@ Component({
       this.setData({
         appMode,
         visible: true,
-        loading: true,
+        loading: !appMode,
         error: "",
-        imagepath: "",
+        imagepath: appMode ? "/images/app-share-poster.png" : "",
         environmentNote: "",
         saving: false,
         albumDenied: false,
         saveMessage: "",
       });
       if (this._modalLock) this._modalLock.set(true);
+      if (appMode) return;
       try {
-        if (appMode) {
-          this.setData({
-            loading: false,
-            imagepath: "/images/app-share-poster.png",
-          });
-          return;
-        }
         const id = Number(question && question.id);
         if (!Number.isSafeInteger(id) || id <= 0)
           throw Error("题目暂未准备好，请稍后重试");

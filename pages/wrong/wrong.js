@@ -55,7 +55,10 @@ Page({
     );
   },
   refreshList() {
-    this._deleteRefreshOwner = null;
+    const owner = getSessionIdentity();
+    if (owner !== this._owner || !this._wrongDeletedIds)
+      this._wrongDeletedIds = new Set();
+    this._wrongReadOffset = 0;
     this._deleteIntent = null;
     if (this.popup) this.popup.hidePopup();
     this._generation = (this._generation || 0) + 1;
@@ -75,11 +78,26 @@ Page({
       wx.stopPullDownRefresh();
       return;
     }
-    return this.getWrongQuestion(1);
-  },
-  async getWrongQuestion(page = this.data.page + 1) {
-    if (this._disposed || !this._visible || this._listFlight || !this._owner)
+    if (this._deleting && this._deletingOwner === this._owner) {
+      this.setData({ loading_str: "加载中..." });
       return;
+    }
+    return this.getWrongQuestion();
+  },
+  async getWrongQuestion() {
+    if (
+      this._disposed ||
+      !this._visible ||
+      this._listFlight ||
+      !this._owner ||
+      (this._deleting && this._deletingOwner === this._owner) ||
+      this._deleteIntent
+    )
+      return;
+    // A local removal shifts the server offset. Re-read the boundary page,
+    // deduplicating the overlap, without replacing already rendered rows.
+    const page = Math.floor((this._wrongReadOffset || 0) / this.data.size) + 1;
+    const append = this.data.question_list.length > 0;
     const owner = this._owner,
       generation = this._generation,
       flight = {};
@@ -112,8 +130,22 @@ Page({
           question_image,
         };
       });
-      const previous = page === 1 ? [] : this.data.question_list;
-      const next = previous.concat(items);
+      const previous = append ? this.data.question_list : [];
+      const ids = new Set(previous.map((item) => item.id));
+      const next = previous.slice();
+      for (const item of items) {
+        if (!this._wrongDeletedIds.has(item.id) && !ids.has(item.id)) {
+          ids.add(item.id);
+          next.push(item);
+        }
+      }
+      const deletedInPayload = rows.filter((item) =>
+        this._wrongDeletedIds.has(item.id),
+      ).length;
+      this._wrongReadOffset = Math.max(
+        0,
+        (page - 1) * this.data.size + rows.length - deletedInPayload,
+      );
       this.setData({
         question_list: next,
         page,
@@ -124,7 +156,7 @@ Page({
     } catch (error) {
       if (!this.isHistoryCurrent(owner, generation)) return;
       const message = (error && error.message) || "网络异常，请重试";
-      if (page === 1)
+      if (!append)
         this.setData({ view_state: "error", error_message: message });
       else this.setData({ more_error: message });
     } finally {
@@ -151,7 +183,7 @@ Page({
   },
   retryMore() {
     app.clickSound();
-    return this.getWrongQuestion(this.data.page + 1);
+    return this.getWrongQuestion();
   },
   loginAndLoad() {
     app.clickSound();
@@ -245,10 +277,17 @@ Page({
       wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
     if (
       this._owner !== getSessionIdentity() ||
-      this._deleteRefreshOwner === getSessionIdentity() ||
       (this.data.view_state === "loading" && !this._listFlight)
     )
       return this.refreshList();
+    this.applyWrongDeletions();
+    if (
+      this.data.view_state === "ready" &&
+      !this.data.question_list.length &&
+      !this.data.no_more_data &&
+      !this._listFlight
+    )
+      return this.getWrongQuestion();
   },
 
   /**
@@ -288,16 +327,54 @@ Page({
       !this.data.more_error &&
       !this._listFlight
     )
-      return this.getWrongQuestion(this.data.page + 1);
+      return this.getWrongQuestion();
   },
 
-  reconcileWrongDeletion(owner, message) {
-    if (this._disposed || owner !== getSessionIdentity()) return;
-    this._deleteRefreshOwner = owner;
-    if (this._visible) {
-      if (message) showToast(message);
-      return this.refreshList();
-    }
+  applyWrongDeletions() {
+    if (
+      this._disposed ||
+      !this._visible ||
+      this._owner !== getSessionIdentity() ||
+      !this._wrongDeletedIds
+    )
+      return;
+    const previous = this.data.question_list;
+    const next = previous.filter((item) => !this._wrongDeletedIds.has(item.id));
+    if (next.length === previous.length) return;
+    this._wrongReadOffset = Math.max(
+      0,
+      (this._wrongReadOffset || 0) - (previous.length - next.length),
+    );
+    this.setData({
+      question_list: next,
+      show_answer_ids: this.data.show_answer_ids.filter(
+        (id) => !this._wrongDeletedIds.has(id),
+      ),
+      view_state: next.length || !this.data.no_more_data ? "ready" : "empty",
+    });
+  },
+  completeWrongDeletion(owner, id) {
+    if (
+      this._disposed ||
+      owner !== getSessionIdentity() ||
+      owner !== this._owner
+    )
+      return;
+    this._wrongDeletedIds.add(id);
+    this.applyWrongDeletions();
+    if (this._visible) showToast("删除成功");
+  },
+  notifyWrongDeletion(owner, message) {
+    if (
+      this._disposed ||
+      owner !== getSessionIdentity() ||
+      owner !== this._owner
+    )
+      return;
+    // The delete may have committed even when its response was lost. Keep the
+    // row until verified, but overlap the next read so no valid row is skipped.
+    this._wrongReadOffset = Math.max(0, (this._wrongReadOffset || 0) - 1);
+    if (this._visible) showToast(message);
   },
   popupConfirm: function () {
     this.popup.hidePopup();
@@ -311,29 +388,40 @@ Page({
     )
       return;
     this._deleting = true;
+    this._deletingOwner = intent.owner;
     return httpDELETE("api/question/delete-wrong-question", { id: intent.id })
       .then((res) => {
         if (this._disposed || intent.owner !== getSessionIdentity()) return;
         if (!res || !res.data || Number(res.data.code) !== 10000)
-          return this.reconcileWrongDeletion(
+          return this.notifyWrongDeletion(
             intent.owner,
-            (res && res.data && res.data.message) || "删除结果暂未确认，请重试",
+            (res && res.data && res.data.message) ||
+              "删除结果暂未确认，请下拉刷新核实",
           );
         if (res.data.data && res.data.data.result) {
-          // A write affects the current offset even if it started in an older view.
-          return this.reconcileWrongDeletion(intent.owner, "删除成功");
+          return this.completeWrongDeletion(intent.owner, intent.id);
         }
         if (this.isHistoryCurrent(intent.owner, intent.generation))
           showToast("删除失败");
       })
       .catch(() =>
-        this.reconcileWrongDeletion(
+        this.notifyWrongDeletion(
           intent.owner,
-          "删除结果暂未确认，正在重新加载",
+          "删除结果暂未确认，请下拉刷新核实",
         ),
       )
       .finally(() => {
         this._deleting = false;
+        this._deletingOwner = null;
+        if (
+          !this._disposed &&
+          this._visible &&
+          intent.owner === getSessionIdentity() &&
+          !this._listFlight &&
+          (this.data.view_state === "loading" ||
+            (!this.data.question_list.length && !this.data.no_more_data))
+        )
+          return this.getWrongQuestion();
       });
   },
   popupCancel: function () {

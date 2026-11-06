@@ -19,7 +19,9 @@
     </view>
     <block wx:elif="{{imagepath}}">
       <view class="poster-scroll">
-        <image class="poster-image" src="{{imagepath}}" mode="widthFix" show-menu-by-longpress="{{true}}" bindtap="preview" binderror="handleImageError" aria-label="{{appMode ? '小程序海报，点击放大预览' : '题目海报，点击放大预览'}}"></image>
+        <view class="{{appMode ? 'poster-image-frame--app' : ''}}">
+          <image class="poster-image {{appMode ? 'poster-image--app' : ''}}" src="{{imagepath}}" mode="{{appMode ? 'aspectFit' : 'widthFix'}}" show-menu-by-longpress="{{true}}" bindtap="preview" binderror="handleImageError" aria-label="{{appMode ? '小程序海报，点击放大预览' : '题目海报，点击放大预览'}}"></image>
+        </view>
       </view>
       <text class="poster-hint">点击放大预览，长按海报也可以分享</text>
       <text wx:if="{{environmentNote}}" class="poster-environment">{{environmentNote}}</text>

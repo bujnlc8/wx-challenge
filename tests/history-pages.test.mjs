@@ -6,7 +6,7 @@ import { runWithAuth } from "./helpers/auth-loader.mjs";
 const flush = async () => {
   for (let i = 0; i < 12; i++) await Promise.resolve();
 };
-function setup(name) {
+function setup(name, size) {
   let definition;
   const requests = [],
     storage = new Map([
@@ -50,7 +50,7 @@ function setup(name) {
   });
   const p = {
     ...definition,
-    data: structuredClone(definition.data),
+    data: { ...structuredClone(definition.data), ...(size ? { size } : {}) },
     setData(patch) {
       Object.assign(this.data, patch);
     },
@@ -74,7 +74,7 @@ test("folding an earlier wrong answer keeps other expanded answers open", () => 
   assert.deepEqual(Array.from(p.data.show_answer_ids), [102]);
 });
 
-test("a successful wrong-record deletion and refresh cannot reopen the real confirmation popup", async () => {
+test("a successful wrong-record deletion stays local and cannot reopen the real confirmation popup", async () => {
   const s = setup("wrong");
   s.requests[0].resolve(s.ok([s.item(1)]));
   await flush();
@@ -147,15 +147,19 @@ test("a successful wrong-record deletion and refresh cannot reopen the real conf
       .length,
     1,
   );
-  s.requests[2].resolve(s.ok([]));
-  await flush();
+  assert.equal(
+    s.requests.length,
+    2,
+    "confirmed deletion must not reload the list",
+  );
+  assert.equal(s.p.data.view_state, "empty");
   s.p.onHide();
   s.p.onShow();
   assert.equal(popup.data.flag, true);
   assert.equal(s.p.data.modal_locked, false);
 });
 
-test("deleting a wrong record refreshes shifted pages and can reach the empty state", async () => {
+test("deleting the last loaded wrong record updates the empty state without a GET", async () => {
   const s = setup("wrong");
   s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
   s.requests[0].resolve(s.ok([s.item(1)]));
@@ -164,14 +168,12 @@ test("deleting a wrong record refreshes shifted pages and can reach the empty st
   s.p.popupConfirm();
   s.requests[1].resolve({ data: { code: 10000, data: { result: true } } });
   await flush();
-  assert.equal(s.requests.length, 3);
-  assert.equal(s.requests[2].data.page, 1);
-  s.requests[2].resolve(s.ok([]));
-  await flush();
+  assert.equal(s.requests.length, 2);
   assert.equal(s.p.data.view_state, "empty");
+  assert.equal(s.p.data.page, 1);
 });
 
-test("a wrong-record deletion completing after refresh revalidates shifted pages", async () => {
+test("manual refresh waits for the pending deletion before reading the new list", async () => {
   const s = setup("wrong");
   s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
   s.requests[0].resolve(s.ok([s.item(1)]));
@@ -179,12 +181,15 @@ test("a wrong-record deletion completing after refresh revalidates shifted pages
   s.p.longpressQuestion({ mark: { i: 1, ii: 0 } });
   s.p.popupConfirm();
   s.p.onPullDownRefresh();
-  s.requests[2].resolve(s.ok([s.item(2)]));
-  await flush();
+  assert.equal(
+    s.requests.length,
+    2,
+    "do not read an offset snapshot during a pending write",
+  );
   s.requests[1].resolve({ data: { code: 10000, data: { result: true } } });
   await flush();
-  assert.equal(s.requests.length, 4);
-  s.requests[3].resolve(s.ok([s.item(2)]));
+  assert.equal(s.requests.length, 3);
+  s.requests[2].resolve(s.ok([s.item(2)]));
   await flush();
   assert.equal(s.list()[0].id, 2);
 });
@@ -276,21 +281,206 @@ for (const name of ["wrong", "coin"]) {
   });
 }
 
-test("a wrong-record deletion settled while hidden refreshes on returning", async () => {
+test("a confirmed deletion while hidden is applied locally on returning", async () => {
+  const s = setup("wrong");
+  s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
+  s.requests[0].resolve(s.ok([s.item(1), s.item(2)]));
+  await flush();
+  const row = s.list()[1];
+  s.p.longpressQuestion({ mark: { i: 1, ii: 0 } });
+  s.p.popupConfirm();
+  s.p.onHide();
+  s.requests[1].resolve({ data: { code: 10000, data: { result: true } } });
+  await flush();
+  s.p.onShow();
+  assert.equal(s.requests.length, 2);
+  assert.equal(s.list().length, 1);
+  assert.equal(s.list()[0], row);
+});
+
+async function removeWrong(s, id) {
+  const index = s.list().findIndex((item) => item.id === id);
+  s.p.longpressQuestion({ mark: { i: id, ii: index } });
+  const task = s.p.popupConfirm();
+  const count = s.requests.length;
+  s.requests.at(-1).resolve({ data: { code: 10000, data: { result: true } } });
+  await flush();
+  assert.equal(
+    s.requests.length,
+    count,
+    "successful deletion must not read the list again",
+  );
+  await task;
+}
+
+test("a deletion deep in the list keeps other rows, expanded answers and the confirmed page", async () => {
+  const s = setup("wrong", 3);
+  s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
+  s.requests[0].resolve(s.ok([9, 8, 7].map(s.item)));
+  await flush();
+  s.p.onReachBottom();
+  s.requests[1].resolve(s.ok([6, 5, 4].map(s.item)));
+  await flush();
+  const rows = s.list().filter((item) => item.id !== 8);
+  s.p.data.show_answer_ids = [8, 5];
+  await removeWrong(s, 8);
+  assert.equal(s.requests.length, 3);
+  assert.equal(s.p.data.page, 2);
+  assert.equal(s.p.data.view_state, "ready");
+  assert.equal(s.list().length, 5);
+  rows.forEach((row, i) => assert.equal(s.list()[i], row));
+  assert.deepEqual(Array.from(s.p.data.show_answer_ids), [5]);
+  s.p.onReachBottom();
+  assert.equal(
+    s.requests[3].data.page,
+    2,
+    "reread the boundary page to fill the shifted offset",
+  );
+  s.requests[3].resolve(s.ok([5, 4, 3].map(s.item)));
+  await flush();
+  assert.deepEqual(
+    Array.from(s.list(), (item) => item.id),
+    [9, 7, 6, 5, 4, 3],
+  );
+  s.p.onReachBottom();
+  assert.equal(s.requests[4].data.page, 3);
+  s.requests[4].resolve(s.ok([2, 1].map(s.item)));
+  await flush();
+  assert.deepEqual(
+    Array.from(s.list(), (item) => item.id),
+    [9, 7, 6, 5, 4, 3, 2, 1],
+  );
+});
+
+test("a failed boundary read on page one remains an append error and retries without clearing rows", async () => {
+  const s = setup("wrong", 3);
+  s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
+  s.requests[0].resolve(s.ok([6, 5, 4].map(s.item)));
+  await flush();
+  await removeWrong(s, 5);
+  s.p.onReachBottom();
+  assert.equal(s.requests[2].data.page, 1);
+  s.requests[2].reject(Error("offline"));
+  await flush();
+  assert.equal(s.p.data.view_state, "ready");
+  assert.deepEqual(
+    Array.from(s.list(), (item) => item.id),
+    [6, 4],
+  );
+  assert.match(s.p.data.more_error, /offline/);
+  s.p.retryMore();
+  assert.equal(s.requests[3].data.page, 1);
+  s.requests[3].resolve(s.ok([6, 4, 3].map(s.item)));
+  await flush();
+  assert.deepEqual(
+    Array.from(s.list(), (item) => item.id),
+    [6, 4, 3],
+  );
+});
+
+test("a known deleted id in a later list payload cannot reappear", async () => {
+  const s = setup("wrong");
+  s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
+  s.requests[0].resolve(s.ok([s.item(1), s.item(2)]));
+  await flush();
+  await removeWrong(s, 1);
+  s.p.onPullDownRefresh();
+  s.requests[2].resolve(s.ok([s.item(1), s.item(2)]));
+  await flush();
+  assert.deepEqual(
+    Array.from(s.list(), (item) => item.id),
+    [2],
+  );
+});
+
+test("an uncertain deletion keeps the visible list and does not reset the page", async () => {
+  const s = setup("wrong");
+  s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
+  s.requests[0].resolve(s.ok([s.item(1), s.item(2)]));
+  await flush();
+  const rows = s.list();
+  s.p.longpressQuestion({ mark: { i: 1, ii: 0 } });
+  const task = s.p.popupConfirm();
+  s.requests[1].reject(Error("response lost"));
+  await flush();
+  assert.equal(s.requests.length, 2);
+  await task;
+  assert.equal(s.list(), rows);
+  assert.equal(s.p.data.page, 1);
+  assert.equal(s.p.data.view_state, "ready");
+});
+
+for (const committed of [true, false]) {
+  test(`an uncertain deletion with server commit ${committed} cannot skip unread rows`, async () => {
+    const s = setup("wrong", 3);
+    s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
+    s.requests[0].resolve(s.ok([6, 5, 4].map(s.item)));
+    await flush();
+    s.p.longpressQuestion({ mark: { i: 5, ii: 1 } });
+    const task = s.p.popupConfirm();
+    s.requests[1].reject(Error("response lost"));
+    await task;
+    const server = committed ? [6, 4, 3, 2, 1] : [6, 5, 4, 3, 2, 1];
+    s.p.onReachBottom();
+    assert.equal(
+      s.requests[2].data.page,
+      1,
+      "conservatively reread the boundary after an uncertain write",
+    );
+    s.requests[2].resolve(s.ok(server.slice(0, 3).map(s.item)));
+    await flush();
+    s.p.onReachBottom();
+    assert.equal(s.requests[3].data.page, 2);
+    s.requests[3].resolve(s.ok(server.slice(3, 6).map(s.item)));
+    await flush();
+    const ids = Array.from(s.list(), (item) => item.id);
+    assert.ok(
+      server.every((id) => ids.includes(id)),
+      "every unread valid row must remain reachable",
+    );
+    assert.equal(new Set(ids).size, ids.length);
+  });
+}
+
+test("switching accounts during deletion still loads the new account immediately", async () => {
   const s = setup("wrong");
   s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
   s.requests[0].resolve(s.ok([s.item(1)]));
   await flush();
   s.p.longpressQuestion({ mark: { i: 1, ii: 0 } });
   s.p.popupConfirm();
+  s.storage.set("uid", "u2");
+  s.storage.set("token", "t2");
+  s.p.onShow();
+  assert.equal(s.requests.length, 3);
+  s.requests[2].resolve(s.ok([s.item(2)]));
+  await flush();
+  s.requests[1].resolve({ data: { code: 10000, data: { result: true } } });
+  await flush();
+  assert.deepEqual(
+    Array.from(s.list(), (item) => item.id),
+    [2],
+  );
+  assert.equal(s.p.data.view_state, "ready");
+});
+
+test("returning after removing every loaded row continues into unread server rows", async () => {
+  const s = setup("wrong", 1);
+  s.p.popup = { setData() {}, showPopup() {}, hidePopup() {} };
+  s.requests[0].resolve(s.ok([s.item(3)]));
+  await flush();
+  s.p.longpressQuestion({ mark: { i: 3, ii: 0 } });
+  s.p.popupConfirm();
   s.p.onHide();
   s.requests[1].resolve({ data: { code: 10000, data: { result: true } } });
   await flush();
-  assert.equal(s.requests.length, 2);
   s.p.onShow();
   assert.equal(s.requests.length, 3);
   assert.equal(s.requests[2].data.page, 1);
-  s.requests[2].resolve(s.ok([]));
+  s.requests[2].resolve(s.ok([s.item(2)]));
   await flush();
-  assert.equal(s.p.data.view_state, "empty");
+  assert.deepEqual(
+    Array.from(s.list(), (item) => item.id),
+    [2],
+  );
 });

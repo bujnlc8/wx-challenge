@@ -201,11 +201,13 @@ function componentHarness() {
       definition = value;
     },
   });
+  const updates = [];
   const instance = {
     triggerEvent() {},
     data: { ...definition.data },
     setData(patch) {
       Object.assign(this.data, patch);
+      updates.push({ patch: { ...patch }, state: { ...this.data } });
     },
     ...definition.methods,
   };
@@ -216,6 +218,7 @@ function componentHarness() {
     definition,
     platform,
     toasts,
+    updates,
     changeAccount() {
       uid = "user-b";
     },
@@ -524,6 +527,55 @@ test("app sharing opens the finished bundled poster without backend or canvas wo
   assert.equal(harness.instance.data.loading, false);
   assert.equal(harness.instance.data.error, "");
   assert.equal(harness.instance.data.environmentNote, "");
+});
+
+test("static app openings publish the finished poster in the first visible update", async () => {
+  const harness = componentHarness();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const start = harness.updates.length;
+    await harness.instance.openApp();
+    const visibleUpdates = harness.updates
+      .slice(start)
+      .filter(({ state }) => state.visible);
+    assert.equal(
+      visibleUpdates.length,
+      1,
+      "opening must not replace a loading frame with the bundled image",
+    );
+    const first = visibleUpdates[0];
+    assert.equal(first.patch.visible, true);
+    assert.equal(first.patch.loading, false);
+    assert.equal(first.patch.imagepath, "/images/app-share-poster.png");
+    assert.equal(first.state.error, "");
+    assert.equal(first.state.saving, false);
+    assert.equal(first.state.albumDenied, false);
+    assert.equal(first.state.saveMessage, "");
+    harness.instance.handleImageError();
+    harness.instance.close();
+  }
+});
+
+test("switching from a question to the static poster never publishes an empty app frame", async () => {
+  const harness = componentHarness();
+  const pending = harness.instance.open({
+    id: 4,
+    content: "题目",
+    options: ["甲"],
+  });
+  assert.equal(harness.updates[0].state.loading, true);
+  const start = harness.updates.length;
+  await harness.instance.openApp();
+  harness.requests[0].resolve({ data: { code: 10001, message: "late error" } });
+  await pending;
+  const appFrames = harness.updates
+    .slice(start)
+    .filter(({ state }) => state.visible && state.appMode);
+  assert.ok(appFrames.length > 0);
+  for (const { state } of appFrames) {
+    assert.equal(state.loading, false);
+    assert.equal(state.imagepath, "/images/app-share-poster.png");
+    assert.equal(state.error, "");
+  }
 });
 
 test("the static app poster is reused across environments and repeated openings", async () => {
