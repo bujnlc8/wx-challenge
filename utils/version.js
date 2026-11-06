@@ -1,4 +1,4 @@
-const APP_VERSION = "2026.11.01";
+const APP_VERSION = "2026.11.07";
 
 function getAppVersion(platform = wx) {
   try {

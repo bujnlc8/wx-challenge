@@ -1,42 +1,74 @@
 .favorites-page {
-  padding-bottom: 28px;
+  padding: 20px 16px 28px;
 }
 .favorites-summary {
-  margin: 20px 2px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 0 2px 18px;
   color: #68758a;
   font-size: 13px;
 }
+.favorites-summary__count {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.favorites-summary__number {
+  color: #202b40;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+.favorites-summary__note {
+  color: #8793a6;
+  font-size: 12px;
+}
 .favorite-card {
   margin-bottom: 16px;
-  padding: 20px;
+  padding: 18px 16px 16px;
+  border: 1px solid #e7edf7;
+  border-radius: 20px;
+  box-shadow: 0 4px 18px rgba(35, 62, 110, 0.035);
 }
 .favorite-question-content {
   color: #202b40;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: 500;
   line-height: 1.8;
   word-break: break-word;
   white-space: pre-wrap;
+}
+.favorite-media {
+  overflow: hidden;
+  margin-top: 14px;
+  border: 1px solid #e8eef8;
+  border-radius: 12px;
+  background: #f5f8fd;
 }
 .favorite-question-image,
 .favorite-question-video {
   display: block;
   width: 100%;
-  height: 180px;
-  margin-top: 14px;
-  border-radius: 10px;
+  height: 200px;
 }
 .favorite-card-footer {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding-top: 12px;
-  margin-top: 16px;
+  gap: 6px;
+  padding: 10px 12px;
+  margin: 18px -16px -16px;
   border-top: 1px solid #edf1f6;
+  border-radius: 0 0 20px 20px;
+  background: #fbfcff;
 }
 .favorite-created-at {
   flex: 1;
   min-width: 70px;
-  color: #68758a;
+  color: #8793a6;
   font-size: 12px;
   line-height: 18px;
   white-space: normal;
@@ -91,8 +123,8 @@
   min-height: 36px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: #edf3ff;
-  color: #2056ce;
+  background: #2864eb;
+  color: #ffffff;
   font-size: 13px;
   line-height: 20px;
 }

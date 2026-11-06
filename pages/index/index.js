@@ -40,7 +40,6 @@ Page({
     challenge_question_count: 50,
     logined: 0,
     mine: null,
-    is_show_help_tip: 0,
   },
   startChallenge: function () {
     app.clickSound();
@@ -59,22 +58,6 @@ Page({
     this.syncChallengeSettings();
     this.getCurrentWeekRanking();
     this.getTotalRanking();
-    wx.getStorage({
-      key: "is_show_help_tip",
-      fail: () => {
-        this.openHelpPage();
-      },
-    });
-  },
-  openHelpPage: function () {
-    if (this._openingHelp) return;
-    this._openingHelp = true;
-    wx.navigateTo({
-      url: "/pages/help/help",
-      complete: () => {
-        this._openingHelp = false;
-      },
-    });
   },
   syncChallengeSettings() {
     const category = Number(app.category) || 0;
@@ -255,10 +238,6 @@ Page({
     if (this._homeUnloaded) return;
     this.syncChallengeSettings();
     this.updateData(this.data.t);
-    if (app.show_help_tip) {
-      app.show_help_tip = 0;
-      this.openHelpPage();
-    }
   },
   onUnload() {
     this._homeUnloaded = true;

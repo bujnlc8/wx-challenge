@@ -61,6 +61,5 @@ Page({
     if (typeof wx.hideShareMenu === "function") {
       wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
     }
-    wx.setStorageSync("is_show_help_tip", 1);
   },
 });

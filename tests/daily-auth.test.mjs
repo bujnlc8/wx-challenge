@@ -137,7 +137,7 @@ test("reminder auth expiry invalidates an overlapping heatmap result and cannot 
   s.requests
     .find((request) => request.path.endsWith("/reminder"))
     .resolve({ data: { code: 11111 } });
-  await daily;
+  await flush();
   s.requests
     .find((request) => request.path.endsWith("/activity"))
     .resolve({ data: { code: 10000, data: { total_count: 999 } } });

@@ -91,8 +91,23 @@ Page({
     if (typeof wx.hideShareMenu === "function")
       wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
     wx.setNavigationBarTitle({ title: "收藏夹" });
-    this._owner = getSessionIdentity();
-    this.refreshFavorites();
+    const owner = getSessionIdentity();
+    if (
+      owner !== this._owner ||
+      !["ready", "empty"].includes(this.data.view_state)
+    )
+      return this.refreshFavorites();
+    const generation = this._generation;
+    const writes = waitForFavoriteWrites();
+    if (writes) {
+      // A write may have reached the server even if its response failed.
+      return writes.then(() => {
+        if (this.isFavoritePageCurrent(owner, generation))
+          return this.refreshFavorites();
+      });
+    }
+    if (this._listRevision !== getFavoriteRevision())
+      return this.refreshFavorites();
   },
   onHide() {
     this.clearRemoveFavoriteIntent();
@@ -100,6 +115,8 @@ Page({
     this._visible = false;
     this._generation++;
     this._listFlight = null;
+    if (!this._disposed && this.data.loading_more)
+      this.setData({ loading_more: false });
   },
   onUnload() {
     this._disposed = true;
@@ -157,7 +174,10 @@ Page({
       if (!this.isFavoritePageCurrent(owner, generation)) return;
       const data = favoriteListPayload(response);
       const items = data.items.map(favoriteQuestion);
-      if (seedFavorites(items, readRevision)) {
+      if (
+        seedFavorites(items, readRevision) ||
+        readRevision !== getFavoriteRevision()
+      ) {
         // A confirmed write changed an offset while this list was in flight.
         this._listFlight = null;
         return this.refreshFavorites();
@@ -183,6 +203,7 @@ Page({
         no_more_data:
           !items.length || page * (data.size || this.data.size) >= data.total,
       });
+      this._listRevision = readRevision;
     } catch (error) {
       if (!this.isFavoritePageCurrent(owner, generation)) return;
       const message = (error && error.message) || "网络异常，请重试";

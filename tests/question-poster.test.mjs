@@ -13,7 +13,7 @@ function api() {
   const scope = vm.createContext({});
   vm.runInContext(
     source +
-      "\nthis.api={normalizeText,normalizeQuestion,wrapText,layoutPoster,drawPoster,drawAppPoster:typeof drawAppPoster==='function'?drawAppPoster:undefined,runtimeEnvironment,validateShareCode,validateAppShareCode:typeof validateAppShareCode==='function'?validateAppShareCode:undefined,createPosterSession};",
+      "\nthis.api={normalizeText,normalizeQuestion,wrapText,layoutPoster,drawPoster,runtimeEnvironment,validateShareCode,createPosterSession};",
     scope,
   );
   return scope.api;
@@ -510,100 +510,132 @@ test("JPEG server code is decoded from its original in-memory payload, drawn and
   assert.equal(removed.length, 0);
 });
 
-function appCode() {
-  return {
-    data: {
-      code: 10000,
-      data: {
-        page: "pages/index/index",
-        env_version: "release",
-        mime_type: "image/png",
-        image_base64: "iVBORw0KGgoAAA==",
-      },
-    },
-  };
-}
-test("app share code requires the exact home page, runtime and matching image signature", () => {
-  const { validateAppShareCode } = api();
-  const code = appCode().data.data;
-  assert.equal(
-    typeof validateAppShareCode,
-    "function",
-    "app share-code validation must exist",
-  );
-  assert.doesNotThrow(() => validateAppShareCode(code, "release"));
-  assert.doesNotThrow(() =>
-    validateAppShareCode(
-      { ...code, mime_type: "image/jpeg", image_base64: "/9j/4AAQSkZJRg==" },
-      "release",
-    ),
-  );
-  for (const invalid of [
-    { ...code, page: "pages/answer/answer" },
-    { ...code, env_version: "trial" },
-    { ...code, image_base64: "eyJlcnJjb2RlIjo0MDAxM30=" },
-    { ...code, mime_type: "image/jpeg" },
-  ])
-    assert.throws(() => validateAppShareCode(invalid, "release"), /小程序码/);
-});
-test("logged-out app share requests only the public home code and exports an app poster", async () => {
+test("app sharing opens the finished bundled poster without backend or canvas work", async () => {
   const harness = componentHarness();
   harness.platform.getStorageSync = () => "";
-  const { draws, text } = installCanvas(harness);
-  assert.equal(harness.requests.length, 0);
-  assert.equal(
-    typeof harness.instance.openApp,
-    "function",
-    "app poster entry point must exist",
-  );
+  harness.instance.renderPoster = () => {
+    throw Error("app sharing must not draw a canvas");
+  };
   const task = harness.instance.openApp();
-  assert.equal(harness.instance.data.appMode, true);
-  assert.equal(harness.requests[0].path, "api/common/share-code");
-  assert.deepEqual(Object.keys(harness.requests[0].body), ["env_version"]);
-  harness.requests[0].resolve(appCode());
+  assert.equal(harness.requests.length, 0);
   await task;
-  assert.equal(harness.instance.data.imagepath, "/tmp/generated-poster.png");
+  assert.equal(harness.instance.data.appMode, true);
+  assert.equal(harness.instance.data.imagepath, "/images/app-share-poster.png");
+  assert.equal(harness.instance.data.loading, false);
   assert.equal(harness.instance.data.error, "");
-  assert.ok(text.includes("百科知识挑战"));
-  assert.ok(text.includes("扫码开启知识挑战"));
-  assert.ok(
-    text.includes("挑战") && text.includes("练习") && text.includes("错题"),
-  );
-  assert.ok(!text.includes("这道题，你会吗？"));
-  assert.ok(draws.includes("/images/ui-about-logo.png"));
+  assert.equal(harness.instance.data.environmentNote, "");
 });
-test("app share retries its public endpoint and never overwrites a newer question or closed modal", async () => {
+
+test("the static app poster is reused across environments and repeated openings", async () => {
+  for (const env of ["release", "trial", "develop", null]) {
+    const harness = componentHarness();
+    harness.platform.getAccountInfoSync = () => {
+      if (!env) throw Error("unavailable");
+      return { miniProgram: { envVersion: env } };
+    };
+    await harness.instance.openApp();
+    assert.equal(
+      harness.instance.data.imagepath,
+      "/images/app-share-poster.png",
+    );
+    harness.instance.close();
+    await harness.instance.openApp();
+    assert.equal(harness.requests.length, 0);
+    assert.equal(harness.instance.data.error, "");
+    assert.equal(harness.instance.data.environmentNote, "");
+    assert.equal(
+      harness.instance.data.imagepath,
+      "/images/app-share-poster.png",
+    );
+  }
+});
+
+test("static poster read errors can retry without regenerating or requesting a code", async () => {
+  const harness = componentHarness();
+  await harness.instance.openApp();
+  harness.instance.handleImageError();
+  assert.match(harness.instance.data.error, /读取失败/);
+  await harness.instance.retry();
+  assert.equal(harness.instance.data.error, "");
+  assert.equal(harness.instance.data.imagepath, "/images/app-share-poster.png");
+  assert.equal(harness.requests.length, 0);
+});
+
+test("a pending question cannot overwrite the static app poster", async () => {
   const harness = componentHarness();
   installCanvas(harness);
-  assert.equal(
-    typeof harness.instance.openApp,
-    "function",
-    "app poster entry point must exist",
-  );
-  const first = harness.instance.openApp();
-  harness.requests[0].resolve({ data: { code: 10001, message: "稍后重试" } });
-  await first;
-  assert.equal(harness.instance.data.error, "稍后重试");
-  const retry = harness.instance.retry();
-  assert.equal(harness.requests[1].path, "api/common/share-code");
   const question = harness.instance.open({
     id: 4,
     content: "题目",
     options: ["甲"],
   });
-  harness.requests[1].resolve(appCode());
-  await retry;
-  assert.equal(harness.instance.data.appMode, false);
-  assert.equal(harness.instance.data.imagepath, "");
-  harness.requests[2].resolve(validCode(4));
+  await harness.instance.openApp();
+  harness.requests[0].resolve(validCode(4));
   await question;
-  assert.equal(harness.instance.data.imagepath, "/tmp/generated-poster.png");
-  const closed = harness.instance.openApp();
+  assert.equal(harness.instance.data.appMode, true);
+  assert.equal(harness.instance.data.imagepath, "/images/app-share-poster.png");
   harness.instance.close();
-  harness.requests[3].resolve(appCode());
-  await closed;
   assert.equal(harness.instance.data.visible, false);
   assert.equal(harness.instance.data.imagepath, "");
+});
+
+test("saving a static poster resolves its local image path and respects close while reading", async () => {
+  const harness = componentHarness();
+  let info, saved;
+  harness.platform.getImageInfo = (options) => {
+    info = options;
+  };
+  harness.platform.saveImageToPhotosAlbum = (options) => {
+    saved = options;
+  };
+  await harness.instance.openApp();
+  const save = harness.instance.save();
+  assert.equal(info.src, "/images/app-share-poster.png");
+  assert.equal(saved, undefined);
+  info.success({ path: "/tmp/static-poster.png" });
+  await save;
+  assert.equal(saved.filePath, "/tmp/static-poster.png");
+  saved.success();
+  assert.equal(harness.instance.data.saving, false);
+  saved = undefined;
+  const closed = harness.instance.save();
+  harness.instance.close();
+  info.success({ path: "/tmp/static-poster.png" });
+  await closed;
+  assert.equal(saved, undefined);
+});
+
+test("a static poster read failure releases saving and shows a useful message", async () => {
+  const harness = componentHarness();
+  harness.platform.getImageInfo = ({ fail }) => fail({ errMsg: "read failed" });
+  await harness.instance.openApp();
+  await harness.instance.save();
+  assert.equal(harness.instance.data.saving, false);
+  assert.match(harness.instance.data.saveMessage, /海报读取失败/);
+});
+
+test("static poster preview resolves a local path and ignores callbacks after closing", async () => {
+  const harness = componentHarness();
+  let info, preview;
+  harness.platform.getImageInfo = (options) => {
+    info = options;
+  };
+  harness.platform.previewImage = (options) => {
+    preview = options;
+  };
+  await harness.instance.openApp();
+  const first = harness.instance.preview();
+  assert.equal(info.src, "/images/app-share-poster.png");
+  info.success({ path: "/tmp/static-poster.png" });
+  await first;
+  assert.equal(preview.current, "/tmp/static-poster.png");
+  assert.deepEqual(Array.from(preview.urls), ["/tmp/static-poster.png"]);
+  preview = undefined;
+  const closed = harness.instance.preview();
+  harness.instance.close();
+  info.success({ path: "/tmp/static-poster.png" });
+  await closed;
+  assert.equal(preview, undefined);
 });
 
 for (const [mime, base64] of [

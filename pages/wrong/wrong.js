@@ -1,13 +1,17 @@
 // pages/wrong/wrong.js
 const app = getApp();
 import { httpDELETE, httpGET, showToast } from "../../utils/util";
+import { getSessionIdentity } from "../../utils/auth-session";
 Page({
   data: {
     question_list: [],
     no_more_data: 0,
-    page: 1,
+    page: 0,
     size: 12,
     loading_str: "",
+    view_state: "loading",
+    error_message: "",
+    more_error: "",
     show_tip: 1,
     show_answer_ids: [],
     delete_id: 0,
@@ -22,7 +26,11 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad() {
-    this.getWrongQuestion();
+    this._generation = 0;
+    this._visible = true;
+    this._disposed = false;
+    this._owner = getSessionIdentity();
+    this.refreshList();
     wx.setNavigationBarTitle({
       title: "错题集",
     });
@@ -37,57 +45,130 @@ Page({
       });
     }
   },
-  getWrongQuestion: function () {
+  isHistoryCurrent(owner, generation) {
+    return (
+      !this._disposed &&
+      this._visible &&
+      this._owner === owner &&
+      owner === getSessionIdentity() &&
+      generation === this._generation
+    );
+  },
+  refreshList() {
+    this._deleteRefreshOwner = null;
+    this._deleteIntent = null;
+    if (this.popup) this.popup.hidePopup();
+    this._generation = (this._generation || 0) + 1;
+    this._listFlight = null;
+    this._owner = getSessionIdentity();
     this.setData({
-      loading_str: "加载中...",
+      question_list: [],
+      page: 0,
+      no_more_data: 0,
+      loading_str: "",
+      view_state: this._owner ? "loading" : "logged-out",
+      error_message: "",
+      more_error: "",
+      show_answer_ids: [],
     });
-    httpGET("api/question/wrong-question-list", {
-      page: this.data.page,
-      size: this.data.size,
-    })
-      .then((res) => {
-        wx.stopPullDownRefresh();
-        this.setData({
-          loading_str: "",
-        });
-        if (res.data.code != 10000) {
-          showToast(res.data.message);
-          return;
-        }
-        res.data.data.forEach((item) => {
-          item.options = item.options.split("|");
-          item.option_type = item.options[0].startsWith(
-            "https://bucket-1256650966",
-          )
-            ? 1
-            : 0;
-          var split_content = item.content.split("###");
-          item.content = split_content[0].replaceAll("\n\n", "\n");
-          item.question_image =
-            split_content.length > 1 ? split_content[1] : "";
-        });
-        this.setData({
-          question_list: this.data.question_list.concat(res.data.data),
-        });
-        if (
-          res.data.data.length == 0 ||
-          res.data.data.length < this.data.size
-        ) {
-          this.setData({
-            no_more_data: 1,
-          });
-        }
-      })
-      .catch(() => {
-        this.setData({ loading_str: "" });
-        wx.stopPullDownRefresh();
-        showToast("网络异常");
+    if (!this._owner) {
+      wx.stopPullDownRefresh();
+      return;
+    }
+    return this.getWrongQuestion(1);
+  },
+  async getWrongQuestion(page = this.data.page + 1) {
+    if (this._disposed || !this._visible || this._listFlight || !this._owner)
+      return;
+    const owner = this._owner,
+      generation = this._generation,
+      flight = {};
+    this._listFlight = flight;
+    this.setData({ loading_str: "加载中...", more_error: "" });
+    try {
+      const response = await httpGET("api/question/wrong-question-list", {
+        page,
+        size: this.data.size,
       });
+      if (!this.isHistoryCurrent(owner, generation)) return;
+      const result = response && response.data;
+      if (!result || Number(result.code) !== 10000)
+        throw Error((result && result.message) || "加载失败，请重试");
+      const rows = result.data;
+      if (!Array.isArray(rows)) throw Error("列表数据异常，请重试");
+      const items = rows.map((item) => {
+        const options = Array.isArray(item.options)
+          ? item.options.slice()
+          : String(item.options || "").split("|");
+        const first = options.find((option) => option) || "";
+        const [content, question_image = ""] = String(item.content || "").split(
+          "###",
+        );
+        return {
+          ...item,
+          options,
+          option_type: first.startsWith("https://bucket-1256650966") ? 1 : 0,
+          content: content.replace(/\n\n/g, "\n"),
+          question_image,
+        };
+      });
+      const previous = page === 1 ? [] : this.data.question_list;
+      const next = previous.concat(items);
+      this.setData({
+        question_list: next,
+        page,
+        no_more_data: rows.length < this.data.size ? 1 : 0,
+        view_state: next.length ? "ready" : "empty",
+        error_message: "",
+      });
+    } catch (error) {
+      if (!this.isHistoryCurrent(owner, generation)) return;
+      const message = (error && error.message) || "网络异常，请重试";
+      if (page === 1)
+        this.setData({ view_state: "error", error_message: message });
+      else this.setData({ more_error: message });
+    } finally {
+      if (this._listFlight === flight) {
+        this._listFlight = null;
+        if (this.isHistoryCurrent(owner, generation)) {
+          this.setData({ loading_str: "" });
+          wx.stopPullDownRefresh();
+        } else if (
+          !this._disposed &&
+          this._visible &&
+          generation === this._generation &&
+          this._owner === owner &&
+          getSessionIdentity() !== owner
+        ) {
+          this.refreshList();
+        }
+      }
+    }
+  },
+  retryList() {
+    app.clickSound();
+    return this.refreshList();
+  },
+  retryMore() {
+    app.clickSound();
+    return this.getWrongQuestion(this.data.page + 1);
+  },
+  loginAndLoad() {
+    app.clickSound();
+    return app.checkLogin(() => {
+      if (this._visible && !this._disposed) this.refreshList();
+    });
   },
   longpressQuestion: function (e) {
     app.clickSound();
     var id = e.mark.i;
     var i = e.mark.ii;
+    if (this._deleting || this._listFlight) return;
+    this._deleteIntent = {
+      id,
+      owner: this._owner,
+      generation: this._generation,
+    };
     this.setData({
       delete_id: id,
       delete_index: i,
@@ -110,12 +191,9 @@ Page({
   },
   showAnswer: function (e) {
     var id = e.mark.i;
-    var ids = this.data.show_answer_ids;
-    if (ids.indexOf(id) >= 0) {
-      ids.pop(id);
-    } else {
-      ids.push(id);
-    }
+    const ids = this.data.show_answer_ids.includes(id)
+      ? this.data.show_answer_ids.filter((value) => value !== id)
+      : this.data.show_answer_ids.concat(id);
     this.setData({
       show_answer_ids: ids,
     });
@@ -162,81 +240,104 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    if (typeof wx.hideShareMenu === "function") {
+    this._visible = true;
+    if (typeof wx.hideShareMenu === "function")
       wx.hideShareMenu({ menus: ["shareAppMessage", "shareTimeline"] });
-    }
+    if (
+      this._owner !== getSessionIdentity() ||
+      this._deleteRefreshOwner === getSessionIdentity() ||
+      (this.data.view_state === "loading" && !this._listFlight)
+    )
+      return this.refreshList();
   },
 
   /**
    * 生命周期函数--监听页面隐藏
    */
-  onHide() {},
+  onHide() {
+    this._deleteIntent = null;
+    if (this.popup) this.popup.hidePopup();
+    this._visible = false;
+    this._generation = (this._generation || 0) + 1;
+    this._listFlight = null;
+    this.setData({ loading_str: "" });
+  },
 
   /**
    * 生命周期函数--监听页面卸载
    */
-  onUnload() {},
+  onUnload() {
+    this._disposed = true;
+    this.onHide();
+  },
 
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */
   onPullDownRefresh() {
-    this.setData({
-      question_list: [],
-      no_more_data: 0,
-      page: 1,
-      size: 12,
-      loading_str: "",
-      show_tip: 1,
-      show_answer_ids: [],
-      delete_id: 0,
-      delete_index: -1,
-      show_feedback: false,
-      current_question_id: 0,
-    });
-    this.onLoad();
+    return this.refreshList();
   },
 
   /**
    * 页面上拉触底事件的处理函数
    */
   onReachBottom() {
-    if (this.data.no_more_data == 0) {
-      this.setData({
-        page: this.data.page + 1,
-      });
-      this.getWrongQuestion();
-    }
+    if (
+      this.data.view_state === "ready" &&
+      !this.data.no_more_data &&
+      !this.data.more_error &&
+      !this._listFlight
+    )
+      return this.getWrongQuestion(this.data.page + 1);
   },
 
+  reconcileWrongDeletion(owner, message) {
+    if (this._disposed || owner !== getSessionIdentity()) return;
+    this._deleteRefreshOwner = owner;
+    if (this._visible) {
+      if (message) showToast(message);
+      return this.refreshList();
+    }
+  },
   popupConfirm: function () {
     this.popup.hidePopup();
-    var id = this.data.delete_id;
-    var i = this.data.delete_index;
-    httpDELETE("api/question/delete-wrong-question", {
-      id: id,
-    })
+    const intent = this._deleteIntent;
+    this._deleteIntent = null;
+    if (
+      !intent ||
+      this._deleting ||
+      !this.isHistoryCurrent(intent.owner, intent.generation) ||
+      !this.data.question_list.some((item) => item.id === intent.id)
+    )
+      return;
+    this._deleting = true;
+    return httpDELETE("api/question/delete-wrong-question", { id: intent.id })
       .then((res) => {
-        if (res.data.code != 10000) {
-          showToast(res.data.message);
-          return;
+        if (this._disposed || intent.owner !== getSessionIdentity()) return;
+        if (!res || !res.data || Number(res.data.code) !== 10000)
+          return this.reconcileWrongDeletion(
+            intent.owner,
+            (res && res.data && res.data.message) || "删除结果暂未确认，请重试",
+          );
+        if (res.data.data && res.data.data.result) {
+          // A write affects the current offset even if it started in an older view.
+          return this.reconcileWrongDeletion(intent.owner, "删除成功");
         }
-        if (res.data.data.result) {
-          showToast("删除成功");
-          var data = this.data.question_list;
-          data.splice(i, 1);
-          this.setData({
-            question_list: data,
-          });
-        } else {
+        if (this.isHistoryCurrent(intent.owner, intent.generation))
           showToast("删除失败");
-        }
       })
-      .catch(() => {
-        showToast("网络异常");
+      .catch(() =>
+        this.reconcileWrongDeletion(
+          intent.owner,
+          "删除结果暂未确认，正在重新加载",
+        ),
+      )
+      .finally(() => {
+        this._deleting = false;
       });
   },
   popupCancel: function () {
+    this._deleteIntent = null;
     this.popup.hidePopup();
   },
   openWrongQuestionPoster(e) {

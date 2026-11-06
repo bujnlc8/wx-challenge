@@ -125,7 +125,27 @@ test("homepage shows current category and validates challenge count again on eve
   s.storage.set("challenge_question_count", 501);
   s.page.onShow();
   assert.equal(s.page.data.challenge_question_count, 50);
-  assert.deepEqual(s.navigations, ["/pages/help/help"]);
+  assert.deepEqual(s.navigations, []);
+});
+
+test("first entry and manual login keep the home page without opening help", () => {
+  const s = setup({ uid: 0 });
+  s.page.onLoad();
+  s.page.onShow();
+  assert.deepEqual(s.navigations, []);
+  s.storage.set("uid", 7);
+  s.storage.set("token", "token-7");
+  s.page.goToLogin();
+  s.page.onShow();
+  assert.equal(s.page.data.logined, 1);
+  assert.deepEqual(s.navigations, []);
+});
+
+test("a legacy global help flag cannot navigate when returning to the home page", () => {
+  const s = setup();
+  s.app.show_help_tip = 1;
+  s.page.onShow();
+  assert.deepEqual(s.navigations, []);
 });
 
 // Empty results must not be rendered until a successful response; failures remain retryable.

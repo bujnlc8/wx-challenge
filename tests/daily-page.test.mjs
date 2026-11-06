@@ -91,7 +91,11 @@ test("failed preference save waits for the already-open subscription before rele
   };
   p.onShow();
   loads = 0;
+  p.loadReminder = () => {
+    loads++;
+  };
   p.data.view_state = "ready";
+  p.data.reminder_state = "ready";
   p._subscriptions = { request: () => request };
   p.notifySubscription = () => {
     notified++;
@@ -145,3 +149,112 @@ for (const completed of ["true", 1, null])
     assert.equal(s.page.data.view_state, "error");
     assert.equal(s.page.data.today, null);
   });
+
+function deferredDaily() {
+  const requests = [];
+  const s = harness({
+    httpGET: (path) =>
+      new Promise((resolve, reject) =>
+        requests.push({ path, resolve, reject }),
+      ),
+  });
+  return {
+    ...s,
+    requests,
+    today: () => requests.find((r) => r.path.endsWith("/today")),
+    reminder: () => requests.find((r) => r.path.endsWith("/reminder")),
+  };
+}
+const ok = (data) => ({ data: { code: 10000, data } });
+const flush = async () => {
+  for (let i = 0; i < 12; i++) await Promise.resolve();
+};
+
+test("a delayed reminder never holds up the daily question or its primary action", async () => {
+  const s = deferredDaily();
+  const task = s.page.loadDaily();
+  s.today().resolve(ok({ question_id: 42, completed: false }));
+  await flush();
+  assert.equal(s.page.data.view_state, "ready");
+  assert.equal(s.page.data.reminder_state, "loading");
+  let destination;
+  s.setNavigate((url) => {
+    destination = url;
+  });
+  s.page.startDaily();
+  assert.match(destination, /question_id=42/);
+  s.reminder().resolve(ok({ enabled: true, credits: 1 }));
+  await task;
+  await flush();
+  assert.equal(s.page.data.reminder_state, "ready");
+});
+
+test("reminder failure is recoverable on its own without reloading the usable question", async () => {
+  const s = deferredDaily();
+  const task = s.page.loadDaily();
+  s.today().resolve(ok({ question_id: 42, completed: false }));
+  s.reminder().reject(Error("reminder unavailable"));
+  await task;
+  await flush();
+  assert.equal(s.page.data.view_state, "ready");
+  assert.equal(s.page.data.reminder_state, "error");
+  assert.match(s.page.data.reminder_error, /reminder unavailable/);
+  const today = s.page.data.today;
+  const retry = s.page.loadReminder();
+  assert.equal(s.requests.length, 3);
+  assert.ok(s.requests[2].path.endsWith("/reminder"));
+  s.requests[2].resolve(ok({ enabled: true, credits: 2 }));
+  await retry;
+  assert.equal(s.page.data.reminder_state, "ready");
+  assert.equal(s.page.data.credits, 2);
+  assert.equal(s.page.data.today, today);
+});
+
+test("a question failure does not erase independently loaded reminder settings", async () => {
+  const s = deferredDaily();
+  const task = s.page.loadDaily();
+  s.reminder().resolve(ok({ enabled: true, credits: 2 }));
+  s.today().reject(Error("today unavailable"));
+  await task;
+  await flush();
+  assert.equal(s.page.data.view_state, "error");
+  assert.equal(s.page.data.reminder_state, "ready");
+  assert.equal(s.page.data.enabled, true);
+});
+
+test("an earlier reminder response cannot overwrite a newer settings retry or a hidden page", async () => {
+  const s = deferredDaily();
+  const old = s.page.loadReminder();
+  const current = s.page.loadReminder();
+  s.requests[1].resolve(ok({ enabled: true, credits: 3 }));
+  await current;
+  s.requests[0].resolve(ok({ enabled: false, credits: 0 }));
+  await old;
+  assert.equal(s.page.data.credits, 3);
+  const hidden = s.page.loadReminder();
+  s.page.onHide();
+  s.requests[2].resolve(ok({ enabled: false, credits: 0 }));
+  await hidden;
+  assert.equal(s.page.data.enabled, true);
+});
+
+test("unknown reminder settings cannot trigger preference saves or native subscriptions", async () => {
+  let calls = 0;
+  const s = harness({
+    httpPOST: () => {
+      calls++;
+      return Promise.resolve(ok({}));
+    },
+  });
+  s.page.data.view_state = "ready";
+  s.page.data.reminder_state = "error";
+  s.page._subscriptions = {
+    request: () => {
+      calls++;
+      return Promise.resolve({ choice: "accept" });
+    },
+  };
+  await s.page.toggleReminder({ detail: { value: true } });
+  await s.page.subscribeReminder();
+  assert.equal(calls, 0);
+});

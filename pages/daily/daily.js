@@ -42,6 +42,8 @@ Page({
     pending: false,
     error_message: "",
     next_send_time: "",
+    reminder_state: "loading",
+    reminder_error: "",
     activity_state: "loading",
     activity: null,
     activity_selected: null,
@@ -63,6 +65,7 @@ Page({
     clearAuthSession();
     this._operation = (this._operation || 0) + 1;
     this._activityOperation = (this._activityOperation || 0) + 1;
+    this._reminderOperation = (this._reminderOperation || 0) + 1;
     this._loginOperation = (this._loginOperation || 0) + 1;
     this._owner = account();
     this._templateId = null;
@@ -74,6 +77,8 @@ Page({
       pending: false,
       error_message: "",
       next_send_time: "",
+      reminder_state: "idle",
+      reminder_error: "",
       activity_state: "idle",
       activity: null,
       activity_selected: null,
@@ -96,6 +101,8 @@ Page({
           credits: 0,
           today: null,
           view_state: "loading",
+          reminder_state: "loading",
+          reminder_error: "",
           activity_state: "loading",
           activity: null,
           activity_selected: null,
@@ -110,10 +117,12 @@ Page({
   onHide() {
     this._visible = false;
     this._hidden = true;
+    this._reminderOperation = (this._reminderOperation || 0) + 1;
     this._operation = (this._operation || 0) + 1;
   },
   onUnload() {
     this._disposed = true;
+    this._reminderOperation = (this._reminderOperation || 0) + 1;
     this._activityOperation = (this._activityOperation || 0) + 1;
     this._operation = (this._operation || 0) + 1;
   },
@@ -137,12 +146,12 @@ Page({
     this.setData({ view_state: "loading", error_message: "" });
     const loading = showLoading({ title: "准备今日挑战" });
     try {
-      const result = await Promise.all([
-        httpGET("api/daily-challenge/today", {}).then(payload),
-        httpGET("api/daily-challenge/reminder", {}).then(payload),
-      ]);
+      const todayRequest = httpGET("api/daily-challenge/today", {}).then(
+        payload,
+      );
+      this.loadReminder();
+      const today = await todayRequest;
       if (!this.isCurrent(operation, owner)) return;
-      const [today, reminder] = result;
       if (
         !today ||
         !Number.isInteger(Number(today.question_id)) ||
@@ -154,15 +163,11 @@ Page({
         typeof today.completed !== "boolean"
       )
         throw new Error("今日完成状态暂时不可用");
-      this._templateId = reminder.template_id || DAILY_TEMPLATE_ID;
       this.setData({
         view_state: "ready",
         today: { ...today, completed: today.completed === true },
         daily_action_label:
           today.completed === true ? "再答一次" : "开始今日挑战",
-        enabled: reminder.enabled === true,
-        credits: Number(reminder.credits) || 0,
-        next_send_time: reminder.next_send_time || "",
       });
     } catch (error) {
       if (this.isCurrent(operation, owner)) {
@@ -176,6 +181,56 @@ Page({
       }
     } finally {
       hideLoading(loading);
+    }
+  },
+  isReminderCurrent(operation, owner) {
+    return (
+      !this._disposed &&
+      this._visible !== false &&
+      operation === this._reminderOperation &&
+      owner === account()
+    );
+  },
+  async loadReminder(event) {
+    if (this.data.pending) return;
+    if (event && event.type === "tap") app.clickSound();
+    const owner = account();
+    if (!owner) {
+      this.setData({ reminder_state: "idle", reminder_error: "" });
+      return;
+    }
+    const operation = (this._reminderOperation =
+      (this._reminderOperation || 0) + 1);
+    this._templateId = null;
+    this.setData({ reminder_state: "loading", reminder_error: "" });
+    try {
+      const reminder = payload(
+        await httpGET("api/daily-challenge/reminder", {}),
+      );
+      if (!this.isReminderCurrent(operation, owner)) return;
+      if (
+        !reminder ||
+        typeof reminder.enabled !== "boolean" ||
+        !Number.isFinite(Number(reminder.credits)) ||
+        Number(reminder.credits) < 0
+      )
+        throw Error("提醒设置暂时不可用，请重试");
+      this._templateId = reminder.template_id || DAILY_TEMPLATE_ID;
+      this.setData({
+        reminder_state: "ready",
+        reminder_error: "",
+        enabled: reminder.enabled,
+        credits: Number(reminder.credits),
+        next_send_time: reminder.next_send_time || "",
+      });
+    } catch (error) {
+      if (!this.isReminderCurrent(operation, owner)) return;
+      if (error.authentication) this.expireDailySession(owner);
+      else
+        this.setData({
+          reminder_state: "error",
+          reminder_error: error.message || "提醒设置暂时无法加载",
+        });
     }
   },
   async loadActivity(event) {
@@ -269,12 +324,14 @@ Page({
     });
   },
   async toggleReminder(event) {
-    if (this.data.view_state !== "ready" || this.data.pending) return;
+    if (this.data.reminder_state !== "ready" || !account() || this.data.pending)
+      return;
     app.clickSound();
     const enabled = event.detail.value === true;
     const previous = this.data.enabled;
     const owner = account();
-    const operation = (this._operation = (this._operation || 0) + 1);
+    const operation = (this._reminderOperation =
+      (this._reminderOperation || 0) + 1);
     // Request immediately while still inside the native switch's gesture callback.
     const subscription =
       enabled && !previous
@@ -289,13 +346,13 @@ Page({
       const reminder = payload(
         await httpPOST("api/daily-challenge/reminder", { enabled }),
       );
-      if (this.isCurrent(operation, owner))
+      if (this.isReminderCurrent(operation, owner))
         this.setData({
           enabled: reminder.enabled === true,
           credits: Number(reminder.credits) || 0,
         });
     } catch (error) {
-      if (error.authentication && this.isCurrent(operation, owner)) {
+      if (error.authentication && this.isReminderCurrent(operation, owner)) {
         this.expireDailySession(owner);
         return;
       }
@@ -304,7 +361,7 @@ Page({
     // A native request already in flight can still accept and enable the server preference.
     // Always settle it before releasing this operation and refreshing canonical settings.
     const outcome = subscription ? await subscription : null;
-    if (this.isCurrent(operation, owner)) {
+    if (this.isReminderCurrent(operation, owner)) {
       if (outcome) this.notifySubscription(outcome);
       if (
         saveError &&
@@ -312,36 +369,39 @@ Page({
       )
         showToast(saveError.message || "保存失败，请重试");
       this.setData({ pending: false });
-      this.loadDaily();
+      this.loadReminder();
     } else if (
       !this._disposed &&
       this._visible &&
       owner === account() &&
       !this.data.pending
     ) {
-      this.loadDaily();
+      this.loadReminder();
     }
   },
 
   async subscribeReminder() {
-    if (this.data.view_state !== "ready" || this.data.pending) return;
+    if (this.data.reminder_state !== "ready" || !account() || this.data.pending)
+      return;
     app.clickSound();
     const owner = account();
-    const operation = (this._operation = (this._operation || 0) + 1);
+    const operation = (this._reminderOperation =
+      (this._reminderOperation || 0) + 1);
     const request = this._subscriptions.request(this._templateId);
     this.setData({ pending: true });
     try {
       const result = await request;
-      if (this.isCurrent(operation, owner)) this.notifySubscription({ result });
+      if (this.isReminderCurrent(operation, owner))
+        this.notifySubscription({ result });
     } catch (error) {
-      if (this.isCurrent(operation, owner)) {
+      if (this.isReminderCurrent(operation, owner)) {
         if (error.authentication) this.expireDailySession(owner);
         else this.notifySubscription({ error });
       }
     } finally {
-      if (this.isCurrent(operation, owner)) {
+      if (this.isReminderCurrent(operation, owner)) {
         this.setData({ pending: false });
-        this.loadDaily();
+        this.loadReminder();
       }
     }
   },

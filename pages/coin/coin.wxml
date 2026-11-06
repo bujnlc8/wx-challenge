@@ -8,7 +8,10 @@
     </view>
   </view>
   <view wx:if="{{no_more_data == 1 && record_list.length > 0}}" class="list-footer">已显示全部记录</view>
-  <view wx:if="{{record_list.length == 0 && !loading_str}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-coin.png" mode="aspectFit" /><view class="empty-title">还没有百科币记录</view><view class="empty-description">参与挑战，积累你的第一份收获</view></view>
+  <view wx:if="{{view_state == 'empty'}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-coin.png" mode="aspectFit" /><view class="empty-title">还没有百科币记录</view><view class="empty-description">参与挑战，积累你的第一份收获</view></view>
+  <view wx:if="{{view_state == 'error'}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-coin.png" mode="aspectFit" /><view class="empty-title">百科币明细暂时打不开</view><view class="history-error-copy">{{error_message}}</view><button class="history-retry" bindtap="retryList" hover-class="button-pressed">重新加载</button></view>
+  <view wx:if="{{view_state == 'logged-out'}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-coin.png" mode="aspectFit" /><view class="empty-title">登录后查看百科币明细</view><view class="history-error-copy">查看你的收入与支出记录</view><button class="history-retry" bindtap="loginAndLoad" hover-class="button-pressed">去登录</button></view>
+  <view wx:if="{{more_error}}" class="history-more-error"><view class="history-error-copy">{{more_error}}</view><button class="history-retry" bindtap="retryMore" hover-class="button-pressed">重试加载更多</button></view>
   <view wx:if="{{loading_str}}" class="list-footer">{{loading_str}}</view>
 </view>
 <ui-feedback state="{{ui_feedback}}" />

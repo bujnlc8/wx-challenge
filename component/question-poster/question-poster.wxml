@@ -9,13 +9,13 @@
     <view wx:if="{{loading}}" class="poster-state">
       <view class="poster-spinner"></view>
       <text class="poster-state__title">{{appMode ? '正在生成分享海报' : '正在生成题目海报'}}</text>
-      <text class="poster-state__description">{{appMode ? '正在准备小程序码，稍等片刻' : '正在准备完整题目和专属小程序码'}}</text>
+      <text class="poster-state__description">{{appMode ? '正在绘制海报，稍等片刻' : '正在准备完整题目和专属小程序码'}}</text>
     </view>
     <view wx:elif="{{error}}" class="poster-state">
       <image class="poster-empty" src="/images/ui-empty-question.svg" mode="aspectFit"></image>
-      <text class="poster-state__title">海报暂时无法生成</text>
+      <text class="poster-state__title">{{appMode ? '海报暂时无法读取' : '海报暂时无法生成'}}</text>
       <text class="poster-state__description">{{error}}</text>
-      <button class="poster-button poster-button--primary poster-retry" bindtap="retry" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">重新生成</button>
+      <button class="poster-button poster-button--primary poster-retry" bindtap="retry" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">{{appMode ? '重新打开' : '重新生成'}}</button>
     </view>
     <block wx:elif="{{imagepath}}">
       <view class="poster-scroll">

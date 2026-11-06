@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 function render(env) {
   const source = readFileSync(
-    new URL("../utils/question-poster-render.js", import.meta.url),
+    new URL("../design-demos/app-poster-render.js", import.meta.url),
     "utf8",
   ).replace(/export\s*\{[\s\S]*?\};?\s*$/, "");
   const scope = vm.createContext({});
@@ -54,11 +54,19 @@ test("app poster keeps the 3:4 canvas and full unclipped code with a rounded log
   const code = result.images.find((draw) => draw.image === result.code);
   const logo = result.images.find((draw) => draw.image === result.logo);
   assert.equal(result.images.length, 2);
-  assert.equal(code.bounds.length, 4, "use the full image, without source crops");
-  assert.equal(code.clipDepth, 0, "the code must not inherit the brand clipping");
+  assert.equal(
+    code.bounds.length,
+    4,
+    "use the full image, without source crops",
+  );
+  assert.equal(
+    code.clipDepth,
+    0,
+    "the code must not inherit the brand clipping",
+  );
   const [x, y, width, height] = code.bounds;
   assert.equal(width, height);
-  assert.ok(width >= 300, "retain a usable code area in the shared image");
+  assert.equal(width, 344, "preserve the provided code at its original size");
   assert.ok(x >= 32 && y >= 32);
   assert.ok(x + width <= 900 - 32 && y + height <= 1200 - 32);
   assert.equal(logo.clipDepth, 1, "retain the real logo's rounded clipping");
@@ -74,19 +82,15 @@ test("app poster keeps the 3:4 canvas and full unclipped code with a rounded log
   }
 });
 
-test("app poster uses the exact slogan and states each runtime's access honestly", () => {
+test("the fixed app poster uses the exact slogan and the same provided code for all runtimes", () => {
   for (const env of ["release", "trial", "develop"]) {
     const { text } = render(env);
-    assert.ok(text.join("").includes("知识无界，挑战不停"));
+    assert.ok(text.join("").includes("知识无界挑战不停"));
     assert.ok(text.includes("百科知识挑战"));
     assert.ok(text.includes("扫码开启知识挑战"));
-    for (const label of ["挑战", "练习", "错题"]) assert.ok(text.includes(label));
+    for (const label of ["挑战", "练习", "错题"])
+      assert.ok(text.includes(label));
     const restrictions = text.filter((value) => value.includes("仅"));
-    assert.deepEqual(
-      restrictions,
-      env === "release"
-        ? []
-        : [env === "trial" ? "体验版 · 仅体验成员可识别" : "开发版 · 仅开发成员可识别"],
-    );
+    assert.deepEqual(restrictions, []);
   }
 });

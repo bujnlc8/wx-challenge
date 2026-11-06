@@ -219,6 +219,134 @@ test("list pagination deduplicates and cancellation resets cursor so no shifted 
   );
   assert.equal(s.calls.filter((x) => /answer|submit/.test(x.path)).length, 0);
 });
+
+test("returning without favorite changes preserves loaded pages and avoids another GET", async () => {
+  const s = runtime(),
+    p = page(s);
+  s.calls[0].resolve(
+    ok({
+      items: [{ question_id: 1, content: "第一题", options: "甲|乙" }],
+      total: 3,
+      page: 1,
+      size: 1,
+    }),
+  );
+  await flush();
+  p.onReachBottom();
+  s.calls[1].resolve(
+    ok({
+      items: [{ question_id: 2, content: "第二题", options: "甲|乙" }],
+      total: 3,
+      page: 2,
+      size: 1,
+    }),
+  );
+  await flush();
+  const loaded = p.data.question_list;
+  p.onHide();
+  p.onShow();
+  await flush();
+  assert.equal(s.calls.length, 2);
+  assert.equal(
+    p.data.question_list,
+    loaded,
+    "leave rendered rows in place so the page keeps its scroll position",
+  );
+  assert.equal(p.data.page, 2);
+  assert.equal(p.data.view_state, "ready");
+});
+
+test("a confirmed favorite change while away refreshes the same-account list", async () => {
+  const s = runtime(),
+    p = page(s);
+  s.calls[0].resolve(ok({ items: [], total: 0, page: 1, size: 12 }));
+  await flush();
+  p.onHide();
+  const added = s.api.setFavorite(42, true);
+  s.calls[1].resolve(ok({ question_id: 42, favorite: true }));
+  await added;
+  p.onShow();
+  await flush();
+  assert.equal(s.calls.length, 3);
+  assert.equal(s.calls[2].data.page, 1);
+  s.calls[2].resolve(
+    ok({
+      items: [{ question_id: 42, content: "新增收藏", options: "甲|乙" }],
+      total: 1,
+      page: 1,
+      size: 12,
+    }),
+  );
+  await flush();
+  assert.equal(p.data.question_list[0].question_id, 42);
+});
+
+test("returning after an interrupted append releases loading and can retry the same page", async () => {
+  const s = runtime(),
+    p = page(s);
+  s.calls[0].resolve(
+    ok({
+      items: [{ question_id: 1, content: "题目", options: "甲|乙" }],
+      total: 3,
+      page: 1,
+      size: 1,
+    }),
+  );
+  await flush();
+  p.onReachBottom();
+  p.onHide();
+  p.onShow();
+  await flush();
+  assert.equal(p.data.loading_more, false);
+  assert.equal(p.data.page, 1);
+  p.onReachBottom();
+  assert.equal(s.calls[2].data.page, 2);
+  s.calls[1].resolve(
+    ok({
+      items: [{ question_id: 99, content: "旧响应", options: "甲|乙" }],
+      total: 3,
+      page: 2,
+      size: 1,
+    }),
+  );
+  s.calls[2].resolve(
+    ok({
+      items: [{ question_id: 2, content: "第二题", options: "甲|乙" }],
+      total: 3,
+      page: 2,
+      size: 1,
+    }),
+  );
+  await flush();
+  assert.deepEqual(
+    Array.from(p.data.question_list, (item) => item.question_id),
+    [1, 2],
+  );
+});
+
+test("a settled uncertain write while away still revalidates the favorite list", async () => {
+  const s = runtime(),
+    p = page(s);
+  s.calls[0].resolve(
+    ok({
+      items: [{ question_id: 1, content: "题目", options: "甲|乙" }],
+      total: 1,
+      page: 1,
+      size: 12,
+    }),
+  );
+  await flush();
+  p.onHide();
+  const write = s.api.setFavorite(1, false);
+  s.calls[1].reject(Error("response lost after possible commit"));
+  await assert.rejects(write);
+  p.onShow();
+  await flush();
+  assert.equal(s.calls.length, 3);
+  s.calls[2].resolve(ok({ items: [], total: 0, page: 1, size: 12 }));
+  await flush();
+  assert.equal(p.data.view_state, "empty");
+});
 test("list hides old account records and ignores late pagination after account change", async () => {
   const s = runtime(),
     p = page(s);

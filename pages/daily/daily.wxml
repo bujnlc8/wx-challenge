@@ -32,15 +32,20 @@
       <view wx:elif="{{activity_state == 'error'}}" class="activity-error"><image src="/images/ui-empty-question.png" mode="aspectFit" /><text>答题记录暂时打不开</text><button bindtap="loadActivity" class="activity-retry" hover-class="button-pressed">重新加载</button></view>
       <view wx:else class="activity-loading">正在加载答题记录…</view>
     </view>
-    <view class="reminder-card surface">
-      <view class="reminder-row"><view><view class="reminder-title">每日提醒</view><view class="reminder-time">早上 <text>08:00</text></view></view><switch color="#2864eb" checked="{{enabled}}" disabled="{{pending}}" bindchange="toggleReminder" aria-label="每日八点提醒" /></view>
-      <view class="reminder-divider"></view>
-      <view class="reminder-copy">请允许<text class="reminder-link" bindtap="subscribeReminder" aria-role="button">订阅消息</text>，接收下一次题目提醒</view>
-      <view class="reminder-status" wx:if="{{enabled && credits > 0}}">已获得 {{credits}} 次提醒授权</view>
-      <view class="reminder-note">开启后，答题时每天最多提示一次订阅。当前为一次性订阅，每次允许后可收到一条提醒。</view>
-    </view>
+
   </view>
   <view class="daily-state" wx:elif="{{view_state == 'logged-out'}}"><image src="/images/ui-empty-question.png" mode="aspectFit" /><view class="state-title">登录后开启每日挑战</view><view class="state-description">每天一道题，也可以订阅早上八点的提醒</view><button class="primary-button" bindtap="loginAndLoad" hover-class="button-pressed" hover-start-time="20" hover-stay-time="80">去登录</button></view>
   <view class="daily-state" wx:elif="{{view_state == 'error'}}"><image src="/images/ui-empty-question.png" mode="aspectFit" /><view class="state-title">今日挑战暂时打不开</view><view class="state-description">{{error_message}}</view><button class="state-retry" bindtap="loadDaily">重新加载</button></view>
+  <view wx:if="{{view_state != 'logged-out'}}" class="reminder-card surface">
+    <view class="reminder-row"><view><view class="reminder-title">每日提醒</view><view class="reminder-time">早上 <text>08:00</text></view></view><switch color="#2864eb" checked="{{enabled}}" disabled="{{pending || reminder_state != 'ready'}}" bindchange="toggleReminder" aria-label="每日八点提醒" /></view>
+    <view class="reminder-divider"></view>
+    <view wx:if="{{reminder_state == 'error'}}" class="reminder-error"><view>提醒设置暂时无法加载</view><text>{{reminder_error}}</text><button class="activity-retry" bindtap="loadReminder" hover-class="button-pressed">重新加载提醒</button></view>
+    <view wx:elif="{{reminder_state != 'ready'}}" class="reminder-loading">正在读取提醒设置…</view>
+    <block wx:else>
+      <view class="reminder-copy">请允许<text class="reminder-link" bindtap="subscribeReminder" aria-role="button">订阅消息</text>，接收下一次题目提醒</view>
+      <view class="reminder-status" wx:if="{{enabled && credits > 0}}">已获得 {{credits}} 次提醒授权</view>
+      <view class="reminder-note">开启后，答题时每天最多提示一次订阅。当前为一次性订阅，每次允许后可收到一条提醒。</view>
+    </block>
+  </view>
 </view>
 <ui-feedback state="{{ui_feedback}}" />

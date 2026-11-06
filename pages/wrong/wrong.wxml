@@ -3,7 +3,7 @@
 <view class="board" catchtap="catchtouchmove" wx:if="{{show_tip == 1 || show_analysis}}" catchtouchmove="catchtouchmove"></view>
 <view class="history-page" style="padding-bottom: 32px;">
   <view class="wrong-heading"><view class="page-title">把错题，变成收获</view><view class="page-subtitle">点击题干查看答案，长按题目删除记录</view></view>
-	<view class="answer-legend" wx:if="{{question_list}}">
+	<view class="answer-legend" wx:if="{{question_list.length}}">
 		<view class="legend-swatch"></view>
 		<text >您的答案</text>
 		<view class="legend-swatch legend-correct"></view><text >正确答案</text>
@@ -50,7 +50,10 @@
 		</view>
 	</view>
 	<view wx:if="{{no_more_data == 1 && question_list.length > 0}}" class="list-footer">我是有底线滴 :)</view>
-	<view wx:if="{{question_list.length == 0 && !loading_str}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-question.png" mode="aspectFit" /><view class="empty-title">还没有错题记录</view><view class="empty-description">每一次认真思考，都是新的积累</view></view>
+    <view wx:if="{{view_state == 'empty'}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-question.png" mode="aspectFit" /><view class="empty-title">还没有错题记录</view><view class="empty-description">每一次认真思考，都是新的积累</view></view>
+    <view wx:if="{{view_state == 'error'}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-question.png" mode="aspectFit" /><view class="empty-title">错题记录暂时打不开</view><view class="history-error-copy">{{error_message}}</view><button class="history-retry" bindtap="retryList" hover-class="button-pressed">重新加载</button></view>
+    <view wx:if="{{view_state == 'logged-out'}}" class="illustrated-empty"><image class="empty-illustration" src="/images/ui-empty-question.png" mode="aspectFit" /><view class="empty-title">登录后查看错题记录</view><view class="history-error-copy">回顾答错的题目，巩固知识</view><button class="history-retry" bindtap="loginAndLoad" hover-class="button-pressed">去登录</button></view>
+    <view wx:if="{{more_error}}" class="history-more-error"><view class="history-error-copy">{{more_error}}</view><button class="history-retry" bindtap="retryMore" hover-class="button-pressed">重试加载更多</button></view>
 	<view wx:if="{{loading_str}}" class="list-footer">{{loading_str}}</view>
 </view>
 <view class="pop-tip" catchtap="catchtouchmove" wx:if="{{show_tip == 1}}" bindlongpress="closeTip">

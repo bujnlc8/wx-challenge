@@ -7,10 +7,8 @@ import {
   normalizeQuestion,
   layoutPoster,
   drawPoster,
-  drawAppPoster,
   runtimeEnvironment,
   validateShareCode,
-  validateAppShareCode,
   createPosterSession,
 } from "../../utils/question-poster-render";
 
@@ -21,10 +19,7 @@ function identity() {
   } catch (error) {
     /* Runtime is validated before requesting a code. */
   }
-  return JSON.stringify([
-    getSessionIdentity(),
-    env,
-  ]);
+  return JSON.stringify([getSessionIdentity(), env]);
 }
 function removeTemporary(path) {
   if (!path) return;
@@ -51,6 +46,16 @@ function loadImage(canvas, src) {
       reject(Error("题目图片读取失败，请检查网络后重试"));
     };
     image.src = src;
+  });
+}
+function localImagePath(src) {
+  return new Promise((resolve, reject) => {
+    wx.getImageInfo({
+      src,
+      success: (result) =>
+        result.path ? resolve(result.path) : reject(Error("empty path")),
+      fail: reject,
+    });
   });
 }
 function getCanvas(component) {
@@ -185,10 +190,17 @@ Component({
       });
       if (this._modalLock) this._modalLock.set(true);
       try {
+        if (appMode) {
+          this.setData({
+            loading: false,
+            imagepath: "/images/app-share-poster.png",
+          });
+          return;
+        }
         const id = Number(question && question.id);
-        if (!appMode && (!Number.isSafeInteger(id) || id <= 0))
+        if (!Number.isSafeInteger(id) || id <= 0)
           throw Error("题目暂未准备好，请稍后重试");
-        const content = appMode ? null : normalizeQuestion(this._question);
+        const content = normalizeQuestion(this._question);
         const env = runtimeEnvironment(wx);
         this.setData({
           environmentNote:
@@ -198,24 +210,22 @@ Component({
                 ? "体验版海报，仅体验成员可扫码进入"
                 : "开发版海报，仅开发成员可扫码进入",
         });
-        const response = await httpPOST(
-          appMode ? "api/common/share-code" : "api/question/share-code",
-          appMode
-            ? { env_version: env }
-            : { question_id: id, env_version: env },
-        );
+        const response = await httpPOST("api/question/share-code", {
+          question_id: id,
+          env_version: env,
+        });
         if (!current()) return;
         const result = response && response.data;
         if (!result || Number(result.code) !== 10000)
           throw Error(
             (result && result.message) || "小程序码暂时无法生成，请重试",
           );
-        if (appMode) validateAppShareCode(result.data, env);
-        else validateShareCode(result.data, id, env);
+        validateShareCode(result.data, id, env);
+        const code = result.data;
         // The component owns one canvas. Queue renders so older exports cannot race a newer drawing.
         const task = (this._renderQueue || Promise.resolve()).then(() => {
           if (!current()) return "";
-          return this.renderPoster(content, result.data, env, current, appMode);
+          return this.renderPoster(content, code, env, current);
         });
         this._renderQueue = task.catch(() => {});
         const path = await task;
@@ -235,17 +245,15 @@ Component({
         });
       }
     },
-    async renderPoster(question, code, env, current, appMode = false) {
+    async renderPoster(question, code, env, current) {
       let canvas;
       try {
         canvas = await getCanvas(this);
         if (!current()) return "";
         const sources = [];
-        const blocks = appMode
-          ? []
-          : question.blocks.concat(
-              ...question.options.map((option) => option.blocks),
-            );
+        const blocks = question.blocks.concat(
+          ...question.options.map((option) => option.blocks),
+        );
         for (const block of blocks) {
           if (block.type === "image" && !sources.includes(block.src))
             sources.push(block.src);
@@ -264,13 +272,10 @@ Component({
         const logo = await loadImage(canvas, "/images/ui-about-logo.png");
         if (!current()) return "";
         const context = canvas.getContext("2d");
-        const layout = appMode
-          ? { width: 900, height: 1200 }
-          : layoutPoster(context, question, images);
+        const layout = layoutPoster(context, question, images);
         canvas.width = layout.width;
         canvas.height = layout.height;
-        if (appMode) drawAppPoster(context, layout, qr, logo, env);
-        else drawPoster(context, layout, question, images, qr, logo, env);
+        drawPoster(context, layout, question, images, qr, logo, env);
         const path = await exportCanvas(canvas, this, layout);
         if (!current()) {
           removeTemporary(path);
@@ -312,16 +317,27 @@ Component({
         this._disposed ||
         !this.data.visible ||
         (!this.data.appMode && !this._question)
-      ) return;
+      )
+        return;
       app.clickSound();
       if (this.data.appMode) return this.openApp();
       if (this._question) return this.open(this._question);
     },
-    preview() {
+    async preview() {
       const current = this._current;
       if (!current || !current() || !this.data.imagepath) return;
       app.clickSound();
-      const path = this.data.imagepath;
+      let path = this.data.imagepath;
+      if (this.data.appMode) {
+        try {
+          path = await localImagePath(path);
+        } catch (error) {
+          if (current())
+            this.setData({ saveMessage: "海报读取失败，请重新打开海报后重试" });
+          return;
+        }
+        if (!current()) return;
+      }
       wx.previewImage({
         current: path,
         urls: [path],
@@ -331,14 +347,28 @@ Component({
         },
       });
     },
-    save() {
+    async save() {
       const current = this._current;
       if (!current || !current() || !this.data.imagepath || this.data.saving)
         return;
       app.clickSound();
       this.setData({ saving: true, saveMessage: "", albumDenied: false });
+      let path = this.data.imagepath;
+      if (this.data.appMode) {
+        try {
+          path = await localImagePath(path);
+        } catch (error) {
+          if (current())
+            this.setData({
+              saving: false,
+              saveMessage: "海报读取失败，请重新打开海报后重试",
+            });
+          return;
+        }
+        if (!current()) return;
+      }
       wx.saveImageToPhotosAlbum({
-        filePath: this.data.imagepath,
+        filePath: path,
         success: () => {
           if (!current()) return;
           this.setData({
@@ -392,7 +422,12 @@ Component({
     },
     handleImageError() {
       if (this._current && this._current())
-        this.setData({ error: "海报预览读取失败，请重新生成", imagepath: "" });
+        this.setData({
+          error: this.data.appMode
+            ? "海报预览读取失败，请重新打开"
+            : "海报预览读取失败，请重新生成",
+          imagepath: "",
+        });
     },
     preventTouch() {},
   },

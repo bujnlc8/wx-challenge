@@ -15,7 +15,6 @@ App({
   show_correct_answer: 1,
   category: 0,
   show_class_tip: 0,
-  show_help_tip: 0,
   show_analysis: 1,
   is_ios: false,
   global_data: {

@@ -1,3 +1,4 @@
+@import "../../styles/history-state.wxss";
 .wrong-heading {
   padding: 24px 20px 16px;
 }

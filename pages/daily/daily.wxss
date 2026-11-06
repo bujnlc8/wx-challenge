@@ -295,3 +295,7 @@
   color: #2056ce;
   font-size: 13px;
 }
+
+.reminder-loading, .reminder-error { color: #68758a; font-size: 13px; line-height: 1.8; }
+.reminder-error text { display: block; margin-top: 6px; word-break: break-word; }
+.reminder-error .activity-retry { margin-top: 12px; }

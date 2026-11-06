@@ -147,7 +147,11 @@ function requestFavorite(id, target) {
           entry.saving = false;
           entry.flight = null;
           // A failed write may have reached the server: require another GET before toggling.
-          if (saving) entry.known = false;
+          if (saving) {
+            entry.known = false;
+            // Invalidate list snapshots even after this uncertain write settles.
+            entry.writeRevision = ++favoriteWriteRevision;
+          }
           entry.error = (error && error.message) || "网络异常，请重试";
           notifyFavorite(id);
         }

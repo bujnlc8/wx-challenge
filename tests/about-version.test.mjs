@@ -54,9 +54,9 @@ test("about displays a packaged version in development and when account informat
     new Error("unavailable"),
   ]) {
     const page = load(info);
-    assert.equal(page.data.version, "2026.11.01");
+    assert.equal(page.data.version, "2026.11.07");
     page.onLoad();
-    assert.equal(page.data.version, "2026.11.01");
+    assert.equal(page.data.version, "2026.11.07");
   }
 });
 

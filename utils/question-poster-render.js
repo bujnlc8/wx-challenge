@@ -131,7 +131,14 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 function layoutPoster(ctx, question, images) {
-  function layoutBlocks(blocks, x, width, top, fixedImageHeight) {
+  function layoutBlocks(
+    blocks,
+    x,
+    width,
+    top,
+    fixedImageHeight,
+    fontSize = 32,
+  ) {
     let y = top;
     const items = blocks.map((block) => {
       const item = { ...block, x, y, width };
@@ -151,9 +158,10 @@ function layoutPoster(ctx, question, images) {
         }
       } else {
         const isVideo = block.type === "video";
-        item.fontSize = isVideo ? 30 : 32;
-        item.lineHeight = isVideo ? 44 : 46;
-        ctx.font = item.fontSize + "px sans-serif";
+        item.fontSize = isVideo ? 30 : fontSize;
+        item.lineHeight = isVideo ? 44 : Math.round(fontSize * 1.45);
+        ctx.font =
+          (item.fontSize >= 38 ? "600 " : "") + item.fontSize + "px sans-serif";
         item.lines = wrapText(
           ctx,
           isVideo ? "本题含视频，扫码后查看完整视频" : block.text,
@@ -167,7 +175,7 @@ function layoutPoster(ctx, question, images) {
     });
     return { items, bottom: items.length ? y - 12 : top };
   }
-  const main = layoutBlocks(question.blocks, 72, 756, 210, 360);
+  let main = layoutBlocks(question.blocks, 72, 756, 210, 360);
   let y = main.bottom + 20;
   const optionGap = 16;
   const columnWidth = (784 - optionGap) / 2;
@@ -213,7 +221,51 @@ function layoutPoster(ctx, question, images) {
     }
     y += rowHeight + 12;
   }
-  const contentBottom = (options.length ? y - 12 : main.bottom) + 16;
+  let contentBottom = (options.length ? y - 12 : main.bottom) + 16;
+  const textOnly =
+    question.blocks.every((block) => block.type === "text") &&
+    question.options.every((option) =>
+      option.blocks.every((block) => block.type === "text"),
+    );
+  // A short text question gets room to breathe. Media and long content keep
+  // their compact, complete layout instead of inheriting this extra spacing.
+  if (textOnly && twoColumns && contentBottom <= 640) {
+    const enlarged = layoutBlocks(question.blocks, 72, 756, 0, 0, 40);
+    const rowHeights = [];
+    for (let index = 0; index < options.length; index += 2) {
+      rowHeights.push(
+        Math.max(
+          132,
+          ...options.slice(index, index + 2).map((option) => option.height),
+        ),
+      );
+    }
+    const groupHeight =
+      enlarged.bottom +
+      44 +
+      rowHeights.reduce((sum, height) => sum + height, 0) +
+      (rowHeights.length - 1) * 20;
+    const areaTop = 230,
+      areaBottom = 792;
+    if (groupHeight <= areaBottom - areaTop) {
+      const top = areaTop + (areaBottom - areaTop - groupHeight) / 2;
+      for (const block of enlarged.items) block.y += top;
+      enlarged.bottom += top;
+      main = enlarged;
+      let rowY = main.bottom + 44;
+      for (let index = 0; index < options.length; index += 2) {
+        const rowHeight = rowHeights[index / 2];
+        for (const option of options.slice(index, index + 2)) {
+          const offset = rowY - option.y + (rowHeight - option.height) / 2;
+          for (const block of option.blocks) block.y += offset;
+          option.y = rowY;
+          option.height = rowHeight;
+        }
+        rowY += rowHeight + 20;
+      }
+      contentBottom = 816;
+    }
+  }
   const height = Math.max(1200, contentBottom + 376);
   if (height > MAX_POSTER_HEIGHT)
     throw Error("题目内容过长，暂时无法生成完整海报，请选择其他题目");
@@ -253,16 +305,35 @@ function drawRoundedLogo(ctx, logo, x, y, size, radius) {
 function drawPoster(ctx, layout, question, images, code, logo, env) {
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillStyle = "#edf3ff";
+  ctx.fillStyle = "#f0f4fc";
   ctx.fillRect(0, 0, layout.width, layout.height);
-  if (logo) drawRoundedLogo(ctx, logo, 52, 30, 64, 16);
   ctx.fillStyle = "#2864eb";
-  ctx.font = "600 39px sans-serif";
-  ctx.fillText("百科知识挑战", logo ? 136 : 52, 42);
-  ctx.fillStyle = "#202b40";
-  ctx.font = "600 48px sans-serif";
+  ctx.fillRect(0, 0, layout.width, 270);
+  // Keep all decoration in the header, away from question images and the code.
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arcTo(900, 0, 900, 270, 0);
+  ctx.arcTo(900, 270, 0, 270, 0);
+  ctx.arcTo(0, 270, 0, 0, 0);
+  ctx.closePath();
+  ctx.clip();
+  roundedRect(ctx, 710, -120, 380, 380, 190, "#3972ed");
+  roundedRect(ctx, 738, -92, 324, 324, 162, "#2864eb");
+  ctx.restore();
+  if (logo) drawRoundedLogo(ctx, logo, 52, 30, 64, 18);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "600 32px sans-serif";
+  ctx.fillText("百科知识挑战", logo ? 136 : 52, 30);
+  ctx.fillStyle = "#dce8ff";
+  ctx.font = "22px sans-serif";
+  ctx.fillText("知识无界，挑战不停", logo ? 136 : 52, 74);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "600 50px sans-serif";
   ctx.fillText("这道题，你会吗？", 52, 120);
-  roundedRect(ctx, 36, 190, 828, layout.contentBottom - 190, 24, "#ffffff");
+  const cardHeight = Math.max(layout.contentBottom, layout.footerY - 28) - 190;
+  roundedRect(ctx, 36, 190, 828, cardHeight + 4, 28, "#dfe8f8");
+  roundedRect(ctx, 36, 190, 828, cardHeight, 28, "#ffffff");
   function drawBlocks(blocks) {
     for (const block of blocks) {
       if (block.type === "image") {
@@ -304,7 +375,10 @@ function drawPoster(ctx, layout, question, images, code, logo, env) {
           ctx.fillText("▶", block.x + 31, block.y + 32);
         }
         ctx.fillStyle = isVideo ? "#2864eb" : "#202b40";
-        ctx.font = block.fontSize + "px sans-serif";
+        ctx.font =
+          (block.fontSize >= 38 ? "600 " : "") +
+          block.fontSize +
+          "px sans-serif";
         block.lines.forEach((line, index) =>
           ctx.fillText(
             line,
@@ -323,29 +397,32 @@ function drawPoster(ctx, layout, question, images, code, logo, env) {
       option.y,
       option.width,
       option.height,
-      16,
-      "#f5f7fb",
+      20,
+      "#f1f5fd",
     );
+    const labelY = option.y + Math.min(44, (option.height - 46) / 2);
+    roundedRect(ctx, option.x + 12, labelY, 52, 46, 14, "#e2ebff");
     ctx.fillStyle = "#2864eb";
     ctx.font = "600 30px sans-serif";
-    ctx.fillText(option.label + ".", option.x + 20, option.y + 18);
+    ctx.fillText(option.label + ".", option.x + 20, labelY + 7);
     drawBlocks(option.blocks);
   }
   const footer = layout.footerY;
-  roundedRect(ctx, 36, footer, 828, 336, 24, "#ffffff");
+  roundedRect(ctx, 36, footer, 828, 336, 28, "#ffffff");
+  roundedRect(ctx, 72, footer + 36, 48, 6, 3, "#ffcf57");
   ctx.fillStyle = "#202b40";
-  ctx.font = "600 35px sans-serif";
-  ctx.fillText("扫码直接作答", 72, footer + 66);
+  ctx.font = "600 38px sans-serif";
+  ctx.fillText("扫码直接作答", 72, footer + 76);
   ctx.fillStyle = "#68758a";
-  ctx.font = "30px sans-serif";
-  ctx.fillText("长按识别小程序码", 72, footer + 126);
-  ctx.fillText("看看你能选对吗", 72, footer + 172);
+  ctx.font = "28px sans-serif";
+  ctx.fillText("长按识别小程序码", 72, footer + 140);
+  ctx.fillText("看看你能选对吗", 72, footer + 184);
   // Use the server's actual code pixels, in a dedicated white region.
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(code, 534, footer + 18, 300, 300);
   if (env !== "release") {
     ctx.fillStyle = "#916539";
-    ctx.font = "26px sans-serif";
+    ctx.font = "24px sans-serif";
     ctx.fillText(
       env === "trial"
         ? "体验版 · 仅体验成员可识别"
@@ -354,77 +431,6 @@ function drawPoster(ctx, layout, question, images, code, logo, env) {
       footer + 278,
     );
   }
-  return layout;
-}
-function drawAppPoster(ctx, layout, code, logo, env) {
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillStyle = "#edf2fa";
-  ctx.fillRect(0, 0, layout.width, layout.height);
-  roundedRect(ctx, 24, 24, 852, 1152, 40, "#ffffff");
-
-  // The brand and its message form one field; the code has its own white area.
-  ctx.save();
-  roundedRect(ctx, 40, 40, 820, 690, 30, "#2864eb");
-  ctx.clip();
-  roundedRect(ctx, 602, 254, 460, 460, 230, "#3972ed");
-  roundedRect(ctx, 630, 282, 404, 404, 202, "#2864eb");
-  roundedRect(ctx, 672, 324, 320, 320, 160, "#3972ed");
-  roundedRect(ctx, 700, 352, 264, 264, 132, "#2864eb");
-  ctx.restore();
-
-  ctx.imageSmoothingEnabled = true;
-  drawRoundedLogo(ctx, logo, 680, 92, 116, 28);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "600 40px sans-serif";
-  ctx.fillText("百科知识挑战", 92, 104);
-  roundedRect(ctx, 92, 188, 62, 6, 3, "#ffda63");
-
-  const slogan = "知识无界，挑战不停";
-  const sloganLines = slogan.split("，");
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "600 84px sans-serif";
-  ctx.fillText(sloganLines[0] + "，", 92, 278);
-  ctx.fillText(sloganLines[1], 92, 390);
-
-  ctx.fillStyle = "#739bf3";
-  ctx.fillRect(92, 566, 704, 1);
-  ctx.textAlign = "center";
-  for (const [index, title] of ["挑战", "练习", "错题"].entries()) {
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "500 30px sans-serif";
-    ctx.fillText(title, 208 + index * 242, 615);
-    if (index < 2) {
-      ctx.fillStyle = "#739bf3";
-      ctx.fillRect(328 + index * 242, 619, 1, 28);
-    }
-  }
-
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#202b40";
-  ctx.font = "600 34px sans-serif";
-  ctx.fillText("扫码开启知识挑战", 92, 842);
-  ctx.fillStyle = "#68758a";
-  ctx.font = "26px sans-serif";
-  ctx.fillText("长按识别小程序码", 92, 916);
-  ctx.fillText("与朋友一起挑战", 92, 960);
-  // Draw every server-code pixel without cropping or adding decoration over it.
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(code, 514, 790, 300, 300);
-  ctx.fillStyle = "#e8edf5";
-  ctx.fillRect(92, 1118, 704, 1);
-  ctx.textAlign = "center";
-  ctx.fillStyle = env === "release" ? "#68758a" : "#916539";
-  ctx.font = "22px sans-serif";
-  ctx.fillText(
-    env === "release"
-      ? "微信小程序"
-      : env === "trial"
-        ? "体验版 · 仅体验成员可识别"
-        : "开发版 · 仅开发成员可识别",
-    450,
-    1135,
-  );
   return layout;
 }
 function runtimeEnvironment(platform) {
@@ -463,14 +469,6 @@ function validateShareCode(code, questionId, env) {
   )
     throw Error("本题小程序码暂时不可用，请重试");
 }
-function validateAppShareCode(code, env) {
-  if (
-    !validCodeImage(code) ||
-    code.page !== "pages/index/index" ||
-    code.env_version !== env
-  )
-    throw Error("小程序码暂时不可用，请重试");
-}
 function createPosterSession(getIdentity) {
   let sequence = 0;
   return {
@@ -492,9 +490,7 @@ export {
   wrapText,
   layoutPoster,
   drawPoster,
-  drawAppPoster,
   runtimeEnvironment,
   validateShareCode,
-  validateAppShareCode,
   createPosterSession,
 };

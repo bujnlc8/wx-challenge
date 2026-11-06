@@ -101,6 +101,41 @@ test("one 360px question image and four short options still fit 3:4 without crop
   assert.ok(layout.contentBottom + 16 <= layout.footerY);
 });
 
+test("short text questions use the available card height while keeping all content clear of the code", () => {
+  const api = renderer(),
+    ctx = context();
+  const question = api.normalizeQuestion({
+    id: 1,
+    content: "太阳系中，体积最大的行星是哪一颗？",
+    options: ["地球", "木星", "土星", "海王星"],
+  });
+  const layout = api.layoutPoster(ctx, question, {});
+  assert.equal(layout.height, 1200);
+  assert.ok(
+    layout.blocks[0].fontSize >= 38,
+    "make the question readable in a shared thumbnail",
+  );
+  assert.ok(layout.options.every((option) => option.height >= 110));
+  const lastOptionBottom = Math.max(
+    ...layout.options.map((option) => option.y + option.height),
+  );
+  assert.ok(
+    lastOptionBottom >= layout.footerY - 150,
+    "avoid a large empty region under the options",
+  );
+  assert.ok(lastOptionBottom + 24 <= layout.footerY);
+  assert.ok(
+    layout.blocks.at(-1).y + layout.blocks.at(-1).height + 24 <=
+      layout.options[0].y,
+  );
+  for (const option of layout.options) {
+    for (const block of option.blocks) {
+      assert.ok(block.y >= option.y);
+      assert.ok(block.y + block.height <= option.y + option.height);
+    }
+  }
+});
+
 test("long options keep a full-width layout and all question and option characters", () => {
   const api = renderer(),
     ctx = context();

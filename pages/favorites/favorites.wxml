@@ -2,11 +2,10 @@
 <wxs src="../../utils/util.wxs" module="tools" />
 <view class="page-shell favorites-page">
   <view wx:if="{{view_state === 'ready'}}">
-    <view class="favorites-summary">共 {{total}} 道收藏题目</view>
+    <view class="favorites-summary"><view class="favorites-summary__count"><text class="favorites-summary__number">{{total}}</text><text>道收藏题目</text></view><text class="favorites-summary__note">随时回看，巩固所学</text></view>
     <view wx:for="{{question_list}}" wx:key="question_id" class="favorite-card surface">
       <view class="favorite-question-content"><rich-text wx:if="{{tools.isRichQuestion(item.content)}}" nodes="{{tools.questionHtml(item.content)}}" space="true" /><text wx:else>{{item.content}}</text></view>
-      <image wx:if="{{item.question_image && !item.is_video}}" class="favorite-question-image" src="{{item.question_image}}" mode="aspectFit" />
-      <video wx:if="{{item.question_image && item.is_video}}" class="favorite-question-video" src="{{item.question_image}}" object-fit="contain" />
+      <view wx:if="{{item.question_image}}" class="favorite-media"><image wx:if="{{!item.is_video}}" class="favorite-question-image" src="{{item.question_image}}" mode="aspectFit" /><video wx:else class="favorite-question-video" src="{{item.question_image}}" object-fit="contain" /></view>
       <view class="favorite-card-footer">
         <text class="favorite-created-at">{{item.created_at_text}}</text>
         <view class="favorite-footer-actions">

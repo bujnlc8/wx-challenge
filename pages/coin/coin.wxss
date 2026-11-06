@@ -1,3 +1,4 @@
+@import "../../styles/history-state.wxss";
 .coin-page {
   padding-bottom: 32px;
 }

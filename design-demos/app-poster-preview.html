@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" />
+  <title>百科知识挑战 · 固定分享海报</title>
+  <style>
+    body { margin: 0; padding: 24px; background: #dfe7f4; }
+    canvas { display: block; width: min(450px, 100%); height: auto; margin: auto; box-shadow: 0 12px 40px #243c6726; }
+  </style>
+  <canvas id="poster" width="900" height="1200"></canvas>
+  <script type="module">
+    import { drawAppPoster } from "./app-poster-render.js";
+    const load = (src) => new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = src;
+    });
+    window.renderPromise = (async () => {
+      const [code, logo] = await Promise.all([
+        load("./app-share-code.jpg"),
+        load("../images/ui-about-logo.png"),
+      ]);
+      const canvas = document.getElementById("poster");
+      drawAppPoster(canvas.getContext("2d"), { width: 900, height: 1200 }, code, logo);
+      canvas.dataset.name = "app-share-poster";
+      canvas.dataset.png = canvas.toDataURL("image/png");
+    })();
+  </script>
+</html>

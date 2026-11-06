@@ -27,6 +27,9 @@ function canvas() {
     arcTo() {},
     closePath() {},
     fill() {},
+    save() {},
+    restore() {},
+    clip() {},
     fillRect() {},
     fillText(text, x, y) {
       texts.push({ text, x, y });
